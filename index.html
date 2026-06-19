@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LPBS — Aktiviti Harian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --bg:#F4EFE3;
+    --bg-card:#FFFDF8;
+    --ink:#1A1A18;
+    --ink-soft:#52524C;
+    --sage:#8A9A8C;
+    --sage-line:#D8D4C4;
+    --paddy:#1F3A2E;
+    --paddy-light:#2E5240;
+    --amber:#C17F2E;
+    --amber-bg:#F6E6D2;
+    --amber-text:#7A4E18;
+    --red:#A33B2E;
+    --red-bg:#F3E0DA;
+    --red-text:#7A2A1F;
+    --line:#E4DFCF;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:880px;
+    margin:0 auto;
+    padding:0 24px 80px;
+  }
+  header.top{
+    padding:48px 0 28px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:8px;
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--paddy-light);
+    font-weight:600;
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:34px;
+    margin:0 0 6px;
+    color:var(--paddy);
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--ink-soft);
+    font-size:15px;
+    margin:0;
+  }
+  .datebar{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin:28px 0 36px;
+    flex-wrap:wrap;
+  }
+  .nav-btn{
+    width:38px;height:38px;
+    border-radius:50%;
+    border:1px solid var(--sage-line);
+    background:var(--bg-card);
+    color:var(--paddy);
+    font-size:16px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s, border-color .15s;
+  }
+  .nav-btn:hover{background:var(--amber-bg); border-color:var(--amber);}
+  .date-display{
+    font-family:'Fraunces',serif;
+    font-size:20px;
+    font-weight:500;
+    color:var(--ink);
+    min-width:230px;
+  }
+  .date-display .day-name{
+    display:block;
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--sage);
+    font-weight:600;
+    margin-bottom:2px;
+  }
+  input[type="date"]{
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--sage-line);
+    background:var(--bg-card);
+    color:var(--ink-soft);
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .today-btn{
+    border:1px solid var(--sage-line);
+    background:transparent;
+    color:var(--paddy-light);
+    font-size:13px;
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .today-btn:hover{background:var(--paddy); color:var(--bg);}
+  .summary-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:32px;
+    flex-wrap:wrap;
+  }
+  .summary-chip{
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 16px;
+    font-size:13px;
+    color:var(--ink-soft);
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+  }
+  .summary-chip b{
+    font-family:'Fraunces',serif;
+    font-size:18px;
+    color:var(--paddy);
+    font-weight:500;
+  }
+  .summary-chip.vvip b{color:var(--red-text);}
+  .timeline{
+    position:relative;
+    padding-left:28px;
+  }
+  .timeline::before{
+    content:'';
+    position:absolute;
+    left:5px;
+    top:6px;
+    bottom:6px;
+    width:1px;
+    background:var(--sage-line);
+  }
+  .event{
+    position:relative;
+    margin-bottom:14px;
+  }
+  .event::before{
+    content:'';
+    position:absolute;
+    left:-28px;
+    top:22px;
+    width:11px;height:11px;
+    border-radius:50%;
+    background:var(--bg);
+    border:2px solid var(--sage);
+  }
+  .event.level-vvip::before{border-color:var(--red);}
+  .event.level-vip::before{border-color:var(--amber);}
+  .card{
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-left:4px solid var(--sage);
+    border-radius:10px;
+    padding:16px 18px 16px 18px;
+    cursor:pointer;
+    transition:box-shadow .15s, border-color .15s;
+  }
+  .card.level-vip{border-left-color:var(--amber);}
+  .card.level-vvip{border-left-color:var(--red);}
+  .card:hover{box-shadow:0 2px 14px rgba(31,58,46,0.08);}
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+  }
+  .card-meta{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+    flex-wrap:wrap;
+  }
+  .time{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:15px;
+    color:var(--paddy);
+    white-space:nowrap;
+  }
+  .category{
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-weight:600;
+    padding:3px 9px;
+    border-radius:5px;
+  }
+  .category.mesyuarat{background:#E7EDE5; color:var(--paddy-light);}
+  .category.program{background:var(--amber-bg); color:var(--amber-text);}
+  .category.taklimat{background:#E5EEF2; color:#2C5870;}
+  .category.perjalanan{background:#F0E5EE; color:#7A3868;}
+  .category.sesi{background:#EEEBE0; color:#5C5340;}
+  .protocol-tag{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.04em;
+    padding:3px 9px;
+    border-radius:5px;
+  }
+  .protocol-tag.vvip{background:var(--red-bg); color:var(--red-text);}
+  .protocol-tag.vip{background:var(--amber-bg); color:var(--amber-text);}
+  .title{
+    font-size:15.5px;
+    font-weight:600;
+    line-height:1.4;
+    margin:0 0 4px;
+    color:var(--ink);
+  }
+  .location-line{
+    font-size:13px;
+    color:var(--sage);
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .chevron{
+    color:var(--sage);
+    font-size:13px;
+    flex-shrink:0;
+    margin-top:4px;
+    transition:transform .15s;
+  }
+  .event.open .chevron{transform:rotate(90deg);}
+  .detail{
+    display:none;
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    font-size:13.5px;
+    color:var(--ink-soft);
+    line-height:1.65;
+  }
+  .event.open .detail{display:block;}
+  .detail-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .detail-row .label{
+    flex-shrink:0;
+    width:90px;
+    font-weight:600;
+    color:var(--ink-soft);
+    font-size:12px;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    padding-top:1px;
+  }
+  .detail-row .value{color:var(--ink);}
+  .detail-row .value.vip-name{color:var(--red-text); font-weight:600;}
+  .attachments{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-top:4px;
+  }
+  .attachment{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:13px;
+    color:var(--paddy-light);
+    text-decoration:none;
+  }
+  .attachment:hover{text-decoration:underline;}
+  .empty-state{
+    text-align:center;
+    padding:70px 20px;
+    color:var(--sage);
+  }
+  .empty-state .big{
+    font-family:'Fraunces',serif;
+    font-size:20px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  footer{
+    text-align:center;
+    padding-top:40px;
+    font-size:12px;
+    color:var(--sage);
+  }
+  .analytics{
+    margin-top:56px;
+    padding-top:36px;
+    border-top:1px solid var(--line);
+  }
+  .analytics-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:20px;
+  }
+  .ana-title{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:24px;
+    color:var(--paddy);
+    margin:0;
+  }
+  .period-toggle{
+    display:flex;
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:3px;
+    gap:2px;
+  }
+  .period-btn{
+    border:none;
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:7px 16px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .period-btn.active{
+    background:var(--paddy);
+    color:var(--bg);
+  }
+  .ana-controls{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+  }
+  .ana-controls select, .ana-controls input{
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--sage-line);
+    background:var(--bg-card);
+    color:var(--ink-soft);
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .ana-body{
+    display:flex;
+    gap:40px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .pie-wrap{
+    flex-shrink:0;
+  }
+  .legend{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    min-width:220px;
+    flex:1;
+  }
+  .legend-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:14px;
+  }
+  .legend-swatch{
+    width:11px;height:11px;
+    border-radius:3px;
+    flex-shrink:0;
+  }
+  .legend-label{
+    flex:1;
+    color:var(--ink);
+    font-weight:500;
+  }
+  .legend-count{
+    color:var(--ink-soft);
+    font-size:13px;
+  }
+  .legend-pct{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    color:var(--paddy);
+    min-width:42px;
+    text-align:right;
+  }
+  .ana-empty{
+    color:var(--sage);
+    font-size:14px;
+    padding:30px 0;
+  }
+  .pie-total-label{
+    font-family:'Inter',sans-serif;
+  }
+  .signin-btn{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    border:1px solid var(--sage-line);
+    background:var(--bg-card);
+    color:var(--ink-soft);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .signin-btn:hover{border-color:var(--paddy-light); color:var(--paddy);}
+  .signin-btn .g-icon{
+    font-style:normal;
+    font-weight:700;
+    font-size:13px;
+    width:16px; height:16px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#4285F4,#34A853,#FBBC05,#EA4335);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .add-btn{
+    border:none;
+    background:var(--paddy);
+    color:var(--bg);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .add-btn:hover{background:var(--paddy-light);}
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(26,26,24,0.45);
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    padding:24px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--bg-card);
+    border-radius:14px;
+    width:100%;
+    max-width:520px;
+    max-height:88vh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .modal-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px 24px;
+    border-bottom:1px solid var(--line);
+  }
+  .modal-head h3{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:19px;
+    color:var(--paddy);
+    margin:0;
+  }
+  .modal-close{
+    border:none;
+    background:transparent;
+    font-size:22px;
+    color:var(--sage);
+    cursor:pointer;
+    line-height:1;
+  }
+  .modal-body{
+    padding:20px 24px;
+    overflow-y:auto;
+    flex:1;
+  }
+  .field-label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:14px 0 6px;
+  }
+  .field-label:first-child{margin-top:0;}
+  .modal-body input, .modal-body select{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--sage-line);
+    background:var(--bg);
+    color:var(--ink);
+    padding:9px 12px;
+    border-radius:8px;
+    font-size:14px;
+  }
+  .field-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .form-note{
+    font-size:12px;
+    color:var(--sage);
+    margin:18px 0 0;
+    line-height:1.5;
+  }
+  .modal-foot{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    padding:16px 24px;
+    border-top:1px solid var(--line);
+  }
+  .cancel-btn{
+    border:1px solid var(--sage-line);
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .save-btn{
+    border:none;
+    background:var(--paddy);
+    color:var(--bg);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 18px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .save-btn:hover{background:var(--paddy-light);}
+  .view-switch-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:28px;
+    margin-bottom:0;
+  }
+  .month-grid-view{
+    margin-top:8px;
+    position:relative;
+  }
+  .mg-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+  }
+  .mg-dow{
+    text-align:center;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    color:var(--sage);
+    padding-bottom:6px;
+  }
+  .mg-cell{
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:8px;
+    min-height:54px;
+    padding:6px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    gap:4px;
+    transition:border-color .15s, box-shadow .15s;
+    position:relative;
+  }
+  .mg-cell:hover{border-color:var(--paddy-light); box-shadow:0 2px 10px rgba(31,58,46,0.08); z-index:5;}
+  .mg-cell.empty{
+    background:transparent;
+    border:none;
+    cursor:default;
+  }
+  .mg-cell.empty:hover{box-shadow:none; border-color:transparent;}
+  .mg-cell.today{border-color:var(--amber); border-width:2px;}
+  .mg-daynum{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:13px;
+    color:var(--ink);
+  }
+  .mg-badges{
+    display:flex;
+    gap:3px;
+    flex-wrap:wrap;
+  }
+  .mg-badge{
+    font-size:10px;
+    font-weight:600;
+    min-width:16px;
+    height:16px;
+    padding:0 4px;
+    border-radius:5px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    line-height:1;
+  }
+  .mg-badge.level-vvip{background:var(--red-bg); color:var(--red-text);}
+  .mg-badge.level-vip{background:var(--amber-bg); color:var(--amber-text);}
+  .mg-badge.level-none{background:#E7EDE5; color:var(--paddy-light);}
+  .mg-tooltip{
+    display:none;
+    position:absolute;
+    bottom:calc(100% + 8px);
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:var(--bg);
+    border-radius:9px;
+    padding:10px 12px;
+    width:230px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.22);
+    z-index:20;
+    pointer-events:none;
+  }
+  .mg-cell:hover .mg-tooltip{display:block;}
+  .mg-tooltip::after{
+    content:'';
+    position:absolute;
+    top:100%;
+    left:50%;
+    transform:translateX(-50%);
+    border:6px solid transparent;
+    border-top-color:var(--ink);
+  }
+  .mg-tooltip .tt-date{
+    font-family:'Fraunces',serif;
+    font-size:13px;
+    font-weight:500;
+    margin-bottom:6px;
+    color:var(--bg);
+    border-bottom:1px solid rgba(244,239,227,0.2);
+    padding-bottom:6px;
+  }
+  .mg-tooltip .tt-row{
+    display:flex;
+    gap:6px;
+    align-items:flex-start;
+    margin-bottom:6px;
+    font-size:11.5px;
+    line-height:1.4;
+  }
+  .mg-tooltip .tt-row:last-child{margin-bottom:0;}
+  .mg-tooltip .tt-time{
+    color:#C9C4B2;
+    flex-shrink:0;
+    min-width:38px;
+  }
+  .mg-tooltip .tt-title{color:var(--bg);}
+  .mg-tooltip .tt-dot{
+    width:6px;height:6px;
+    border-radius:50%;
+    flex-shrink:0;
+    margin-top:4px;
+  }
+  .mg-tooltip .tt-dot.level-vvip{background:#E8867A;}
+  .mg-tooltip .tt-dot.level-vip{background:var(--amber);}
+  .mg-tooltip .tt-dot.level-none{background:#8FAE96;}
+  .month-list-view{
+    margin-top:8px;
+  }
+  .ml-group{
+    margin-bottom:22px;
+  }
+  .ml-date-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:10px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+  }
+  .ml-date-head:hover .ml-date-main{color:var(--paddy-light);}
+  .ml-date-main{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:16px;
+    color:var(--paddy);
+  }
+  .ml-date-sub{
+    font-size:12px;
+    color:var(--sage);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .ml-event{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:9px 0;
+    border-left:3px solid var(--sage);
+    padding-left:12px;
+    margin-bottom:4px;
+    cursor:pointer;
+  }
+  .ml-event.level-vip{border-left-color:var(--amber);}
+  .ml-event.level-vvip{border-left-color:var(--red);}
+  .ml-event-time{
+    font-family:'Fraunces',serif;
+    font-size:13px;
+    color:var(--paddy);
+    min-width:46px;
+    flex-shrink:0;
+  }
+  .ml-event-title{
+    font-size:13.5px;
+    color:var(--ink);
+    line-height:1.5;
+  }
+  .ml-event-loc{
+    font-size:12px;
+    color:var(--sage);
+  }
+  .range-label{
+    font-size:13px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .range-view{
+    margin-top:8px;
+  }
+  .rv-day-group{
+    margin-bottom:24px;
+  }
+  .rv-day-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:12px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+  }
+  .rv-day-main{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:17px;
+    color:var(--paddy);
+  }
+  .rv-day-sub{
+    font-size:12px;
+    color:var(--sage);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .rv-day-count{
+    margin-left:auto;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:2px 10px;
+  }
+  .rv-day-empty{
+    font-size:13px;
+    color:var(--sage);
+    padding:4px 0 0;
+  }
+  .rv-events{
+    position:relative;
+    padding-left:24px;
+  }
+  .rv-events::before{
+    content:'';
+    position:absolute;
+    left:5px;
+    top:6px;
+    bottom:6px;
+    width:1px;
+    background:var(--sage-line);
+  }
+  .gate{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--bg);
+    padding:24px;
+  }
+  .gate-card{
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:44px 40px;
+    max-width:420px;
+    text-align:center;
+    box-shadow:0 4px 24px rgba(31,58,46,0.06);
+  }
+  .gate-title{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:28px;
+    color:var(--paddy);
+    margin:6px 0 10px;
+  }
+  .gate-sub{
+    color:var(--ink-soft);
+    font-size:14px;
+    margin:0 0 28px;
+    line-height:1.5;
+  }
+  .gate-signin-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    border:1px solid var(--sage-line);
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    padding:12px 22px;
+    border-radius:9px;
+    cursor:pointer;
+  }
+  .gate-signin-btn:hover{border-color:var(--paddy-light);}
+  .gate-signin-btn .g-icon{
+    font-style:normal;
+    font-weight:700;
+    font-size:13px;
+    width:18px; height:18px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#4285F4,#34A853,#FBBC05,#EA4335);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .gate-note{
+    margin-top:18px;
+    font-size:13px;
+    color:var(--red-text);
+    min-height:18px;
+  }
+  .user-badge{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:6px 12px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .user-badge.editor::before{
+    content:'';
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--paddy-light);
+    display:inline-block;
+  }
+</style>
+</head>
+<body>
+<div class="gate" id="gateScreen">
+  <div class="gate-card">
+    <p class="eyebrow">Lembaga Padi dan Beras Sabah</p>
+    <h1 class="gate-title">Papar Aktiviti Harian</h1>
+    <p class="gate-sub">Akses terhad kepada staf LPBS yang dibenarkan sahaja.</p>
+    <button class="gate-signin-btn" id="gateSigninBtn"><i class="g-icon">G</i> Log masuk dengan Google</button>
+    <p class="gate-note" id="gateNote"></p>
+  </div>
+</div>
+
+<div class="app" id="mainApp" style="display:none;">
+  <header class="top">
+    <p class="eyebrow">Lembaga Padi dan Beras Sabah</p>
+    <h1>Papar Aktiviti Harian</h1>
+    <p class="sub">Gambaran keseluruhan jadual dan program LPBS bagi tarikh yang dipilih.</p>
+  </header>
+
+  <div class="view-switch-row">
+    <div class="period-toggle" id="viewToggle">
+      <button class="period-btn active" data-view="day">Hari</button>
+      <button class="period-btn" data-view="month">Bulan</button>
+    </div>
+    <div class="period-toggle" id="daySubToggle">
+      <button class="period-btn active" data-daysub="single">Tunggal</button>
+      <button class="period-btn" data-daysub="range">Julat</button>
+    </div>
+    <div class="period-toggle" id="monthSubToggle" style="display:none;">
+      <button class="period-btn active" data-sub="grid">Grid</button>
+      <button class="period-btn" data-sub="list">Senarai</button>
+    </div>
+  </div>
+
+  <div class="datebar" id="dayControls">
+    <button class="nav-btn" id="prevDay">&#8249;</button>
+    <div class="date-display">
+      <span class="day-name" id="dayName">SELASA</span>
+      <span id="dateText">17 Jun 2026</span>
+    </div>
+    <button class="nav-btn" id="nextDay">&#8250;</button>
+    <input type="date" id="datePicker" value="2026-06-17">
+    <button class="today-btn" id="todayBtn">Hari ini</button>
+    <div style="flex:1;"></div>
+    <span class="user-badge" id="userBadge"></span>
+    <button class="add-btn" id="addBtn" style="display:none;">+ Tambah aktiviti</button>
+  </div>
+
+  <div class="datebar" id="rangeControls" style="display:none;">
+    <span class="range-label">Dari</span>
+    <input type="date" id="rangeStart" value="2026-06-15">
+    <span class="range-label">Hingga</span>
+    <input type="date" id="rangeEnd" value="2026-06-19">
+    <div style="flex:1;"></div>
+    <span class="user-badge" id="userBadgeRange"></span>
+    <button class="add-btn" id="addBtnRange" style="display:none;">+ Tambah aktiviti</button>
+  </div>
+
+  <div class="datebar" id="monthControls" style="display:none;">
+    <button class="nav-btn" id="prevMonth">&#8249;</button>
+    <div class="date-display">
+      <span class="day-name">BULAN</span>
+      <span id="monthText">Jun 2026</span>
+    </div>
+    <button class="nav-btn" id="nextMonth">&#8250;</button>
+    <div style="flex:1;"></div>
+    <span class="user-badge" id="userBadgeMonth"></span>
+    <button class="add-btn" id="addBtnMonth" style="display:none;">+ Tambah aktiviti</button>
+  </div>
+
+  <div class="summary-row" id="summaryRow"></div>
+
+  <div class="timeline" id="timeline"></div>
+
+  <div id="rangeView" class="range-view" style="display:none;"></div>
+
+  <div id="monthGridView" class="month-grid-view" style="display:none;"></div>
+  <div id="monthListView" class="month-list-view" style="display:none;"></div>
+
+  <section class="analytics">
+    <div class="analytics-head">
+      <div>
+        <p class="eyebrow">Analitik</p>
+        <h2 class="ana-title">Taburan jenis aktiviti</h2>
+      </div>
+      <div class="period-toggle" id="periodToggle">
+        <button class="period-btn" data-period="day">Hari</button>
+        <button class="period-btn active" data-period="month">Bulan</button>
+        <button class="period-btn" data-period="year">Tahun</button>
+      </div>
+    </div>
+
+    <div class="ana-controls" id="anaControls"></div>
+
+    <div class="ana-body" id="anaBody"></div>
+  </section>
+
+  <footer>Data disegerakkan terus daripada Kalendar Rasmi LPBS &middot; Google Calendar</footer>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Tambah aktiviti baharu</h3>
+      <button class="modal-close" id="modalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Tajuk aktiviti</label>
+      <input type="text" id="f-title" placeholder="Contoh: Mesyuarat Jawatankuasa Induk LPBS Bil.5/2026">
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Kategori</label>
+          <select id="f-category">
+            <option value="MESYUARAT">Mesyuarat</option>
+            <option value="PROGRAM">Program</option>
+            <option value="TAKLIMAT">Taklimat</option>
+            <option value="PERJALANAN">Perjalanan</option>
+            <option value="SESI">Sesi libat urus</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Peringkat protokol</label>
+          <select id="f-protocol">
+            <option value="">Tiada / dalaman</option>
+            <option value="vip">VIP</option>
+            <option value="vvip">VVIP</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Tarikh</label>
+          <input type="date" id="f-date">
+        </div>
+        <div>
+          <label class="field-label">Masa</label>
+          <input type="time" id="f-time">
+        </div>
+      </div>
+
+      <label class="field-label">Lokasi</label>
+      <input type="text" id="f-location" placeholder="Contoh: BMU MAFFI">
+
+      <label class="field-label">VIP / VVIP (jika berkaitan)</label>
+      <input type="text" id="f-vip" placeholder="Contoh: Datuk Dr. Ts. Ramle Hj. Kasin">
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Urus setia</label>
+          <input type="text" id="f-urussetia" placeholder="Nama / unit">
+        </div>
+        <div>
+          <label class="field-label">Pakaian</label>
+          <input type="text" id="f-pakaian" placeholder="Contoh: Baju Korporat">
+        </div>
+      </div>
+
+      <label class="field-label">Kehadiran (wakil LPBS)</label>
+      <input type="text" id="f-kehadiran" placeholder="Contoh: GM + 2 pegawai">
+
+      <label class="field-label">Pautan lampiran (Google Drive)</label>
+      <input type="text" id="f-attachment" placeholder="https://drive.google.com/...">
+
+      <p class="form-note">Aktiviti akan ditambah terus ke Kalendar Rasmi LPBS menggunakan akaun Google staf yang log masuk.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="cancel-btn" id="modalCancel">Batal</button>
+      <button class="save-btn" id="modalSave">Simpan ke kalendar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// KONFIGURASI — Google OAuth & Kalendar
+// ============================================================
+const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
+const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
+const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar";
+
+// ============================================================
+// AKSES KAWALAN — Senarai e-mel staf yang dibenarkan
+// ============================================================
+const EDITOR_ALLOWLIST = [
+  "badzlii99@gmail.com",
+  "carlvinds@gmail.com",
+  "dzulkifliewilyawaty@gmail.com",
+  "dzunisajaldin@gmail.com",
+  "jeffreyavie@gmail.com",
+  "jenna.kulai@gmail.com",
+  "jhuzaika@gmail.com",
+  "juanapoyong@gmail.com",
+  "khairiyyahrazanah@gmail.com",
+  "nestor652022@gmail.com",
+  "puterifitri02@gmail.com",
+  "ramlekasin@gmail.com",
+  "rosnileong1967@gmail.com",
+  "shafikahoyeaw777@gmail.com",
+  "shymatahat@gmail.com",
+  "wiwierimin96@gmail.com",
+  "debracalley97@gmail.com",
+  "stacysoh81@gmail.com"
+];
+
+const VIEW_ONLY_ALLOWLIST = [
+  "apriljohnny95@gmail.com",
+  "eryyyzck1906@gmail.com",
+  "ikaqika745@gmail.com",
+  "adeysonana@gmail.com",
+  "falishafaisal@gmail.com",
+  "petrecilla@gmail.com",
+  "jeffryj222@gmail.com"
+];
+
+// Editors are automatically viewers too, so the two lists merge here.
+const VIEWER_ALLOWLIST = [...VIEW_ONLY_ALLOWLIST, ...EDITOR_ALLOWLIST];
+
+let currentUser = null; // { email, name } once signed in
+
+function isAllowedViewer(email){
+  return VIEWER_ALLOWLIST.map(e=>e.toLowerCase()).includes((email||'').toLowerCase());
+}
+function isAllowedEditor(email){
+  return EDITOR_ALLOWLIST.map(e=>e.toLowerCase()).includes((email||'').toLowerCase());
+}
+
+// ============================================================
+// DATA SEBENAR — diisi melalui Google Calendar API selepas log masuk
+// (Kekal nama "SAMPLE_EVENTS" supaya kod paparan sedia ada tidak berubah.)
+// ============================================================
+const SAMPLE_EVENTS = {};
+let calendarLoaded = false;
+let calendarLoadError = null;
+
+const CATEGORY_TAG_PATTERN = /^\s*\[([A-Z\s]+)\]\s*/;
+const KNOWN_CATEGORIES = ["MESYUARAT","PROGRAM","MAJLIS","TAKLIMAT","SESI LIBAT URUS","KURSUS","PERJALANAN"];
+
+function parseCategoryFromTitle(rawTitle){
+  const match = rawTitle.match(CATEGORY_TAG_PATTERN);
+  if(match){
+    const tag = match[1].trim();
+    const cleanTitle = rawTitle.replace(CATEGORY_TAG_PATTERN, '').trim();
+    if(tag === "SESI LIBAT URUS") return { category: "SESI", title: cleanTitle };
+    if(KNOWN_CATEGORIES.includes(tag)) return { category: tag, title: cleanTitle };
+    return { category: tag, title: cleanTitle };
+  }
+  return { category: "MESYUARAT", title: rawTitle };
+}
+
+function parseDescriptionFields(desc){
+  // Looks for lines like "VIP: ..." / "Urus Setia: ..." / "Pakaian: ..." / "Kehadiran: ...”
+  const fields = { vip:null, urusSetia:null, kehadiran:null, pakaian:null, protocol:null };
+  if(!desc) return fields;
+  const lines = desc.split(/\n|<br\s*\/?>/i);
+  lines.forEach(line => {
+    const m = line.match(/^\s*(VIP|VVIP|Urus Setia|Kehadiran|Pakaian)\s*:\s*(.+)$/i);
+    if(!m) return;
+    const key = m[1].toLowerCase();
+    const val = m[2].trim();
+    if(key === 'vip'){ fields.vip = val; fields.protocol = 'vip'; }
+    else if(key === 'vvip'){ fields.vip = val; fields.protocol = 'vvip'; }
+    else if(key === 'urus setia') fields.urusSetia = val;
+    else if(key === 'kehadiran') fields.kehadiran = val;
+    else if(key === 'pakaian') fields.pakaian = val;
+  });
+  return fields;
+}
+
+function googleEventToInternal(gEvent){
+  const { category, title } = parseCategoryFromTitle(gEvent.summary || '(Tiada tajuk)');
+  const descFields = parseDescriptionFields(gEvent.description || '');
+  const isAllDay = !!(gEvent.start && gEvent.start.date && !gEvent.start.dateTime);
+
+  let time = '00:00';
+  if(!isAllDay && gEvent.start && gEvent.start.dateTime){
+    const d = new Date(gEvent.start.dateTime);
+    time = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+
+  const attachments = (gEvent.attachments || []).map(a => ({ title: a.title || a.fileUrl, url: a.fileUrl }));
+
+  return {
+    id: gEvent.id,
+    time,
+    allDay: isAllDay,
+    category,
+    title,
+    location: gEvent.location || '',
+    protocol: descFields.protocol,
+    vip: descFields.vip,
+    urusSetia: descFields.urusSetia,
+    kehadiran: descFields.kehadiran,
+    pakaian: descFields.pakaian,
+    conferenceUrl: gEvent.hangoutLink || null,
+    attachments,
+    _raw: gEvent
+  };
+}
+
+function dateKeyFromGoogleEvent(gEvent){
+  if(gEvent.start && gEvent.start.date) return gEvent.start.date;
+  if(gEvent.start && gEvent.start.dateTime) return gEvent.start.dateTime.slice(0,10);
+  return null;
+}
+
+async function loadEventsFromGoogleCalendar(){
+  if(!accessToken) return;
+  calendarLoadError = null;
+  try{
+    let pageToken = null;
+    let allItems = [];
+    do{
+      const params = new URLSearchParams({
+        maxResults: '250',
+        singleEvents: 'true',
+        orderBy: 'startTime',
+        timeMin: '2020-01-01T00:00:00Z',
+        timeMax: '2030-01-01T00:00:00Z'
+      });
+      if(pageToken) params.set('pageToken', pageToken);
+
+      const res = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events?${params.toString()}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      if(!res.ok){
+        if(res.status === 401 || res.status === 403){
+          throw new Error('PERMISSION');
+        }
+        throw new Error('FETCH_FAILED');
+      }
+      const data = await res.json();
+      allItems = allItems.concat(data.items || []);
+      pageToken = data.nextPageToken || null;
+    } while(pageToken);
+
+    // Clear and repopulate SAMPLE_EVENTS in place (other functions hold no stale references).
+    Object.keys(SAMPLE_EVENTS).forEach(k => delete SAMPLE_EVENTS[k]);
+    allItems.forEach(gEvent => {
+      if(gEvent.status === 'cancelled') return;
+      const key = dateKeyFromGoogleEvent(gEvent);
+      if(!key) return;
+      if(!SAMPLE_EVENTS[key]) SAMPLE_EVENTS[key] = [];
+      SAMPLE_EVENTS[key].push(googleEventToInternal(gEvent));
+    });
+
+    calendarLoaded = true;
+    render();
+    if(currentView === 'month') renderMonthView();
+    if(currentView === 'day' && daySubView === 'range') renderRangeView();
+    refreshAnalytics();
+  }catch(e){
+    calendarLoadError = e.message === 'PERMISSION'
+      ? 'Akaun anda tidak mempunyai kebenaran untuk melihat kalendar ini. Sila hubungi pentadbir LPBS.'
+      : 'Gagal memuatkan data kalendar. Sila muat semula halaman.';
+    const timeline = document.getElementById('timeline');
+    if(timeline) timeline.innerHTML = `<div class="empty-state"><div class="big">Ralat memuatkan data</div>${calendarLoadError}</div>`;
+  }
+}
+
+
+const CATEGORY_MAP = {
+  "MESYUARAT":"mesyuarat",
+  "PROGRAM":"program",
+  "TAKLIMAT":"taklimat",
+  "PERJALANAN":"perjalanan",
+  "SESI":"sesi"
+};
+
+const DAY_NAMES = ["AHAD","ISNIN","SELASA","RABU","KHAMIS","JUMAAT","SABTU"];
+const MONTH_NAMES = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
+
+let currentDate = new Date("2026-06-17T00:00:00");
+
+function fmtKey(d){
+  return d.toISOString().slice(0,10);
+}
+
+function buildEventCard(e, uid){
+  const catClass = CATEGORY_MAP[e.category] || 'mesyuarat';
+  const levelClass = e.protocol ? 'level-'+e.protocol : '';
+  const protocolTag = e.protocol ? `<span class="protocol-tag ${e.protocol}">${e.protocol.toUpperCase()}</span>` : '';
+
+  let detailRows = '';
+  if(e.vip) detailRows += `<div class="detail-row"><span class="label">VIP</span><span class="value vip-name">${e.vip}</span></div>`;
+  if(e.urusSetia) detailRows += `<div class="detail-row"><span class="label">Urus setia</span><span class="value">${e.urusSetia}</span></div>`;
+  if(e.kehadiran) detailRows += `<div class="detail-row"><span class="label">Kehadiran</span><span class="value">${e.kehadiran}</span></div>`;
+  if(e.pakaian) detailRows += `<div class="detail-row"><span class="label">Pakaian</span><span class="value">${e.pakaian}</span></div>`;
+  if(e.conferenceUrl) detailRows += `<div class="detail-row"><span class="label">Pautan</span><span class="value">${e.conferenceUrl}</span></div>`;
+
+  let attachHtml = '';
+  if(e.attachments && e.attachments.length){
+    attachHtml = '<div class="detail-row"><span class="label">Lampiran</span><span class="value"><div class="attachments">' +
+      e.attachments.map(a=>`<span class="attachment">&#128206; ${a.title}</span>`).join('') +
+      '</div></span></div>';
+  }
+
+  const hasDetail = detailRows || attachHtml;
+
+  return `
+    <div class="event ${levelClass}" data-uid="${uid}">
+      <div class="card ${levelClass}" onclick="toggleEvent('${uid}')">
+        <div class="card-top">
+          <div style="flex:1;">
+            <div class="card-meta">
+              <span class="time">${e.allDay ? 'Sepanjang hari' : e.time}</span>
+              <span class="category ${catClass}">${e.category}</span>
+              ${protocolTag}
+            </div>
+            <p class="title">${e.title}</p>
+            <div class="location-line">&#128205; ${e.location||''}</div>
+          </div>
+          ${hasDetail ? '<span class="chevron">&#10095;</span>' : ''}
+        </div>
+        ${hasDetail ? `<div class="detail">${detailRows}${attachHtml}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function buildSummaryChips(events, suffix){
+  const vvipCount = events.filter(e=>e.protocol==='vvip').length;
+  const vipCount = events.filter(e=>e.protocol==='vip').length;
+  let chips = `<div class="summary-chip"><b>${events.length}</b> aktiviti${suffix||''}</div>`;
+  if(vvipCount>0) chips += `<div class="summary-chip vvip"><b>${vvipCount}</b> peringkat VVIP</div>`;
+  if(vipCount>0) chips += `<div class="summary-chip"><b>${vipCount}</b> peringkat VIP</div>`;
+  return chips;
+}
+
+function render(){
+  const key = fmtKey(currentDate);
+  document.getElementById('datePicker').value = key;
+  document.getElementById('dayName').textContent = DAY_NAMES[currentDate.getDay()];
+  document.getElementById('dateText').textContent =
+    currentDate.getDate() + ' ' + MONTH_NAMES[currentDate.getMonth()] + ' ' + currentDate.getFullYear();
+
+  const events = (SAMPLE_EVENTS[key] || []).slice().sort((a,b)=> (a.time||'').localeCompare(b.time||''));
+  const timeline = document.getElementById('timeline');
+  const summaryRow = document.getElementById('summaryRow');
+
+  if(events.length === 0){
+    timeline.style.paddingLeft = '0';
+    summaryRow.innerHTML = '<div class="summary-chip"><b>0</b> aktiviti</div>';
+    timeline.innerHTML = '<div class="empty-state"><div class="big">Tiada aktiviti dijadualkan</div>Tidak ada acara LPBS pada tarikh ini.</div>';
+    return;
+  }
+  timeline.style.paddingLeft = '28px';
+  summaryRow.innerHTML = buildSummaryChips(events, '');
+
+  timeline.innerHTML = events.map((e, idx) => buildEventCard(e, key+'-'+idx)).join('');
+}
+
+function toggleEvent(uid){
+  const el = document.querySelector(`.event[data-uid="${uid}"]`);
+  if(el) el.classList.toggle('open');
+}
+
+document.getElementById('prevDay').onclick = () => {
+  currentDate.setDate(currentDate.getDate()-1);
+  render();
+};
+document.getElementById('nextDay').onclick = () => {
+  currentDate.setDate(currentDate.getDate()+1);
+  render();
+};
+document.getElementById('todayBtn').onclick = () => {
+  currentDate = new Date("2026-06-17T00:00:00");
+  render();
+};
+document.getElementById('datePicker').onchange = (e) => {
+  currentDate = new Date(e.target.value + "T00:00:00");
+  render();
+};
+
+let currentView = 'day';
+let monthSubView = 'grid';
+let monthCursor = new Date("2026-06-01T00:00:00");
+const TODAY_KEY = "2026-06-17";
+
+function eventsForMonth(year, month){
+  const out = {};
+  for(const key in SAMPLE_EVENTS){
+    const d = new Date(key+"T00:00:00");
+    if(d.getFullYear()===year && d.getMonth()===month){
+      out[key] = SAMPLE_EVENTS[key];
+    }
+  }
+  return out;
+}
+
+function renderMonthGrid(){
+  const year = monthCursor.getFullYear();
+  const month = monthCursor.getMonth();
+  document.getElementById('monthText').textContent = MONTH_NAMES[month] + ' ' + year;
+
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const monthEvents = eventsForMonth(year, month);
+
+  const dowHeader = ['AHAD','ISNIN','SELASA','RABU','KHAMIS','JUMAAT','SABTU']
+    .map(d => `<div class="mg-dow">${d}</div>`).join('');
+
+  let cells = '';
+  for(let i=0;i<firstDow;i++){
+    cells += `<div class="mg-cell empty"></div>`;
+  }
+  for(let day=1; day<=daysInMonth; day++){
+    const key = year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+    const events = (monthEvents[key]||[]).slice().sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    const isToday = key === TODAY_KEY;
+
+    const counts = {vvip:0, vip:0, none:0};
+    events.forEach(e=>{
+      const lvl = e.protocol === 'vvip' ? 'vvip' : (e.protocol === 'vip' ? 'vip' : 'none');
+      counts[lvl]++;
+    });
+    let badges = '';
+    if(counts.vvip) badges += `<span class="mg-badge level-vvip">${counts.vvip}</span>`;
+    if(counts.vip) badges += `<span class="mg-badge level-vip">${counts.vip}</span>`;
+    if(counts.none) badges += `<span class="mg-badge level-none">${counts.none}</span>`;
+
+    let tooltip = '';
+    if(events.length){
+      const d = new Date(key+"T00:00:00");
+      const rows = events.map(e=>{
+        const lvl = e.protocol === 'vvip' ? 'vvip' : (e.protocol === 'vip' ? 'vip' : 'none');
+        return `<div class="tt-row">
+          <span class="tt-dot level-${lvl}"></span>
+          <span class="tt-time">${e.allDay ? 'Spjg' : e.time}</span>
+          <span class="tt-title">${e.title}</span>
+        </div>`;
+      }).join('');
+      tooltip = `<div class="mg-tooltip">
+        <div class="tt-date">${d.getDate()} ${MONTH_NAMES[d.getMonth()]} &middot; ${DAY_NAMES[d.getDay()]}</div>
+        ${rows}
+      </div>`;
+    }
+
+    cells += `<div class="mg-cell ${isToday?'today':''}" data-key="${key}" onclick="jumpToDay('${key}')">
+      <span class="mg-daynum">${day}</span>
+      <div class="mg-badges">${badges}</div>
+      ${tooltip}
+    </div>`;
+  }
+
+  document.getElementById('monthGridView').innerHTML = `
+    <div class="mg-grid">${dowHeader}${cells}</div>
+  `;
+}
+
+function renderMonthList(){
+  const year = monthCursor.getFullYear();
+  const month = monthCursor.getMonth();
+  document.getElementById('monthText').textContent = MONTH_NAMES[month] + ' ' + year;
+
+  const monthEvents = eventsForMonth(year, month);
+  const sortedKeys = Object.keys(monthEvents).sort();
+
+  if(sortedKeys.length === 0){
+    document.getElementById('monthListView').innerHTML = '<div class="empty-state"><div class="big">Tiada aktiviti dijadualkan</div>Tidak ada acara LPBS pada bulan ini.</div>';
+    return;
+  }
+
+  const html = sortedKeys.map(key => {
+    const d = new Date(key+"T00:00:00");
+    const events = monthEvents[key].slice().sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    const rows = events.map(e=>{
+      const lvl = e.protocol ? 'level-'+e.protocol : '';
+      return `<div class="ml-event ${lvl}" onclick="jumpToDay('${key}')">
+        <span class="ml-event-time">${e.allDay ? 'Sepanjang' : e.time}</span>
+        <div>
+          <div class="ml-event-title">${e.title}</div>
+          <div class="ml-event-loc">${e.location||''}</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="ml-group">
+      <div class="ml-date-head" onclick="jumpToDay('${key}')">
+        <span class="ml-date-main">${d.getDate()} ${MONTH_NAMES[d.getMonth()]}</span>
+        <span class="ml-date-sub">${DAY_NAMES[d.getDay()]}</span>
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  document.getElementById('monthListView').innerHTML = html;
+}
+
+function updateMonthSummary(){
+  const year = monthCursor.getFullYear();
+  const month = monthCursor.getMonth();
+  const monthEvents = eventsForMonth(year, month);
+  const allMonthEvents = Object.values(monthEvents).flat();
+
+  const summaryRow = document.getElementById('summaryRow');
+  if(allMonthEvents.length === 0){
+    summaryRow.innerHTML = '<div class="summary-chip"><b>0</b> aktiviti bulan ini</div>';
+    return;
+  }
+  const vvipCount = allMonthEvents.filter(e=>e.protocol==='vvip').length;
+  const vipCount = allMonthEvents.filter(e=>e.protocol==='vip').length;
+
+  let chips = `<div class="summary-chip"><b>${allMonthEvents.length}</b> aktiviti bulan ini</div>`;
+  if(vvipCount>0) chips += `<div class="summary-chip vvip"><b>${vvipCount}</b> peringkat VVIP</div>`;
+  if(vipCount>0) chips += `<div class="summary-chip"><b>${vipCount}</b> peringkat VIP</div>`;
+  summaryRow.innerHTML = chips;
+}
+
+function renderMonthView(){
+  updateMonthSummary();
+  if(monthSubView === 'grid'){
+    document.getElementById('monthGridView').style.display = '';
+    document.getElementById('monthListView').style.display = 'none';
+    renderMonthGrid();
+  } else {
+    document.getElementById('monthGridView').style.display = 'none';
+    document.getElementById('monthListView').style.display = '';
+    renderMonthList();
+  }
+}
+
+function jumpToDay(key){
+  currentDate = new Date(key+"T00:00:00");
+  daySubView = 'single';
+  switchToView('day');
+}
+
+let daySubView = 'single';
+let rangeStart = "2026-06-15";
+let rangeEnd = "2026-06-19";
+
+function dateRangeArray(startKey, endKey){
+  const out = [];
+  let d = new Date(startKey+"T00:00:00");
+  const end = new Date(endKey+"T00:00:00");
+  if(d > end) return out;
+  let guard = 0;
+  while(d <= end && guard < 366){
+    out.push(fmtKey(d));
+    d.setDate(d.getDate()+1);
+    guard++;
+  }
+  return out;
+}
+
+function renderRangeView(){
+  document.getElementById('rangeStart').value = rangeStart;
+  document.getElementById('rangeEnd').value = rangeEnd;
+
+  const days = dateRangeArray(rangeStart, rangeEnd);
+  const rangeViewEl = document.getElementById('rangeView');
+  const summaryRow = document.getElementById('summaryRow');
+
+  if(days.length === 0){
+    rangeViewEl.innerHTML = '<div class="empty-state"><div class="big">Julat tarikh tidak sah</div>Tarikh "Hingga" mesti sama atau selepas tarikh "Dari".</div>';
+    summaryRow.innerHTML = '';
+    return;
+  }
+
+  const allEvents = [];
+  days.forEach(key => (SAMPLE_EVENTS[key]||[]).forEach(e => allEvents.push(e)));
+  summaryRow.innerHTML = buildSummaryChips(allEvents, ` (${days.length} hari)`);
+
+  rangeViewEl.innerHTML = days.map(key => {
+    const d = new Date(key+"T00:00:00");
+    const events = (SAMPLE_EVENTS[key]||[]).slice().sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    const countBadge = events.length ? `<span class="rv-day-count">${events.length} aktiviti</span>` : '<span class="rv-day-count">Tiada aktiviti</span>';
+    const body = events.length
+      ? `<div class="rv-events">${events.map((e,idx)=>buildEventCard(e, key+'-r'+idx)).join('')}</div>`
+      : `<div class="rv-day-empty">Tiada aktiviti dijadualkan.</div>`;
+    return `<div class="rv-day-group">
+      <div class="rv-day-head">
+        <span class="rv-day-main">${d.getDate()} ${MONTH_NAMES[d.getMonth()]}</span>
+        <span class="rv-day-sub">${DAY_NAMES[d.getDay()]}</span>
+        ${countBadge}
+      </div>
+      ${body}
+    </div>`;
+  }).join('');
+}
+
+function switchToView(view){
+  currentView = view;
+  document.querySelectorAll('#viewToggle .period-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  if(view === 'day'){
+    document.getElementById('monthControls').style.display = 'none';
+    document.getElementById('monthSubToggle').style.display = 'none';
+    document.getElementById('monthGridView').style.display = 'none';
+    document.getElementById('monthListView').style.display = 'none';
+    document.getElementById('daySubToggle').style.display = '';
+    document.querySelectorAll('#daySubToggle .period-btn').forEach(b=>{
+      b.classList.toggle('active', b.dataset.daysub === daySubView);
+    });
+
+    if(daySubView === 'single'){
+      document.getElementById('dayControls').style.display = '';
+      document.getElementById('rangeControls').style.display = 'none';
+      document.getElementById('timeline').style.display = '';
+      document.getElementById('rangeView').style.display = 'none';
+      render();
+    } else {
+      document.getElementById('dayControls').style.display = 'none';
+      document.getElementById('rangeControls').style.display = '';
+      document.getElementById('timeline').style.display = 'none';
+      document.getElementById('rangeView').style.display = '';
+      syncSignInButtons();
+      renderRangeView();
+    }
+  } else {
+    document.getElementById('dayControls').style.display = 'none';
+    document.getElementById('rangeControls').style.display = 'none';
+    document.getElementById('daySubToggle').style.display = 'none';
+    document.getElementById('timeline').style.display = 'none';
+    document.getElementById('rangeView').style.display = 'none';
+    document.getElementById('monthControls').style.display = '';
+    document.getElementById('monthSubToggle').style.display = '';
+    monthCursor = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    syncSignInButtons();
+    renderMonthView();
+  }
+}
+
+document.querySelectorAll('#daySubToggle .period-btn').forEach(btn=>{
+  btn.addEventListener('click', () => {
+    daySubView = btn.dataset.daysub;
+    switchToView('day');
+  });
+});
+document.getElementById('rangeStart').addEventListener('change', (e)=>{
+  rangeStart = e.target.value;
+  renderRangeView();
+});
+document.getElementById('rangeEnd').addEventListener('change', (e)=>{
+  rangeEnd = e.target.value;
+  renderRangeView();
+});
+document.getElementById('addBtnRange').addEventListener('click', openModal);
+
+document.querySelectorAll('#viewToggle .period-btn').forEach(btn=>{
+  btn.addEventListener('click', () => switchToView(btn.dataset.view));
+});
+document.querySelectorAll('#monthSubToggle .period-btn').forEach(btn=>{
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#monthSubToggle .period-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    monthSubView = btn.dataset.sub;
+    renderMonthView();
+  });
+});
+document.getElementById('prevMonth').addEventListener('click', () => {
+  monthCursor.setMonth(monthCursor.getMonth()-1);
+  renderMonthView();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+  monthCursor.setMonth(monthCursor.getMonth()+1);
+  renderMonthView();
+});
+
+function syncSignInButtons(){
+  if(!currentUser) return;
+  const canEdit = isAllowedEditor(currentUser.email);
+  const visible = canEdit ? 'inline-flex' : 'none';
+
+  document.getElementById('addBtn').style.display = visible;
+  document.getElementById('addBtnMonth').style.display = visible;
+  document.getElementById('addBtnRange').style.display = visible;
+
+  const badgeHtml = `<i class="g-icon">G</i> ${currentUser.email}`;
+  const badgeClass = canEdit ? 'user-badge editor' : 'user-badge';
+  ['userBadge','userBadgeMonth','userBadgeRange'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.className = badgeClass;
+    el.innerHTML = badgeHtml;
+  });
+}
+document.getElementById('addBtnMonth').onclick = openModal;
+
+const CATEGORY_COLORS = {
+  "MESYUARAT":{fill:"#2E5240", text:"#E7EDE5"},
+  "PROGRAM":{fill:"#C17F2E", text:"#FAEEDA"},
+  "TAKLIMAT":{fill:"#3C7E96", text:"#E5EEF2"},
+  "PERJALANAN":{fill:"#965A82", text:"#F0E5EE"},
+  "SESI":{fill:"#8A7F56", text:"#EEEBE0"}
+};
+const CATEGORY_LABELS = {
+  "MESYUARAT":"Mesyuarat",
+  "PROGRAM":"Program",
+  "TAKLIMAT":"Taklimat",
+  "PERJALANAN":"Perjalanan",
+  "SESI":"Sesi libat urus"
+};
+
+let anaPeriod = 'month';
+let anaMonth = 5;
+let anaYear = 2026;
+let anaDay = "2026-06-17";
+
+function allEventsFlat(){
+  const out = [];
+  for(const key in SAMPLE_EVENTS){
+    SAMPLE_EVENTS[key].forEach(e => out.push(Object.assign({dateKey:key}, e)));
+  }
+  return out;
+}
+
+function aggregateByCategory(events){
+  const counts = {};
+  events.forEach(e => {
+    const cat = e.category || 'LAIN';
+    counts[cat] = (counts[cat]||0) + 1;
+  });
+  return counts;
+}
+
+function describeArc(cx, cy, r, startAngle, endAngle){
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArc = endAngle - startAngle <= 180 ? "0" : "1";
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
+}
+function polarToCartesian(cx, cy, r, angleDeg){
+  const a = (angleDeg-90) * Math.PI / 180;
+  return { x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) };
+}
+
+function renderPie(counts){
+  const total = Object.values(counts).reduce((a,b)=>a+b,0);
+  const anaBody = document.getElementById('anaBody');
+
+  if(total === 0){
+    anaBody.innerHTML = '<div class="ana-empty">Tiada data aktiviti untuk tempoh ini.</div>';
+    return;
+  }
+
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  let angle = 0;
+  const cx=110, cy=110, r=100;
+  let slices = '';
+  entries.forEach(([cat,count])=>{
+    const pct = count/total;
+    const sweep = pct*360;
+    const color = (CATEGORY_COLORS[cat]||{fill:'#888780'}).fill;
+    if(entries.length === 1){
+      slices += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}"></circle>`;
+    } else {
+      slices += `<path d="${describeArc(cx,cy,r,angle,angle+sweep)}" fill="${color}"></path>`;
+    }
+    angle += sweep;
+  });
+
+  const svg = `
+    <div class="pie-wrap">
+      <svg width="220" height="220" viewBox="0 0 220 220">
+        ${slices}
+        <circle cx="${cx}" cy="${cy}" r="58" fill="var(--bg)"></circle>
+        <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="Fraunces, serif" font-weight="500" font-size="30" fill="var(--ink)">${total}</text>
+        <text x="${cx}" y="${cy+16}" text-anchor="middle" class="pie-total-label" font-size="12" fill="var(--sage)">aktiviti</text>
+      </svg>
+    </div>
+  `;
+
+  const legend = `
+    <div class="legend">
+      ${entries.map(([cat,count])=>{
+        const pct = Math.round((count/total)*100);
+        const color = (CATEGORY_COLORS[cat]||{fill:'#888780'}).fill;
+        const label = CATEGORY_LABELS[cat] || cat;
+        return `
+          <div class="legend-row">
+            <span class="legend-swatch" style="background:${color}"></span>
+            <span class="legend-label">${label}</span>
+            <span class="legend-count">${count}</span>
+            <span class="legend-pct">${pct}%</span>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  anaBody.innerHTML = svg + legend;
+}
+
+function getFilteredEvents(){
+  const all = allEventsFlat();
+  if(anaPeriod === 'day'){
+    return all.filter(e => e.dateKey === anaDay);
+  } else if(anaPeriod === 'month'){
+    const prefix = anaYear + '-' + String(anaMonth+1).padStart(2,'0');
+    return all.filter(e => e.dateKey.startsWith(prefix));
+  } else {
+    const prefix = String(anaYear);
+    return all.filter(e => e.dateKey.startsWith(prefix));
+  }
+}
+
+function renderAnaControls(){
+  const controls = document.getElementById('anaControls');
+  if(anaPeriod === 'day'){
+    controls.innerHTML = `<input type="date" id="anaDayPicker" value="${anaDay}">`;
+    document.getElementById('anaDayPicker').onchange = (e)=>{ anaDay = e.target.value; refreshAnalytics(); };
+  } else if(anaPeriod === 'month'){
+    controls.innerHTML = `
+      <select id="anaMonthSel">${MONTH_NAMES.map((m,i)=>`<option value="${i}" ${i===anaMonth?'selected':''}>${m}</option>`).join('')}</select>
+      <select id="anaYearSel">${[2025,2026,2027].map(y=>`<option value="${y}" ${y===anaYear?'selected':''}>${y}</option>`).join('')}</select>
+    `;
+    document.getElementById('anaMonthSel').onchange = (e)=>{ anaMonth = parseInt(e.target.value); refreshAnalytics(); };
+    document.getElementById('anaYearSel').onchange = (e)=>{ anaYear = parseInt(e.target.value); refreshAnalytics(); };
+  } else {
+    controls.innerHTML = `<select id="anaYearOnlySel">${[2025,2026,2027].map(y=>`<option value="${y}" ${y===anaYear?'selected':''}>${y}</option>`).join('')}</select>`;
+    document.getElementById('anaYearOnlySel').onchange = (e)=>{ anaYear = parseInt(e.target.value); refreshAnalytics(); };
+  }
+}
+
+function refreshAnalytics(){
+  renderAnaControls();
+  const filtered = getFilteredEvents();
+  const counts = aggregateByCategory(filtered);
+  renderPie(counts);
+}
+
+document.querySelectorAll('.period-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    anaPeriod = btn.dataset.period;
+    refreshAnalytics();
+  };
+});
+
+refreshAnalytics();
+render();
+
+// ============================================================
+// GATE SIGN-IN — Google OAuth (sebenar)
+// ============================================================
+let accessToken = null;
+let tokenClient = null;
+
+function initGoogleAuth(){
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: OAUTH_SCOPE,
+    callback: (tokenResponse) => {
+      if(tokenResponse.error){
+        showGateError("Log masuk gagal. Sila cuba semula.");
+        return;
+      }
+      accessToken = tokenResponse.access_token;
+      fetchUserInfoAndProceed();
+    },
+    error_callback: (err) => {
+      showGateError("Log masuk dibatalkan atau gagal.");
+    }
+  });
+}
+
+function showGateError(msg){
+  document.getElementById('gateNote').textContent = msg;
+}
+
+async function fetchUserInfoAndProceed(){
+  try{
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if(!res.ok) throw new Error('userinfo failed');
+    const info = await res.json();
+    attemptSignIn(info.email);
+  }catch(e){
+    showGateError("Tidak dapat mengesahkan akaun Google. Sila cuba semula.");
+  }
+}
+
+function attemptSignIn(email){
+  if(isAllowedViewer(email)){
+    currentUser = { email };
+    document.getElementById('gateScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = '';
+    syncSignInButtons();
+    document.getElementById('timeline').innerHTML = '<div class="empty-state"><div class="big">Memuatkan data...</div>Sila tunggu sebentar.</div>';
+    loadEventsFromGoogleCalendar();
+  } else {
+    showGateError(`Akaun "${email}" tidak dibenarkan mengakses sistem ini. Sila hubungi pentadbir LPBS.`);
+    accessToken = null;
+  }
+}
+
+window.addEventListener('load', () => {
+  // Google Identity Services script loads async; wait for it.
+  const waitForGoogle = setInterval(() => {
+    if(window.google && window.google.accounts){
+      clearInterval(waitForGoogle);
+      initGoogleAuth();
+    }
+  }, 100);
+});
+
+document.getElementById('gateSigninBtn').addEventListener('click', () => {
+  if(!tokenClient){
+    showGateError("Sistem log masuk sedang dimuatkan, sila cuba sebentar lagi.");
+    return;
+  }
+  showGateError("");
+  tokenClient.requestAccessToken();
+});
+
+const modalOverlay = document.getElementById('modalOverlay');
+function openModal(){
+  document.getElementById('f-date').value = fmtKey(currentDate);
+  modalOverlay.classList.add('open');
+}
+function closeModal(){
+  modalOverlay.classList.remove('open');
+}
+document.getElementById('addBtn').onclick = openModal;
+document.getElementById('modalClose').onclick = closeModal;
+document.getElementById('modalCancel').onclick = closeModal;
+modalOverlay.onclick = (e) => { if(e.target === modalOverlay) closeModal(); };
+
+function buildEventDescription(fields){
+  const lines = [];
+  if(fields.vvip) lines.push(`VVIP: ${fields.vvip}`);
+  else if(fields.vip) lines.push(`VIP: ${fields.vip}`);
+  if(fields.urusSetia) lines.push(`Urus Setia: ${fields.urusSetia}`);
+  if(fields.kehadiran) lines.push(`Kehadiran: ${fields.kehadiran}`);
+  if(fields.pakaian) lines.push(`Pakaian: ${fields.pakaian}`);
+  return lines.join('\n');
+}
+
+async function saveNewEventToGoogleCalendar(){
+  const saveBtn = document.getElementById('modalSave');
+  const title = document.getElementById('f-title').value.trim();
+  const date = document.getElementById('f-date').value;
+  const time = document.getElementById('f-time').value;
+  const category = document.getElementById('f-category').value;
+  const protocol = document.getElementById('f-protocol').value;
+  const location = document.getElementById('f-location').value;
+  const vip = document.getElementById('f-vip').value;
+  const urusSetia = document.getElementById('f-urussetia').value;
+  const kehadiran = document.getElementById('f-kehadiran').value;
+  const pakaian = document.getElementById('f-pakaian').value;
+  const attachmentUrl = document.getElementById('f-attachment').value.trim();
+
+  if(!title || !date){
+    alert('Sila isi sekurang-kurangnya tajuk dan tarikh.');
+    return;
+  }
+  if(!accessToken){
+    alert('Sesi log masuk telah tamat. Sila muat semula halaman dan log masuk semula.');
+    return;
+  }
+
+  const categoryLabel = category === 'SESI' ? 'SESI LIBAT URUS' : category;
+  const summary = `[${categoryLabel}] ${title}`;
+  const description = buildEventDescription({
+    vip: protocol === 'vip' ? vip : null,
+    vvip: protocol === 'vvip' ? vip : null,
+    urusSetia, kehadiran, pakaian
+  });
+
+  const isAllDay = !time;
+  const body = {
+    summary,
+    description: description || undefined,
+    location: location || undefined,
+  };
+  if(isAllDay){
+    const endDate = new Date(date + "T00:00:00");
+    endDate.setDate(endDate.getDate()+1);
+    body.start = { date };
+    body.end = { date: fmtKey(endDate) };
+  } else {
+    const startDT = `${date}T${time}:00`;
+    const endHour = (parseInt(time.split(':')[0],10)+1) % 24;
+    const endDT = `${date}T${String(endHour).padStart(2,'0')}:${time.split(':')[1]}:00`;
+    body.start = { dateTime: startDT, timeZone: 'Asia/Kuala_Lumpur' };
+    body.end = { dateTime: endDT, timeZone: 'Asia/Kuala_Lumpur' };
+  }
+  if(attachmentUrl){
+    body.attachments = [{ fileUrl: attachmentUrl, title: 'Lampiran' }];
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Menyimpan...';
+  try{
+    const params = new URLSearchParams({ supportsAttachments: 'true' });
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events?${params.toString()}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      }
+    );
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || 'Gagal menyimpan aktiviti.');
+    }
+
+    closeModal();
+    ['f-title','f-location','f-vip','f-urussetia','f-pakaian','f-kehadiran','f-attachment','f-time'].forEach(id=>{
+      document.getElementById(id).value = '';
+    });
+    currentDate = new Date(date + "T00:00:00");
+    daySubView = 'single';
+    await loadEventsFromGoogleCalendar();
+    switchToView('day');
+  }catch(e){
+    alert('Ralat: ' + e.message);
+  }finally{
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Simpan ke kalendar';
+  }
+}
+
+document.getElementById('modalSave').onclick = saveNewEventToGoogleCalendar;
+</script>
+</body>
+</html>
