@@ -1400,7 +1400,10 @@ function buildEventCard(e, uid){
   let attachHtml = '';
   if(e.attachments && e.attachments.length){
     attachHtml = '<div class="detail-row"><span class="label">Lampiran</span><span class="value"><div class="attachments">' +
-      e.attachments.map(a=>`<span class="attachment">&#128206; ${a.title}</span>`).join('') +
+      e.attachments.map(a=> a.url
+        ? `<a class="attachment" href="${a.url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">&#128206; ${a.title}</a>`
+        : `<span class="attachment">&#128206; ${a.title}</span>`
+      ).join('') +
       '</div></span></div>';
   }
 
