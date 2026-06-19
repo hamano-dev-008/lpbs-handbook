@@ -317,6 +317,51 @@
     padding:70px 20px;
     color:var(--sage);
   }
+  .toast-container{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:100;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:center;
+  }
+  .toast{
+    background:var(--ink);
+    color:var(--bg);
+    border-radius:10px;
+    padding:12px 16px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    box-shadow:0 6px 24px rgba(0,0,0,0.25);
+    font-size:13.5px;
+    min-width:280px;
+  }
+  .toast-msg{flex:1;}
+  .toast-undo-btn{
+    border:1px solid rgba(244,239,227,0.4);
+    background:transparent;
+    color:var(--bg);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:700;
+    padding:6px 12px;
+    border-radius:7px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .toast-undo-btn:hover{background:rgba(244,239,227,0.15);}
+  .toast-timer-bar{
+    position:absolute;
+    bottom:0; left:0;
+    height:3px;
+    background:var(--gold);
+    border-radius:0 0 10px 10px;
+  }
+  .toast{position:relative; overflow:hidden;}
   .empty-state .big{
     font-family:'Fraunces',serif;
     font-size:20px;
@@ -1011,6 +1056,8 @@
   <footer>Data disegerakkan terus daripada Kalendar Rasmi LPBS &middot; Google Calendar</footer>
 </div>
 
+<div class="toast-container" id="toastContainer"></div>
+
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -1091,12 +1138,17 @@
 // ============================================================
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
-const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
+const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
+const ALLOWLIST_SHEET_RANGE = "Senarai!A2:B1000";
+const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets.readonly";
 
 // ============================================================
 // AKSES KAWALAN — Senarai e-mel staf yang dibenarkan
+// Senarai SEBENAR datang dari Google Sheet secara langsung (lihat
+// loadAllowlistFromSheet di bawah). Senarai berikut HANYA digunakan
+// sebagai jaringan keselamatan sekiranya Sheet gagal dimuatkan.
 // ============================================================
-const EDITOR_ALLOWLIST = [
+const FALLBACK_EDITOR_ALLOWLIST = [
   "neel.jay98@gmail.com",
   "badzlii99@gmail.com",
   "carlvinds@gmail.com",
@@ -1118,7 +1170,7 @@ const EDITOR_ALLOWLIST = [
   "stacysoh81@gmail.com"
 ];
 
-const VIEW_ONLY_ALLOWLIST = [
+const FALLBACK_VIEW_ONLY_ALLOWLIST = [
   "ohsomandy98@gmail.com",
   "apriljohnny95@gmail.com",
   "eryyyzck1906@gmail.com",
@@ -1129,16 +1181,56 @@ const VIEW_ONLY_ALLOWLIST = [
   "jeffryj222@gmail.com"
 ];
 
-// Editors are automatically viewers too, so the two lists merge here.
-const VIEWER_ALLOWLIST = [...VIEW_ONLY_ALLOWLIST, ...EDITOR_ALLOWLIST];
+// Live state — populated by loadAllowlistFromSheet() at sign-in time.
+// Starts as null so we can tell "not loaded yet" apart from "loaded but empty".
+let EDITOR_SET = null;
+let VIEWER_SET = null;
+let allowlistSource = 'belum dimuatkan'; // 'sheet' | 'fallback' | 'belum dimuatkan'
+
+function buildFallbackSets(){
+  EDITOR_SET = new Set(FALLBACK_EDITOR_ALLOWLIST.map(e=>e.toLowerCase()));
+  VIEWER_SET = new Set([...FALLBACK_VIEW_ONLY_ALLOWLIST, ...FALLBACK_EDITOR_ALLOWLIST].map(e=>e.toLowerCase()));
+  allowlistSource = 'fallback';
+}
+
+async function loadAllowlistFromSheet(){
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${ALLOWLIST_SHEET_ID}/values/${encodeURIComponent(ALLOWLIST_SHEET_RANGE)}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if(!res.ok) throw new Error('Sheet fetch failed: ' + res.status);
+    const data = await res.json();
+    const rows = data.values || [];
+
+    const editors = new Set();
+    const viewers = new Set();
+    rows.forEach(row => {
+      const email = (row[0] || '').trim().toLowerCase();
+      const role = (row[1] || '').trim().toLowerCase();
+      if(!email) return;
+      viewers.add(email);
+      if(role === 'editor') editors.add(email);
+    });
+
+    if(viewers.size === 0) throw new Error('Sheet returned no valid rows');
+
+    EDITOR_SET = editors;
+    VIEWER_SET = viewers;
+    allowlistSource = 'sheet';
+  }catch(e){
+    console.error('loadAllowlistFromSheet failed, using fallback list:', e);
+    buildFallbackSets();
+  }
+}
 
 let currentUser = null; // { email, name } once signed in
 
 function isAllowedViewer(email){
-  return VIEWER_ALLOWLIST.map(e=>e.toLowerCase()).includes((email||'').toLowerCase());
+  if(!VIEWER_SET) buildFallbackSets(); // safety net if called before load completes
+  return VIEWER_SET.has((email||'').toLowerCase());
 }
 function isAllowedEditor(email){
-  return EDITOR_ALLOWLIST.map(e=>e.toLowerCase()).includes((email||'').toLowerCase());
+  if(!EDITOR_SET) buildFallbackSets();
+  return EDITOR_SET.has((email||'').toLowerCase());
 }
 
 // ============================================================
@@ -1879,12 +1971,16 @@ function initGoogleAuth(){
   });
 }
 
-function showGateError(msg){
-  document.getElementById('gateNote').textContent = msg;
+function showGateError(msg, isInfo){
+  const el = document.getElementById('gateNote');
+  el.textContent = msg;
+  el.style.color = isInfo ? 'var(--ink-soft)' : '';
 }
 
 async function fetchUserInfoAndProceed(){
   try{
+    showGateError("");
+
     const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
@@ -1897,6 +1993,12 @@ async function fetchUserInfoAndProceed(){
     if(!info.email){
       throw new Error('no email in userinfo response');
     }
+
+    // Load the live allow-list (from Sheet, or fallback) BEFORE checking permission.
+    showGateError("Menyemak kebenaran akses...", true);
+    await loadAllowlistFromSheet();
+    showGateError("");
+
     attemptSignIn(info.email);
   }catch(e){
     console.error('fetchUserInfoAndProceed error:', e);
@@ -2054,35 +2156,90 @@ document.getElementById('modalSave').onclick = saveNewEventToGoogleCalendar;
 // ============================================================
 // PADAM AKTIVITI — editor sahaja
 // ============================================================
+const pendingDeletes = {}; // uid -> { timeoutId, eventId }
+
+function showUndoToast(uid, eventTitle, onExpire){
+  const container = document.getElementById('toastContainer');
+  const toastId = 'toast-' + uid;
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.id = toastId;
+  toast.innerHTML = `
+    <span class="toast-msg">Memadam "${eventTitle}"...</span>
+    <button class="toast-undo-btn">Buat asal</button>
+    <div class="toast-timer-bar" style="width:100%;"></div>
+  `;
+  container.appendChild(toast);
+
+  const bar = toast.querySelector('.toast-timer-bar');
+  const DURATION = 10000;
+  let startTime = Date.now();
+  let rafId;
+  function tick(){
+    const elapsed = Date.now() - startTime;
+    const pct = Math.max(0, 100 - (elapsed / DURATION) * 100);
+    bar.style.width = pct + '%';
+    if(pct > 0){ rafId = requestAnimationFrame(tick); }
+  }
+  rafId = requestAnimationFrame(tick);
+
+  const timeoutId = setTimeout(() => {
+    toast.remove();
+    delete pendingDeletes[uid];
+    onExpire();
+  }, DURATION);
+
+  toast.querySelector('.toast-undo-btn').addEventListener('click', () => {
+    clearTimeout(timeoutId);
+    cancelAnimationFrame(rafId);
+    toast.remove();
+    const pending = pendingDeletes[uid];
+    delete pendingDeletes[uid];
+    if(pending && pending.onUndo) pending.onUndo();
+  });
+
+  return timeoutId;
+}
+
 async function deleteEventPrompt(eventId, uid){
   if(!currentUser || !isAllowedEditor(currentUser.email)){
     return; // safety net; button shouldn't render for non-editors anyway
   }
-  const confirmed = window.confirm("Adakah anda pasti mahu memadam aktiviti ini? Tindakan ini tidak boleh dibatalkan.");
+  const eventEl = document.querySelector(`.event[data-uid="${uid}"]`);
+  const titleEl = eventEl ? eventEl.querySelector('.title') : null;
+  const eventTitle = titleEl ? titleEl.textContent : 'aktiviti ini';
+
+  const confirmed = window.confirm(`Adakah anda pasti mahu memadam "${eventTitle}"? Anda boleh "Buat asal" dalam masa 10 saat selepas ini.`);
   if(!confirmed) return;
 
-  const btn = document.querySelector(`.event[data-uid="${uid}"] .delete-btn`);
-  if(btn){ btn.disabled = true; btn.textContent = 'Memadam...'; }
+  // Optimistically hide the card immediately.
+  if(eventEl) eventEl.style.display = 'none';
 
-  try{
-    const res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events/${encodeURIComponent(eventId)}`,
-      {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${accessToken}` }
+  const onUndo = () => {
+    if(eventEl) eventEl.style.display = '';
+  };
+
+  const onExpire = async () => {
+    try{
+      const res = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events/${encodeURIComponent(eventId)}`,
+        { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      if(!res.ok && res.status !== 410){
+        const errData = await res.json().catch(()=>({}));
+        throw new Error(errData.error?.message || ('Gagal memadam (status ' + res.status + ')'));
       }
-    );
-    if(!res.ok && res.status !== 410){ // 410 = already deleted, treat as success
-      const errData = await res.json().catch(()=>({}));
-      throw new Error(errData.error?.message || ('Gagal memadam (status ' + res.status + ')'));
+      await loadEventsFromGoogleCalendar();
+      if(currentView === 'month') renderMonthView();
+      if(currentView === 'day' && daySubView === 'range') renderRangeView();
+    }catch(e){
+      alert('Ralat memadam aktiviti: ' + e.message);
+      if(eventEl) eventEl.style.display = ''; // restore on failure
     }
-    await loadEventsFromGoogleCalendar();
-    if(currentView === 'month') renderMonthView();
-    if(currentView === 'day' && daySubView === 'range') renderRangeView();
-  }catch(e){
-    alert('Ralat memadam aktiviti: ' + e.message);
-    if(btn){ btn.disabled = false; btn.textContent = 'Padam aktiviti'; }
-  }
+  };
+
+  const timeoutId = showUndoToast(uid, eventTitle, onExpire);
+  pendingDeletes[uid] = { timeoutId, eventId, onUndo };
 }
 </script>
 </body>
