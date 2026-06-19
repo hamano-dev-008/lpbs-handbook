@@ -293,6 +293,25 @@
     text-decoration:none;
   }
   .attachment:hover{text-decoration:underline;}
+  .detail-delete-row{
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    text-align:right;
+  }
+  .delete-btn{
+    border:1px solid var(--red-bg);
+    background:var(--red-bg);
+    color:var(--red-text);
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:7px 14px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .delete-btn:hover{background:var(--red); color:#fff; border-color:var(--red);}
+  .delete-btn:disabled{opacity:0.6; cursor:default;}
   .empty-state{
     text-align:center;
     padding:70px 20px;
@@ -1100,6 +1119,7 @@ const EDITOR_ALLOWLIST = [
 ];
 
 const VIEW_ONLY_ALLOWLIST = [
+  "ohsomandy98@gmail.com",
   "apriljohnny95@gmail.com",
   "eryyyzck1906@gmail.com",
   "ikaqika745@gmail.com",
@@ -1292,7 +1312,13 @@ function buildEventCard(e, uid){
       '</div></span></div>';
   }
 
-  const hasDetail = detailRows || attachHtml;
+  const canEdit = currentUser && isAllowedEditor(currentUser.email);
+  let deleteHtml = '';
+  if(canEdit && e.id){
+    deleteHtml = `<div class="detail-delete-row"><button class="delete-btn" onclick="event.stopPropagation(); deleteEventPrompt('${e.id}', '${uid}')">Padam aktiviti</button></div>`;
+  }
+
+  const hasDetail = detailRows || attachHtml || deleteHtml;
 
   return `
     <div class="event ${levelClass}" data-uid="${uid}">
@@ -1309,7 +1335,7 @@ function buildEventCard(e, uid){
           </div>
           ${hasDetail ? '<span class="chevron">&#10095;</span>' : ''}
         </div>
-        ${hasDetail ? `<div class="detail">${detailRows}${attachHtml}</div>` : ''}
+        ${hasDetail ? `<div class="detail">${detailRows}${attachHtml}${deleteHtml}</div>` : ''}
       </div>
     </div>
   `;
@@ -2024,6 +2050,40 @@ async function saveNewEventToGoogleCalendar(){
 }
 
 document.getElementById('modalSave').onclick = saveNewEventToGoogleCalendar;
+
+// ============================================================
+// PADAM AKTIVITI — editor sahaja
+// ============================================================
+async function deleteEventPrompt(eventId, uid){
+  if(!currentUser || !isAllowedEditor(currentUser.email)){
+    return; // safety net; button shouldn't render for non-editors anyway
+  }
+  const confirmed = window.confirm("Adakah anda pasti mahu memadam aktiviti ini? Tindakan ini tidak boleh dibatalkan.");
+  if(!confirmed) return;
+
+  const btn = document.querySelector(`.event[data-uid="${uid}"] .delete-btn`);
+  if(btn){ btn.disabled = true; btn.textContent = 'Memadam...'; }
+
+  try{
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events/${encodeURIComponent(eventId)}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }
+    );
+    if(!res.ok && res.status !== 410){ // 410 = already deleted, treat as success
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || ('Gagal memadam (status ' + res.status + ')'));
+    }
+    await loadEventsFromGoogleCalendar();
+    if(currentView === 'month') renderMonthView();
+    if(currentView === 'day' && daySubView === 'range') renderRangeView();
+  }catch(e){
+    alert('Ralat memadam aktiviti: ' + e.message);
+    if(btn){ btn.disabled = false; btn.textContent = 'Padam aktiviti'; }
+  }
+}
 </script>
 </body>
 </html>
