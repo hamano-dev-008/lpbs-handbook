@@ -1072,7 +1072,7 @@
 // ============================================================
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
-const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar";
+const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
 
 // ============================================================
 // AKSES KAWALAN — Senarai e-mel staf yang dibenarkan
@@ -1861,11 +1861,19 @@ async function fetchUserInfoAndProceed(){
     const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
-    if(!res.ok) throw new Error('userinfo failed');
+    if(!res.ok){
+      const errBody = await res.text().catch(()=>'');
+      console.error('userinfo failed:', res.status, errBody);
+      throw new Error('userinfo failed: ' + res.status);
+    }
     const info = await res.json();
+    if(!info.email){
+      throw new Error('no email in userinfo response');
+    }
     attemptSignIn(info.email);
   }catch(e){
-    showGateError("Tidak dapat mengesahkan akaun Google. Sila cuba semula.");
+    console.error('fetchUserInfoAndProceed error:', e);
+    showGateError("Tidak dapat mengesahkan akaun Google (" + e.message + "). Sila cuba semula.");
   }
 }
 
