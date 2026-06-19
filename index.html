@@ -435,55 +435,68 @@
     cursor:pointer;
   }
   .ana-body{
-    display:flex;
-    gap:40px;
-    flex-wrap:wrap;
-    align-items:center;
+    display:block;
   }
-  .pie-wrap{
-    flex-shrink:0;
-  }
-  .legend{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    min-width:220px;
-    flex:1;
-  }
-  .legend-row{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    font-size:14px;
-  }
-  .legend-swatch{
-    width:11px;height:11px;
-    border-radius:3px;
-    flex-shrink:0;
-  }
-  .legend-label{
-    flex:1;
-    color:var(--ink);
-    font-weight:500;
-  }
-  .legend-count{
-    color:var(--ink-soft);
-    font-size:13px;
-  }
-  .legend-pct{
+  .bar-total{
     font-family:'Fraunces',serif;
     font-weight:500;
-    color:var(--paddy);
-    min-width:42px;
+    font-size:28px;
+    color:var(--ink);
+    margin-bottom:24px;
+  }
+  .bar-total span{
+    font-family:'Inter',sans-serif;
+    font-weight:400;
+    font-size:13px;
+    color:var(--sage);
+    margin-left:8px;
+  }
+  .bar-chart{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .bar-row{
+    display:grid;
+    grid-template-columns:130px 1fr 32px 42px;
+    align-items:center;
+    gap:12px;
+  }
+  .bar-label{
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .bar-track{
+    background:var(--line);
+    border-radius:6px;
+    height:20px;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    border-radius:6px;
+    transition:width .3s ease;
+  }
+  .bar-count{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:14px;
+    color:var(--ink);
+    text-align:right;
+  }
+  .bar-pct{
+    font-size:12px;
+    color:var(--sage);
     text-align:right;
   }
   .ana-empty{
     color:var(--sage);
     font-size:14px;
     padding:30px 0;
-  }
-  .pie-total-label{
-    font-family:'Inter',sans-serif;
   }
   .signin-btn{
     display:flex;
@@ -954,6 +967,19 @@
     border-radius:50%;
     background:var(--paddy-light);
     display:inline-block;
+  }
+  @media (max-width: 480px){
+    .bar-row{
+      grid-template-columns:1fr;
+      gap:4px;
+    }
+    .bar-label{
+      white-space:normal;
+    }
+    .bar-count, .bar-pct{
+      text-align:left;
+      display:inline;
+    }
   }
 </style>
 </head>
@@ -1832,18 +1858,7 @@ function aggregateByCategory(events){
   return counts;
 }
 
-function describeArc(cx, cy, r, startAngle, endAngle){
-  const start = polarToCartesian(cx, cy, r, endAngle);
-  const end = polarToCartesian(cx, cy, r, startAngle);
-  const largeArc = endAngle - startAngle <= 180 ? "0" : "1";
-  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
-}
-function polarToCartesian(cx, cy, r, angleDeg){
-  const a = (angleDeg-90) * Math.PI / 180;
-  return { x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) };
-}
-
-function renderPie(counts){
+function renderBars(counts){
   const total = Object.values(counts).reduce((a,b)=>a+b,0);
   const anaBody = document.getElementById('anaBody');
 
@@ -1853,51 +1868,29 @@ function renderPie(counts){
   }
 
   const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  let angle = 0;
-  const cx=110, cy=110, r=100;
-  let slices = '';
-  entries.forEach(([cat,count])=>{
-    const pct = count/total;
-    const sweep = pct*360;
+  const maxCount = entries[0][1];
+
+  const bars = entries.map(([cat,count])=>{
+    const pct = Math.round((count/total)*100);
+    const widthPct = Math.max(4, Math.round((count/maxCount)*100));
     const color = (CATEGORY_COLORS[cat]||{fill:'#888780'}).fill;
-    if(entries.length === 1){
-      slices += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}"></circle>`;
-    } else {
-      slices += `<path d="${describeArc(cx,cy,r,angle,angle+sweep)}" fill="${color}"></path>`;
-    }
-    angle += sweep;
-  });
+    const label = CATEGORY_LABELS[cat] || cat;
+    return `
+      <div class="bar-row">
+        <span class="bar-label">${label}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${widthPct}%; background:${color};"></div>
+        </div>
+        <span class="bar-count">${count}</span>
+        <span class="bar-pct">${pct}%</span>
+      </div>
+    `;
+  }).join('');
 
-  const svg = `
-    <div class="pie-wrap">
-      <svg width="220" height="220" viewBox="0 0 220 220">
-        ${slices}
-        <circle cx="${cx}" cy="${cy}" r="58" fill="var(--bg)"></circle>
-        <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="Fraunces, serif" font-weight="500" font-size="30" fill="var(--ink)">${total}</text>
-        <text x="${cx}" y="${cy+16}" text-anchor="middle" class="pie-total-label" font-size="12" fill="var(--sage)">aktiviti</text>
-      </svg>
-    </div>
+  anaBody.innerHTML = `
+    <div class="bar-total">${total} <span>aktiviti jumlah</span></div>
+    <div class="bar-chart">${bars}</div>
   `;
-
-  const legend = `
-    <div class="legend">
-      ${entries.map(([cat,count])=>{
-        const pct = Math.round((count/total)*100);
-        const color = (CATEGORY_COLORS[cat]||{fill:'#888780'}).fill;
-        const label = CATEGORY_LABELS[cat] || cat;
-        return `
-          <div class="legend-row">
-            <span class="legend-swatch" style="background:${color}"></span>
-            <span class="legend-label">${label}</span>
-            <span class="legend-count">${count}</span>
-            <span class="legend-pct">${pct}%</span>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-
-  anaBody.innerHTML = svg + legend;
 }
 
 function getFilteredEvents(){
@@ -1935,7 +1928,7 @@ function refreshAnalytics(){
   renderAnaControls();
   const filtered = getFilteredEvents();
   const counts = aggregateByCategory(filtered);
-  renderPie(counts);
+  renderBars(counts);
 }
 
 document.querySelectorAll('.period-btn').forEach(btn=>{
