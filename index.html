@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   :root{
     --bg:#F4EFE3;
@@ -571,6 +573,54 @@
     color:var(--sage);
     font-size:14px;
     padding:30px 0;
+  }
+  .print-section{
+    margin-top:40px;
+    padding-top:32px;
+    border-top:1px solid var(--line);
+  }
+  .print-head{
+    margin-bottom:18px;
+  }
+  .print-controls{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:18px 0 20px;
+    flex-wrap:wrap;
+  }
+  .print-controls select, .print-controls input{
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--sage-line);
+    background:var(--bg-card);
+    color:var(--ink-soft);
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:13px;
+  }
+  .print-controls .range-label{
+    font-size:13px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .print-btn{
+    border:none;
+    background:var(--paddy);
+    color:var(--bg);
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    padding:11px 20px;
+    border-radius:9px;
+    cursor:pointer;
+  }
+  .print-btn:hover{background:var(--paddy-light);}
+  .print-btn:disabled{opacity:0.6; cursor:default;}
+  .print-note{
+    margin-top:12px;
+    font-size:12.5px;
+    color:var(--sage);
+    min-height:16px;
   }
   .signin-btn{
     display:flex;
@@ -1151,6 +1201,21 @@
     <div class="ana-controls" id="anaControls"></div>
 
     <div class="ana-body" id="anaBody"></div>
+
+    <div class="print-section" id="printSection" style="display:none;">
+      <div class="print-head">
+        <p class="eyebrow">Cetak / Eksport</p>
+        <h2 class="ana-title">Cetak senarai aktiviti</h2>
+      </div>
+      <div class="period-toggle" id="printPeriodToggle">
+        <button class="period-btn active" data-pp="day">Hari - Hari</button>
+        <button class="period-btn" data-pp="month">Bulan - Bulan</button>
+        <button class="period-btn" data-pp="year">Tahun</button>
+      </div>
+      <div class="print-controls" id="printControls"></div>
+      <button class="print-btn" id="printDownloadBtn">&#128190; Muat turun PDF</button>
+      <p class="print-note" id="printNote"></p>
+    </div>
   </section>
 
   <footer>Data disegerakkan terus daripada Kalendar Rasmi LPBS &middot; Google Calendar</footer>
@@ -1893,6 +1958,7 @@ function syncSignInButtons(){
   document.getElementById('addBtn').style.display = visible;
   document.getElementById('addBtnMonth').style.display = visible;
   document.getElementById('addBtnRange').style.display = visible;
+  document.getElementById('printSection').style.display = canEdit ? '' : 'none';
 
   const badgeHtml = `<i class="g-icon">G</i> ${currentUser.email}`;
   const badgeClass = canEdit ? 'user-badge editor' : 'user-badge';
@@ -2014,14 +2080,167 @@ function refreshAnalytics(){
   renderBars(counts);
 }
 
-document.querySelectorAll('.period-btn').forEach(btn=>{
+document.querySelectorAll('#periodToggle .period-btn').forEach(btn=>{
   btn.onclick = ()=>{
-    document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('#periodToggle .period-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     anaPeriod = btn.dataset.period;
     refreshAnalytics();
   };
 });
+
+// ============================================================
+// CETAK / EKSPORT PDF — editor sahaja
+// ============================================================
+let printPeriod = 'day';
+let printDayStart = fmtKey(new Date("2026-06-17T00:00:00"));
+let printDayEnd = fmtKey(new Date("2026-06-17T00:00:00"));
+let printMonthStart = { month: 5, year: 2026 };
+let printMonthEnd = { month: 5, year: 2026 };
+let printYear = 2026;
+
+function renderPrintControls(){
+  const el = document.getElementById('printControls');
+  const yearOptions = [2024,2025,2026,2027].map(y=>`<option value="${y}">${y}</option>`).join('');
+  const monthOptions = (selMonth) => MONTH_NAMES.map((m,i)=>`<option value="${i}" ${i===selMonth?'selected':''}>${m}</option>`).join('');
+
+  if(printPeriod === 'day'){
+    el.innerHTML = `
+      <span class="range-label">Dari</span>
+      <input type="date" id="printDayStartInput" value="${printDayStart}">
+      <span class="range-label">Hingga</span>
+      <input type="date" id="printDayEndInput" value="${printDayEnd}">
+    `;
+    document.getElementById('printDayStartInput').onchange = (e)=>{ printDayStart = e.target.value; };
+    document.getElementById('printDayEndInput').onchange = (e)=>{ printDayEnd = e.target.value; };
+  } else if(printPeriod === 'month'){
+    el.innerHTML = `
+      <span class="range-label">Dari</span>
+      <select id="printMonthStartSel">${monthOptions(printMonthStart.month)}</select>
+      <select id="printMonthStartYearSel">${yearOptions}</select>
+      <span class="range-label">Hingga</span>
+      <select id="printMonthEndSel">${monthOptions(printMonthEnd.month)}</select>
+      <select id="printMonthEndYearSel">${yearOptions}</select>
+    `;
+    document.getElementById('printMonthStartYearSel').value = printMonthStart.year;
+    document.getElementById('printMonthEndYearSel').value = printMonthEnd.year;
+    document.getElementById('printMonthStartSel').onchange = (e)=>{ printMonthStart.month = parseInt(e.target.value); };
+    document.getElementById('printMonthStartYearSel').onchange = (e)=>{ printMonthStart.year = parseInt(e.target.value); };
+    document.getElementById('printMonthEndSel').onchange = (e)=>{ printMonthEnd.month = parseInt(e.target.value); };
+    document.getElementById('printMonthEndYearSel').onchange = (e)=>{ printMonthEnd.year = parseInt(e.target.value); };
+  } else {
+    el.innerHTML = `<select id="printYearSel">${yearOptions}</select>`;
+    document.getElementById('printYearSel').value = printYear;
+    document.getElementById('printYearSel').onchange = (e)=>{ printYear = parseInt(e.target.value); };
+  }
+}
+
+function getPrintEvents(){
+  const all = allEventsFlat();
+  let startKey, endKey;
+
+  if(printPeriod === 'day'){
+    startKey = printDayStart;
+    endKey = printDayEnd;
+  } else if(printPeriod === 'month'){
+    startKey = printMonthStart.year + '-' + String(printMonthStart.month+1).padStart(2,'0') + '-01';
+    const endMonthDate = new Date(printMonthEnd.year, printMonthEnd.month+1, 0); // last day of end month
+    endKey = fmtKey(endMonthDate);
+  } else {
+    startKey = printYear + '-01-01';
+    endKey = printYear + '-12-31';
+  }
+
+  if(startKey > endKey){
+    return { error: 'Tarikh/tempoh "Hingga" mesti sama atau selepas "Dari".' };
+  }
+
+  const filtered = all.filter(e => e.dateKey >= startKey && e.dateKey <= endKey);
+  filtered.sort((a,b) => a.dateKey === b.dateKey ? (a.time||'').localeCompare(b.time||'') : a.dateKey.localeCompare(b.dateKey));
+  return { events: filtered, startKey, endKey };
+}
+
+function generatePrintPDF(){
+  const note = document.getElementById('printNote');
+  const btn = document.getElementById('printDownloadBtn');
+  note.textContent = '';
+
+  const result = getPrintEvents();
+  if(result.error){
+    note.textContent = result.error;
+    return;
+  }
+  if(result.events.length === 0){
+    note.textContent = 'Tiada aktiviti dijumpai untuk tempoh yang dipilih.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Menjana PDF...';
+
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(31, 58, 46);
+    doc.text('LEMBAGA PADI DAN BERAS SABAH (LPBS)', 40, 30);
+    doc.setFontSize(14);
+    doc.text('Senarai Mesyuarat / Aktiviti Rasmi', 40, 48);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    const todayStr = new Date().toLocaleDateString('en-GB');
+    doc.text(`Jumlah aktiviti: ${result.events.length} | Tempoh: ${result.startKey} hingga ${result.endKey} | Dicetak: ${todayStr}`, 40, 60);
+
+    const rows = result.events.map(e => {
+      const d = new Date(e.dateKey + "T00:00:00");
+      const dateStr = d.toLocaleDateString('en-GB');
+      const dayName = DAY_NAMES[d.getDay()];
+      const masa = e.allDay ? 'Sepanjang hari' : (e.time || '');
+      return [dateStr, dayName, masa, e.category || '', e.title || '', e.location || ''];
+    });
+
+    doc.autoTable({
+      startY: 72,
+      head: [['Tarikh','Hari','Masa','Kategori','Tajuk Aktiviti','Lokasi']],
+      body: rows,
+      styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 4 },
+      headStyles: { fillColor: [31,58,46], textColor: [255,255,255], fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 50 },
+        2: { cellWidth: 65 },
+        3: { cellWidth: 70 },
+        4: { cellWidth: 280 },
+        5: { cellWidth: 140 }
+      },
+      theme: 'grid'
+    });
+
+    const filenameSafe = `LPBS_Senarai_${result.startKey}_hingga_${result.endKey}.pdf`;
+    doc.save(filenameSafe);
+    note.textContent = `PDF berjaya dijana (${result.events.length} aktiviti).`;
+  }catch(err){
+    console.error('PDF generation error:', err);
+    note.textContent = 'Ralat menjana PDF: ' + err.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '\u{1F4BE} Muat turun PDF';
+  }
+}
+
+document.querySelectorAll('#printPeriodToggle .period-btn').forEach(btn=>{
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#printPeriodToggle .period-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    printPeriod = btn.dataset.pp;
+    renderPrintControls();
+  });
+});
+document.getElementById('printDownloadBtn').addEventListener('click', generatePrintPDF);
+renderPrintControls();
 
 refreshAnalytics();
 render();
