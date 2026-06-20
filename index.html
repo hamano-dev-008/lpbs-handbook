@@ -451,43 +451,6 @@
     padding-top:0;
     border-top:none;
   }
-  .app-header{
-    position:sticky;
-    top:0;
-    z-index:30;
-    background:var(--bg);
-    border-bottom:1px solid var(--line);
-    padding:14px 20px;
-    margin:0 -24px;
-  }
-  .app-header-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    max-width:832px;
-    margin:0 auto;
-  }
-  .app-brand{
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
-  .app-brand-mark{
-    font-family:'Fraunces',serif;
-    font-weight:600;
-    font-size:13px;
-    letter-spacing:0.04em;
-    color:#fff;
-    background:var(--paddy);
-    padding:4px 9px;
-    border-radius:6px;
-  }
-  .app-brand-title{
-    font-family:'Fraunces',serif;
-    font-weight:500;
-    font-size:17px;
-    color:var(--ink);
-  }
   .app-content{
     padding-bottom:calc(100px + env(safe-area-inset-bottom));
   }
@@ -522,7 +485,9 @@
   }
   .tab-btn:hover{background:var(--bg);}
   .tab-btn.active{color:var(--paddy);}
-  .tab-icon{font-size:20px; line-height:1;}
+  .tab-icon{display:flex; align-items:center; justify-content:center;}
+  .tab-icon svg{width:21px; height:21px;}
+  .tab-add-center svg{width:24px; height:24px;}
   .tab-label{font-size:11px; font-weight:600; letter-spacing:0.01em;}
   .analytics-head{
     display:flex;
@@ -837,51 +802,157 @@
     cursor:pointer;
   }
   .save-btn:hover{background:var(--paddy-light);}
-  .hero-card{
+  .hero-v2{
     background:linear-gradient(135deg, var(--paddy) 0%, var(--paddy-light) 100%);
-    border-radius:24px;
-    padding:24px 22px 20px;
-    margin-top:16px;
+    border-radius:0 0 32px 32px;
+    padding:20px 24px 28px;
+    margin:0 -24px;
     color:#fff;
+    position:relative;
+    z-index:15;
   }
-  .hero-top-row{
+  .hero-v2-top{
     display:flex;
     justify-content:space-between;
-    align-items:flex-start;
-    margin-bottom:18px;
+    align-items:center;
+    margin-bottom:20px;
+    max-width:832px;
+    margin-left:auto;
+    margin-right:auto;
   }
-  .hero-greeting{
-    font-size:12.5px;
-    color:rgba(255,255,255,0.75);
-    margin:0 0 4px;
-    font-weight:500;
+  .hero-v2-id{
+    display:flex;
+    align-items:center;
+    gap:12px;
   }
-  .hero-date{
+  .hero-v2-avatar{
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.18);
+    border:2px solid rgba(255,255,255,0.3);
+    display:flex;
+    align-items:center;
+    justify-content:center;
     font-family:'Fraunces',serif;
-    font-weight:500;
-    font-size:19px;
-    color:#fff;
-    margin:0;
-  }
-  .today-btn-hero{
-    border:1px solid rgba(255,255,255,0.35);
-    background:rgba(255,255,255,0.12);
-    color:#fff;
-    font-family:'Inter',sans-serif;
-    font-size:12px;
     font-weight:600;
-    padding:7px 13px;
-    border-radius:8px;
-    cursor:pointer;
+    font-size:18px;
+    color:#fff;
     flex-shrink:0;
   }
-  .today-btn-hero:hover{background:rgba(255,255,255,0.22);}
-  .hero-search .search-input-row{
-    background:rgba(255,255,255,0.95);
-    border:none;
+  .hero-v2-greeting{
+    font-size:13px;
+    color:rgba(255,255,255,0.75);
+    margin:0 0 2px;
+    font-weight:500;
   }
+  .hero-v2-name{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:18px;
+    color:#fff;
+    margin:0;
+    text-transform:capitalize;
+  }
+  .hero-v2-bell{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.12);
+    border:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    cursor:pointer;
+    position:relative;
+    flex-shrink:0;
+  }
+  .hero-v2-bell svg{width:21px; height:21px;}
+  .hero-v2-bell-dot{
+    position:absolute;
+    top:9px; right:10px;
+    width:7px; height:7px;
+    border-radius:50%;
+    background:var(--red);
+    border:1.5px solid var(--paddy);
+  }
+  .hero-search{
+    max-width:832px;
+    margin:0 auto;
+  }
+  .hero-search .search-input-row{
+    background:rgba(255,255,255,0.97);
+    border:none;
+    padding:12px 14px;
+  }
+  .stat-card-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-top:-22px;
+    position:relative;
+    z-index:20;
+    margin-bottom:8px;
+  }
+  .stat-card{
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.04);
+  }
+  .stat-card-icon{
+    width:38px;
+    height:38px;
+    border-radius:11px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:10px;
+  }
+  .stat-card-icon svg{width:20px; height:20px;}
+  .stat-card-primary .stat-card-icon{background:rgba(27,58,107,0.1); color:var(--paddy);}
+  .stat-card-secondary .stat-card-icon{background:rgba(193,127,46,0.12); color:var(--amber-text);}
+  .stat-card-num{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:24px;
+    color:var(--ink);
+    margin:0 0 2px;
+  }
+  .stat-card-label{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin:0;
+    font-weight:500;
+  }
+  .section-heading-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:24px;
+    margin-bottom:4px;
+  }
+  .section-heading{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:18px;
+    color:var(--ink);
+    margin:0;
+  }
+  .today-link-btn{
+    border:none;
+    background:none;
+    color:var(--paddy-light);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    padding:4px;
+  }
+  .today-link-btn:hover{text-decoration:underline;}
   .day-strip-wrap{
-    margin-top:16px;
+    margin-top:12px;
     overflow-x:auto;
     -ms-overflow-style:none;
     scrollbar-width:none;
@@ -1387,37 +1458,57 @@
 </div>
 
 <div class="app" id="mainApp" style="display:none;">
-  <header class="app-header">
-    <div class="app-header-row">
-      <div class="app-brand">
-        <span class="app-brand-mark">LPBS</span>
-        <span class="app-brand-title" id="pageTitle">Papar Aktiviti</span>
+  <header class="hero-v2" id="heroCardV2">
+    <div class="hero-v2-top">
+      <div class="hero-v2-id">
+        <div class="hero-v2-avatar" id="heroAvatar">G</div>
+        <div>
+          <p class="hero-v2-greeting" id="heroGreeting">Selamat pagi,</p>
+          <h1 class="hero-v2-name" id="heroUserName">Staf LPBS</h1>
+        </div>
       </div>
-      <span class="user-badge" id="userBadge"></span>
+      <button class="hero-v2-bell" aria-label="Notifikasi">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.75 9v.704c0 .845.24 1.671.692 2.374l1.108 1.723c1.011 1.574.239 3.713-1.52 4.21a25.8 25.8 0 0 1-14.06 0c-1.759-.497-2.531-2.636-1.52-4.21l1.108-1.723a4.4 4.4 0 0 0 .693-2.374V9c0-3.866 3.022-7 6.749-7s6.75 3.134 6.75 7" opacity=".5"/><path fill="currentColor" d="M12.75 6a.75.75 0 0 0-1.5 0v4a.75.75 0 0 0 1.5 0zM7.243 18.545a5.002 5.002 0 0 0 9.513 0c-3.145.59-6.367.59-9.513 0"/></svg>
+        <span class="hero-v2-bell-dot"></span>
+      </button>
+    </div>
+    <div class="search-bar-wrap hero-search">
+      <div class="search-input-row">
+        <span class="search-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11.5" cy="11.5" r="9.5"/><path stroke-linecap="round" d="M18.5 18.5L22 22"/></svg>
+        </span>
+        <input type="text" id="searchInput" placeholder="Cari aktiviti, lokasi, atau VIP...">
+        <button class="search-clear-btn" id="searchClearBtn" style="display:none;">&times;</button>
+      </div>
     </div>
   </header>
+  <div class="search-results" id="searchResults" style="display:none;"></div>
 
   <div class="app-content">
 
   <div id="sectionAktiviti">
 
-  <div class="hero-card" id="heroCard">
-    <div class="hero-top-row">
-      <div>
-        <p class="hero-greeting" id="heroGreeting">Selamat sejahtera</p>
-        <p class="hero-date" id="heroDateLabel">Rabu, 17 Jun 2026</p>
+  <div class="stat-card-row" id="statCardRow">
+    <div class="stat-card stat-card-primary">
+      <div class="stat-card-icon">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M6.94 2c.416 0 .753.324.753.724v1.46c.668-.012 1.417-.012 2.26-.012h4.015c.842 0 1.591 0 2.259.013v-1.46c0-.4.337-.725.753-.725s.753.324.753.724V4.25c1.445.111 2.394.384 3.09 1.055c.698.67.982 1.582 1.097 2.972L22 9H2v-.724c.116-1.39.4-2.302 1.097-2.972s1.645-.944 3.09-1.055V2.724c0-.4.337-.724.753-.724"/><path fill="currentColor" d="M22 14v-2c0-.839-.004-2.335-.017-3H2.01c-.013.665-.01 2.161-.01 3v2c0 3.771 0 5.657 1.172 6.828S6.228 22 10 22h4c3.77 0 5.656 0 6.828-1.172S22 17.772 22 14" opacity=".5"/><path fill="currentColor" d="M18 17a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-5 4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-5 4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></svg>
       </div>
-      <button class="today-btn-hero" id="todayBtnHero">Hari ini</button>
+      <h3 class="stat-card-num" id="statTodayCount">0</h3>
+      <p class="stat-card-label">Aktiviti hari ini</p>
     </div>
-    <div class="search-bar-wrap hero-search">
-      <div class="search-input-row">
-        <span class="search-icon">&#128269;</span>
-        <input type="text" id="searchInput" placeholder="Cari aktiviti mengikut tajuk, lokasi, atau VIP...">
-        <button class="search-clear-btn" id="searchClearBtn" style="display:none;">&times;</button>
+    <div class="stat-card stat-card-secondary">
+      <div class="stat-card-icon">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22c-4.714 0-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12s0-7.071 1.464-8.536C4.93 2 7.286 2 12 2s7.071 0 8.535 1.464C22 4.93 22 7.286 22 12s0 7.071-1.465 8.535C19.072 22 16.714 22 12 22" opacity=".5"/><path fill="currentColor" d="M16.03 8.97a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06l1.47 1.47l4.47-4.47a.75.75 0 0 1 1.06 0"/></svg>
       </div>
+      <h3 class="stat-card-num" id="statVipCount">0</h3>
+      <p class="stat-card-label">Peringkat VIP/VVIP</p>
     </div>
   </div>
-  <div class="search-results" id="searchResults" style="display:none;"></div>
+
+  <div class="section-heading-row">
+    <h2 class="section-heading">Jadual Anda</h2>
+    <button class="today-link-btn" id="todayBtnHero">Hari ini</button>
+  </div>
 
   <div class="day-strip-wrap" id="dayStripWrap">
     <div class="day-strip" id="dayStrip"></div>
@@ -1528,18 +1619,18 @@
 
   <nav class="bottom-tabs" id="bottomTabs">
     <button class="tab-btn active" id="tabAktiviti" onclick="switchSection('aktiviti')">
-      <span class="tab-icon">&#128197;</span>
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c0-3.771 0-5.657 1.172-6.828S6.229 4 10 4h4c3.771 0 5.657 0 6.828 1.172S22 8.229 22 12v2c0 3.771 0 5.657-1.172 6.828S17.771 22 14 22h-4c-3.771 0-5.657 0-6.828-1.172S2 17.771 2 14z"/><path stroke-linecap="round" d="M7 4V2.5M17 4V2.5M2.5 9h19"/><path fill="currentColor" stroke="none" d="M18 17a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-5 4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-5 4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></g></svg></span>
       <span class="tab-label">Aktiviti</span>
     </button>
     <button class="tab-btn" id="tabAnalitik" onclick="switchSection('analitik')">
-      <span class="tab-icon">&#128202;</span>
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2s7.071 0 8.535 1.464C22 4.93 22 7.286 22 12s0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z"/><path stroke-linecap="round" d="M7 18V9m5 9V6m5 12v-5"/></g></svg></span>
       <span class="tab-label">Analitik</span>
     </button>
     <button class="tab-add-center" id="tabAddCenter" style="display:none;" onclick="openModal()" aria-label="Tambah aktiviti">
-      <span>&#43;</span>
+      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 13H6q-.425 0-.712-.288T5 12t.288-.712T6 11h5V6q0-.425.288-.712T12 5t.713.288T13 6v5h5q.425 0 .713.288T19 12t-.288.713T18 13h-5v5q0 .425-.288.713T12 19t-.712-.288T11 18z"/></svg>
     </button>
     <button class="tab-btn" id="tabCetak" onclick="switchSection('cetak')" style="display:none;">
-      <span class="tab-icon">&#128190;</span>
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 4.002c2.175.012 3.353.109 4.121.877C21 5.758 21 7.172 21 10v6c0 2.829 0 4.243-.879 5.122C19.243 22 17.828 22 15 22H9c-2.828 0-4.243 0-5.121-.878C3 20.242 3 18.829 3 16v-6c0-2.828 0-4.242.879-5.121c.768-.768 1.946-.865 4.121-.877"/><path stroke-linecap="round" d="M10.5 14H17M7 14h.5M7 10.5h.5m-.5 7h.5m3-7H17m-6.5 7H17"/><path d="M8 3.5A1.5 1.5 0 0 1 9.5 2h5A1.5 1.5 0 0 1 16 3.5v1A1.5 1.5 0 0 1 14.5 6h-5A1.5 1.5 0 0 1 8 4.5z"/></g></svg></span>
       <span class="tab-label">Cetak</span>
     </button>
   </nav>
@@ -1944,12 +2035,17 @@ function buildSummaryChips(events, suffix){
 }
 
 function renderHero(){
-  const d = currentDate;
-  document.getElementById('heroDateLabel').textContent =
-    `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Selamat pagi' : (hour < 18 ? 'Selamat tengah hari' : 'Selamat petang');
+  const greeting = hour < 12 ? 'Selamat pagi,' : (hour < 18 ? 'Selamat tengah hari,' : 'Selamat petang,');
   document.getElementById('heroGreeting').textContent = greeting;
+}
+
+function updateStatCards(){
+  const key = fmtKey(currentDate);
+  const events = SAMPLE_EVENTS[key] || [];
+  const vipCount = events.filter(e => e.protocol === 'vip' || e.protocol === 'vvip').length;
+  document.getElementById('statTodayCount').textContent = events.length;
+  document.getElementById('statVipCount').textContent = vipCount;
 }
 
 function renderDayStrip(){
@@ -1981,6 +2077,7 @@ function renderDayStrip(){
 function render(){
   renderHero();
   renderDayStrip();
+  updateStatCards();
 
   const key = fmtKey(currentDate);
   document.getElementById('datePicker').value = key;
@@ -1991,15 +2088,14 @@ function render(){
   const events = (SAMPLE_EVENTS[key] || []).slice().sort((a,b)=> (a.time||'').localeCompare(b.time||''));
   const timeline = document.getElementById('timeline');
   const summaryRow = document.getElementById('summaryRow');
+  summaryRow.innerHTML = ''; // stat cards in the hero already show today's counts
 
   if(events.length === 0){
     timeline.style.paddingLeft = '0';
-    summaryRow.innerHTML = '<div class="summary-chip"><b>0</b> aktiviti</div>';
     timeline.innerHTML = '<div class="empty-state"><div class="big">Tiada aktiviti dijadualkan</div>Tidak ada acara LPBS pada tarikh ini.</div>';
     return;
   }
   timeline.style.paddingLeft = '28px';
-  summaryRow.innerHTML = buildSummaryChips(events, '');
 
   timeline.innerHTML = events.map((e, idx) => buildEventCard(e, key+'-'+idx, key)).join('');
 }
@@ -2050,7 +2146,6 @@ function switchSection(section){
   });
 
   const titles = SECTION_TITLES[section] || SECTION_TITLES.aktiviti;
-  document.getElementById('pageTitle').textContent = titles.title;
 
   // Lazily trigger the right render when entering a section, so data is fresh.
   if(section === 'aktiviti'){
@@ -2444,10 +2539,10 @@ function syncSignInButtons(){
   document.getElementById('tabCetak').style.display = canEdit ? '' : 'none';
   document.getElementById('tabAddCenter').style.display = canEdit ? '' : 'none';
 
-  const badgeHtml = `<i class="g-icon">G</i> ${currentUser.email}`;
-  const badgeEl = document.getElementById('userBadge');
-  badgeEl.className = canEdit ? 'user-badge editor' : 'user-badge';
-  badgeEl.innerHTML = badgeHtml;
+  const namePart = currentUser.email.split('@')[0];
+  const initial = namePart.charAt(0).toUpperCase();
+  document.getElementById('heroAvatar').textContent = initial;
+  document.getElementById('heroUserName').textContent = namePart;
 }
 document.getElementById('addBtnMonth').onclick = openModal;
 
