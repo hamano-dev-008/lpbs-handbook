@@ -730,6 +730,34 @@
     padding:4px 8px;
   }
   .kh-row-delete-btn:hover{text-decoration:underline;}
+  .kh-row-edit-btn{
+    border:none;
+    background:none;
+    color:var(--paddy);
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    padding:4px 8px;
+  }
+  .kh-row-edit-btn:hover{text-decoration:underline;}
+  .kh-table input{
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--sage-line);
+    background:var(--bg);
+    color:var(--ink);
+    padding:6px 8px;
+    border-radius:6px;
+    font-size:13px;
+    width:100%;
+  }
+  .kh-staff-filter-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  #khExcludeStaff{
+    min-width:180px;
+  }
   .signin-btn{
     display:flex;
     align-items:center;
@@ -1646,6 +1674,10 @@
     </div>
 
     <div class="print-controls" style="margin-top:20px;">
+      <div class="kh-staff-filter-wrap">
+        <label class="range-label" for="khExcludeStaff">Kecualikan staf (PDF)</label>
+        <select id="khExcludeStaff" multiple size="4"></select>
+      </div>
       <button class="print-btn" id="khPrintBtn">&#128190; Muat turun PDF</button>
     </div>
     <p class="print-note" id="khPrintNote"></p>
@@ -1910,25 +1942,45 @@ async function loadKehadiranFromSheet(){
   }
 }
 
+let editingKehadiranRow = null;
+
 function renderKehadiranTable(){
   const wrap = document.getElementById('khTableWrap');
   const canEdit = currentUser && isAllowedKehadiranEditor(currentUser.email);
 
   if(kehadiranRecords.length === 0){
     wrap.innerHTML = `<div class="empty-state"><div class="big">Tiada rekod lagi</div>Tambah rekod kehadiran pertama menggunakan borang di atas.</div>`;
+    populateKehadiranStaffFilter();
     return;
   }
 
-  const rows = kehadiranRecords.map(r => `
+  const rows = kehadiranRecords.map(r => {
+    if(canEdit && r.rowIndex === editingKehadiranRow){
+      return `
+        <tr onclick="event.stopPropagation()">
+          <td><input type="date" value="${r.tarikh}" id="khEdit-tarikh-${r.rowIndex}"></td>
+          <td><input type="text" value="${r.nama}" id="khEdit-nama-${r.rowIndex}"></td>
+          <td><input type="time" value="${r.masuk}" id="khEdit-masuk-${r.rowIndex}"></td>
+          <td><input type="time" value="${r.keluar}" id="khEdit-keluar-${r.rowIndex}"></td>
+          <td class="kh-hours-cell">-</td>
+          <td class="kh-delete-cell">
+            <button class="kh-row-edit-btn" onclick="saveEditKehadiranRow(${r.rowIndex})">Simpan</button>
+            <button class="kh-row-delete-btn" onclick="cancelEditKehadiranRow()">Batal</button>
+          </td>
+        </tr>
+      `;
+    }
+    return `
     <tr>
       <td>${r.tarikh}</td>
       <td>${r.nama}</td>
       <td>${r.masuk}</td>
       <td>${r.keluar}</td>
       <td class="kh-hours-cell">${fmtHours(r.jam)}</td>
-      ${canEdit ? `<td class="kh-delete-cell"><button class="kh-row-delete-btn" onclick="deleteKehadiranRow(${r.rowIndex})">Padam</button></td>` : ''}
+      ${canEdit ? `<td class="kh-delete-cell"><button class="kh-row-edit-btn" onclick="startEditKehadiranRow(${r.rowIndex})">Edit</button><button class="kh-row-delete-btn" onclick="deleteKehadiranRow(${r.rowIndex})">Padam</button></td>` : ''}
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   wrap.innerHTML = `
     <table class="kh-table">
@@ -1940,6 +1992,62 @@ function renderKehadiranTable(){
       <tbody>${rows}</tbody>
     </table>
   `;
+
+  populateKehadiranStaffFilter();
+}
+
+function startEditKehadiranRow(rowIndex){
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+  editingKehadiranRow = rowIndex;
+  renderKehadiranTable();
+}
+
+function cancelEditKehadiranRow(){
+  editingKehadiranRow = null;
+  renderKehadiranTable();
+}
+
+async function saveEditKehadiranRow(rowIndex){
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+  const tarikh = document.getElementById(`khEdit-tarikh-${rowIndex}`).value;
+  const nama = document.getElementById(`khEdit-nama-${rowIndex}`).value.trim();
+  const masuk = document.getElementById(`khEdit-masuk-${rowIndex}`).value;
+  const keluar = document.getElementById(`khEdit-keluar-${rowIndex}`).value;
+
+  if(!nama || !tarikh || !masuk || !keluar){
+    alert('Sila isi semua medan: nama, tarikh, masa masuk, dan masa keluar.');
+    return;
+  }
+
+  const dup = kehadiranRecords.find(r => r.rowIndex !== rowIndex && r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh);
+  if(dup){
+    alert(`${nama} sudah mempunyai rekod pada ${tarikh}.`);
+    return;
+  }
+
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A'+rowIndex+':D'+rowIndex)}?valueInputOption=USER_ENTERED`;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[tarikh, nama, masuk, keluar]] })
+    });
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+    }
+    editingKehadiranRow = null;
+    await loadKehadiranFromSheet();
+  }catch(e){
+    alert('Ralat menyimpan rekod: ' + e.message);
+  }
+}
+
+function populateKehadiranStaffFilter(){
+  const sel = document.getElementById('khExcludeStaff');
+  const prevSelected = new Set(Array.from(sel.selectedOptions).map(o => o.value));
+  const names = [...new Set(kehadiranRecords.map(r => r.nama))].sort((a,b) => a.localeCompare(b));
+  sel.innerHTML = names.map(n => `<option value="${n}" ${prevSelected.has(n) ? 'selected' : ''}>${n}</option>`).join('');
 }
 
 async function saveKehadiranRecord(){
@@ -2015,7 +2123,10 @@ function generateKehadiranPDF(){
   const btn = document.getElementById('khPrintBtn');
   note.textContent = '';
 
-  if(kehadiranRecords.length === 0){
+  const excluded = new Set(Array.from(document.getElementById('khExcludeStaff').selectedOptions).map(o => o.value));
+  const recordsToPrint = kehadiranRecords.filter(r => !excluded.has(r.nama));
+
+  if(recordsToPrint.length === 0){
     note.textContent = 'Tiada rekod untuk dicetak.';
     return;
   }
@@ -2037,9 +2148,9 @@ function generateKehadiranPDF(){
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     const todayStr = new Date().toLocaleDateString('en-GB');
-    doc.text(`Jumlah rekod: ${kehadiranRecords.length} | Dicetak: ${todayStr}`, 40, 60);
+    doc.text(`Jumlah rekod: ${recordsToPrint.length} | Dicetak: ${todayStr}`, 40, 60);
 
-    const rows = kehadiranRecords.map(r => [r.tarikh, r.nama, r.masuk, r.keluar, fmtHours(r.jam)]);
+    const rows = recordsToPrint.map(r => [r.tarikh, r.nama, r.masuk, r.keluar, fmtHours(r.jam)]);
 
     doc.autoTable({
       startY: 72,
@@ -2051,7 +2162,7 @@ function generateKehadiranPDF(){
     });
 
     doc.save(`LPBS_Kehadiran_Staf_${fmtKey(new Date())}.pdf`);
-    note.textContent = `PDF berjaya dijana (${kehadiranRecords.length} rekod).`;
+    note.textContent = `PDF berjaya dijana (${recordsToPrint.length} rekod).`;
   }catch(err){
     note.textContent = 'Ralat menjana PDF: ' + err.message;
   }finally{
