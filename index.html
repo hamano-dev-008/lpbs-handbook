@@ -293,11 +293,85 @@
     text-decoration:none;
   }
   .attachment:hover{text-decoration:underline;}
-  .detail-delete-row{
+  .detail-actions-row{
     margin-top:14px;
     padding-top:14px;
     border-top:1px solid var(--line);
-    text-align:right;
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  .edit-btn{
+    border:1px solid var(--sage-line);
+    background:var(--bg);
+    color:var(--paddy-light);
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:7px 14px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .edit-btn:hover{background:var(--amber-bg); border-color:var(--amber); color:var(--amber-text);}
+  .edit-form{
+    margin-top:4px;
+  }
+  .edit-form .field-label{
+    display:block;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:10px 0 4px;
+  }
+  .edit-form .field-label:first-child{margin-top:0;}
+  .edit-form input, .edit-form select{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--sage-line);
+    background:var(--bg);
+    color:var(--ink);
+    padding:7px 10px;
+    border-radius:7px;
+    font-size:13px;
+  }
+  .edit-form .field-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .edit-actions-row{
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  .save-edit-btn{
+    border:none;
+    background:var(--paddy);
+    color:var(--bg);
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:7px 16px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .save-edit-btn:hover{background:var(--paddy-light);}
+  .save-edit-btn:disabled{opacity:0.6;cursor:default;}
+  .cancel-edit-btn{
+    border:1px solid var(--sage-line);
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:7px 14px;
+    border-radius:7px;
+    cursor:pointer;
   }
   .delete-btn{
     border:1px solid var(--red-bg);
@@ -1414,7 +1488,10 @@ function fmtKey(d){
   return `${y}-${m}-${day}`;
 }
 
-function buildEventCard(e, uid){
+const eventDataByUid = {}; // uid -> raw event object, used for inline editing
+
+function buildEventCard(e, uid, dateKey){
+  eventDataByUid[uid] = Object.assign({}, e, { dateKey: dateKey || e.dateKey });
   const catClass = CATEGORY_MAP[e.category] || 'mesyuarat';
   const levelClass = e.protocol ? 'level-'+e.protocol : '';
   const protocolTag = e.protocol ? `<span class="protocol-tag ${e.protocol}">${e.protocol.toUpperCase()}</span>` : '';
@@ -1437,12 +1514,15 @@ function buildEventCard(e, uid){
   }
 
   const canEdit = currentUser && isAllowedEditor(currentUser.email);
-  let deleteHtml = '';
+  let actionsHtml = '';
   if(canEdit && e.id){
-    deleteHtml = `<div class="detail-delete-row"><button class="delete-btn" onclick="event.stopPropagation(); deleteEventPrompt('${e.id}', '${uid}')">Padam aktiviti</button></div>`;
+    actionsHtml = `<div class="detail-actions-row">
+      <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode('${uid}')">Edit aktiviti</button>
+      <button class="delete-btn" onclick="event.stopPropagation(); deleteEventPrompt('${e.id}', '${uid}')">Padam aktiviti</button>
+    </div>`;
   }
 
-  const hasDetail = detailRows || attachHtml || deleteHtml;
+  const hasDetail = detailRows || attachHtml || actionsHtml;
 
   return `
     <div class="event ${levelClass}" data-uid="${uid}">
@@ -1459,7 +1539,7 @@ function buildEventCard(e, uid){
           </div>
           ${hasDetail ? '<span class="chevron">&#10095;</span>' : ''}
         </div>
-        ${hasDetail ? `<div class="detail">${detailRows}${attachHtml}${deleteHtml}</div>` : ''}
+        ${hasDetail ? `<div class="detail" id="detail-${uid}">${detailRows}${attachHtml}${actionsHtml}</div>` : ''}
       </div>
     </div>
   `;
@@ -1494,7 +1574,7 @@ function render(){
   timeline.style.paddingLeft = '28px';
   summaryRow.innerHTML = buildSummaryChips(events, '');
 
-  timeline.innerHTML = events.map((e, idx) => buildEventCard(e, key+'-'+idx)).join('');
+  timeline.innerHTML = events.map((e, idx) => buildEventCard(e, key+'-'+idx, key)).join('');
 }
 
 function toggleEvent(uid){
@@ -1713,7 +1793,7 @@ function renderRangeView(){
     const events = (SAMPLE_EVENTS[key]||[]).slice().sort((a,b)=>(a.time||'').localeCompare(b.time||''));
     const countBadge = events.length ? `<span class="rv-day-count">${events.length} aktiviti</span>` : '<span class="rv-day-count">Tiada aktiviti</span>';
     const body = events.length
-      ? `<div class="rv-events">${events.map((e,idx)=>buildEventCard(e, key+'-r'+idx)).join('')}</div>`
+      ? `<div class="rv-events">${events.map((e,idx)=>buildEventCard(e, key+'-r'+idx, key)).join('')}</div>`
       : `<div class="rv-day-empty">Tiada aktiviti dijadualkan.</div>`;
     return `<div class="rv-day-group">
       <div class="rv-day-head">
@@ -2151,6 +2231,167 @@ async function saveNewEventToGoogleCalendar(){
 }
 
 document.getElementById('modalSave').onclick = saveNewEventToGoogleCalendar;
+
+// ============================================================
+// EDIT AKTIVITI — editor sahaja, terus dalam kad (inline)
+// ============================================================
+const CATEGORY_OPTIONS = [
+  ["MESYUARAT","Mesyuarat"],["PROGRAM","Program"],["MAJLIS","Majlis"],
+  ["TAKLIMAT","Taklimat"],["SESI","Sesi libat urus"],["KURSUS","Kursus"],["PERJALANAN","Perjalanan"]
+];
+
+function enterEditMode(uid){
+  const e = eventDataByUid[uid];
+  if(!e) return;
+  const detailEl = document.getElementById('detail-' + uid);
+  if(!detailEl) return;
+
+  const catValue = e.category === 'SESI LIBAT URUS' ? 'SESI' : (e.category || 'MESYUARAT');
+  const catOptionsHtml = CATEGORY_OPTIONS.map(([val,label])=>
+    `<option value="${val}" ${val===catValue?'selected':''}>${label}</option>`
+  ).join('');
+
+  detailEl.dataset.originalHtml = detailEl.innerHTML;
+  detailEl.innerHTML = `
+    <div class="edit-form">
+      <label class="field-label">Tajuk aktiviti</label>
+      <input type="text" id="ef-title-${uid}" value="${(e.title||'').replace(/"/g,'&quot;')}">
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Kategori</label>
+          <select id="ef-category-${uid}">${catOptionsHtml}</select>
+        </div>
+        <div>
+          <label class="field-label">Peringkat protokol</label>
+          <select id="ef-protocol-${uid}">
+            <option value="" ${!e.protocol?'selected':''}>Tiada / dalaman</option>
+            <option value="vip" ${e.protocol==='vip'?'selected':''}>VIP</option>
+            <option value="vvip" ${e.protocol==='vvip'?'selected':''}>VVIP</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Tarikh</label>
+          <input type="date" id="ef-date-${uid}" value="${e.dateKey || fmtKey(currentDate)}">
+        </div>
+        <div>
+          <label class="field-label">Masa</label>
+          <input type="time" id="ef-time-${uid}" value="${e.allDay ? '' : (e.time||'')}">
+        </div>
+      </div>
+
+      <label class="field-label">Lokasi</label>
+      <input type="text" id="ef-location-${uid}" value="${(e.location||'').replace(/"/g,'&quot;')}">
+
+      <label class="field-label">VIP / VVIP (jika berkaitan)</label>
+      <input type="text" id="ef-vip-${uid}" value="${(e.vip||'').replace(/"/g,'&quot;')}">
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Urus setia</label>
+          <input type="text" id="ef-urussetia-${uid}" value="${(e.urusSetia||'').replace(/"/g,'&quot;')}">
+        </div>
+        <div>
+          <label class="field-label">Pakaian</label>
+          <input type="text" id="ef-pakaian-${uid}" value="${(e.pakaian||'').replace(/"/g,'&quot;')}">
+        </div>
+      </div>
+
+      <label class="field-label">Kehadiran (wakil LPBS)</label>
+      <input type="text" id="ef-kehadiran-${uid}" value="${(e.kehadiran||'').replace(/"/g,'&quot;')}">
+
+      <div class="edit-actions-row">
+        <button class="cancel-edit-btn" onclick="event.stopPropagation(); cancelEdit('${uid}')">Batal</button>
+        <button class="save-edit-btn" id="ef-save-${uid}" onclick="event.stopPropagation(); saveEditedEvent('${uid}')">Simpan perubahan</button>
+      </div>
+    </div>
+  `;
+
+  // Ensure card stays open while editing.
+  const eventEl = document.querySelector(`.event[data-uid="${uid}"]`);
+  if(eventEl) eventEl.classList.add('open');
+}
+
+function cancelEdit(uid){
+  const detailEl = document.getElementById('detail-' + uid);
+  if(detailEl && detailEl.dataset.originalHtml){
+    detailEl.innerHTML = detailEl.dataset.originalHtml;
+  }
+}
+
+async function saveEditedEvent(uid){
+  const e = eventDataByUid[uid];
+  if(!e || !e.id) return;
+
+  const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const title = val(`ef-title-${uid}`).trim();
+  const date = val(`ef-date-${uid}`);
+  const time = val(`ef-time-${uid}`);
+  const category = val(`ef-category-${uid}`);
+  const protocol = val(`ef-protocol-${uid}`);
+  const location = val(`ef-location-${uid}`);
+  const vip = val(`ef-vip-${uid}`);
+  const urusSetia = val(`ef-urussetia-${uid}`);
+  const pakaian = val(`ef-pakaian-${uid}`);
+  const kehadiran = val(`ef-kehadiran-${uid}`);
+
+  if(!title || !date){
+    alert('Sila isi sekurang-kurangnya tajuk dan tarikh.');
+    return;
+  }
+
+  const categoryLabel = category === 'SESI' ? 'SESI LIBAT URUS' : category;
+  const summary = `[${categoryLabel}] ${title}`;
+  const description = buildEventDescription({
+    vip: protocol === 'vip' ? vip : null,
+    vvip: protocol === 'vvip' ? vip : null,
+    urusSetia, kehadiran, pakaian
+  });
+
+  const isAllDay = !time;
+  const body = {
+    summary,
+    description: description || '',
+    location: location || ''
+  };
+  if(isAllDay){
+    const endDate = new Date(date + "T00:00:00");
+    endDate.setDate(endDate.getDate()+1);
+    body.start = { date };
+    body.end = { date: fmtKey(endDate) };
+  } else {
+    const endHour = (parseInt(time.split(':')[0],10)+1) % 24;
+    body.start = { dateTime: `${date}T${time}:00`, timeZone: 'Asia/Kuala_Lumpur' };
+    body.end = { dateTime: `${date}T${String(endHour).padStart(2,'0')}:${time.split(':')[1]}:00`, timeZone: 'Asia/Kuala_Lumpur' };
+  }
+
+  const saveBtn = document.getElementById(`ef-save-${uid}`);
+  if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan...'; }
+
+  try{
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events/${encodeURIComponent(e.id)}`,
+      {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }
+    );
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+    }
+    await loadEventsFromGoogleCalendar();
+    if(currentView === 'month') renderMonthView();
+    if(currentView === 'day' && daySubView === 'range') renderRangeView();
+  }catch(err){
+    alert('Ralat menyimpan perubahan: ' + err.message);
+    if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'Simpan perubahan'; }
+  }
+}
 
 // ============================================================
 // PADAM AKTIVITI — editor sahaja
