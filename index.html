@@ -2253,7 +2253,7 @@ function enterEditMode(uid){
 
   detailEl.dataset.originalHtml = detailEl.innerHTML;
   detailEl.innerHTML = `
-    <div class="edit-form">
+    <div class="edit-form" onclick="event.stopPropagation()">
       <label class="field-label">Tajuk aktiviti</label>
       <input type="text" id="ef-title-${uid}" value="${(e.title||'').replace(/"/g,'&quot;')}">
 
