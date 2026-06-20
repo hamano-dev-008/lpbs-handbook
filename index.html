@@ -656,6 +656,80 @@
     color:var(--sage);
     min-height:16px;
   }
+  .kehadiran-form{
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+    margin-top:18px;
+  }
+  .kehadiran-form input{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--sage-line);
+    background:var(--bg);
+    color:var(--ink);
+    padding:9px 12px;
+    border-radius:8px;
+    font-size:14px;
+  }
+  .kh-hours-preview{
+    margin:14px 0 0;
+    font-size:13.5px;
+    color:var(--ink-soft);
+    background:var(--bg);
+    border-radius:8px;
+    padding:10px 12px;
+    min-height:18px;
+  }
+  .kh-hours-preview b{color:var(--paddy); font-family:'Fraunces',serif; font-size:15px;}
+  .kh-note{
+    margin-top:10px;
+    font-size:12.5px;
+    color:var(--sage);
+    min-height:16px;
+  }
+  .kh-table-wrap{
+    margin-top:14px;
+    overflow-x:auto;
+  }
+  .kh-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+  .kh-table th{
+    background:var(--paddy);
+    color:#fff;
+    text-align:left;
+    padding:9px 10px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .kh-table td{
+    padding:9px 10px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  .kh-table tr:last-child td{border-bottom:none;}
+  .kh-table .kh-hours-cell{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    color:var(--paddy);
+  }
+  .kh-delete-cell{
+    text-align:right;
+  }
+  .kh-row-delete-btn{
+    border:none;
+    background:none;
+    color:var(--red-text);
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    padding:4px 8px;
+  }
+  .kh-row-delete-btn:hover{text-decoration:underline;}
   .signin-btn{
     display:flex;
     align-items:center;
@@ -1531,6 +1605,53 @@
   </section>
   </div>
 
+  <div id="sectionKehadiran" style="display:none;">
+
+  <section class="analytics no-border-top">
+    <div class="print-head">
+      <p class="eyebrow">Kehadiran Staf</p>
+      <h2 class="ana-title">Rekod Kehadiran</h2>
+    </div>
+
+    <div class="kehadiran-form" id="kehadiranForm">
+      <label class="field-label">Tarikh</label>
+      <input type="date" id="kh-tarikh">
+
+      <label class="field-label">Nama Staf</label>
+      <input type="text" id="kh-nama" placeholder="Contoh: Ahmad bin Ali">
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Masa Masuk</label>
+          <input type="time" id="kh-masuk">
+        </div>
+        <div>
+          <label class="field-label">Masa Keluar</label>
+          <input type="time" id="kh-keluar">
+        </div>
+      </div>
+
+      <p class="kh-hours-preview" id="khHoursPreview"></p>
+
+      <button class="save-btn" id="khSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
+      <p class="kh-note" id="khNote"></p>
+    </div>
+
+    <div class="section-heading-row" style="margin-top:32px;">
+      <h2 class="section-heading">Rekod Tersimpan</h2>
+    </div>
+
+    <div class="kh-table-wrap" id="khTableWrap">
+      <div class="empty-state"><div class="big">Memuatkan rekod...</div></div>
+    </div>
+
+    <div class="print-controls" style="margin-top:20px;">
+      <button class="print-btn" id="khPrintBtn">&#128190; Muat turun PDF</button>
+    </div>
+    <p class="print-note" id="khPrintNote"></p>
+  </section>
+  </div>
+
   <footer>Data disegerakkan terus daripada Kalendar Rasmi LPBS &middot; Google Calendar</footer>
   </div>
 
@@ -1549,6 +1670,10 @@
     <button class="tab-btn" id="tabCetak" onclick="switchSection('cetak')" style="display:none;">
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 4.002c2.175.012 3.353.109 4.121.877C21 5.758 21 7.172 21 10v6c0 2.829 0 4.243-.879 5.122C19.243 22 17.828 22 15 22H9c-2.828 0-4.243 0-5.121-.878C3 20.242 3 18.829 3 16v-6c0-2.828 0-4.242.879-5.121c.768-.768 1.946-.865 4.121-.877"/><path stroke-linecap="round" d="M10.5 14H17M7 14h.5M7 10.5h.5m-.5 7h.5m3-7H17m-6.5 7H17"/><path d="M8 3.5A1.5 1.5 0 0 1 9.5 2h5A1.5 1.5 0 0 1 16 3.5v1A1.5 1.5 0 0 1 14.5 6h-5A1.5 1.5 0 0 1 8 4.5z"/></g></svg></span>
       <span class="tab-label">Cetak</span>
+    </button>
+    <button class="tab-btn" id="tabKehadiran" onclick="switchSection('kehadiran')" style="display:none;">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="6" r="4"/><path stroke-linecap="round" d="M15 9a3 3 0 1 0 0-6"/><ellipse cx="9" cy="17" rx="7" ry="4"/><path stroke-linecap="round" d="M18 14c1.754.385 3 1.359 3 2.5c0 1.03-1.014 1.923-2.5 2.37"/></g></svg></span>
+      <span class="tab-label">Kehadiran</span>
     </button>
   </nav>
 </div>
@@ -1637,7 +1762,20 @@ const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.goo
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
 const ALLOWLIST_SHEET_RANGE = "Senarai!A2:B1000";
-const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets.readonly";
+// TODO: ganti dengan ID Sheet "LPBS Kehadiran Staf" sebenar selepas dicipta.
+const KEHADIRAN_SHEET_ID = "1lGD1XnlEuOGHHnfrUnaqaMPbYMgfnBvkFTXRsNYNkmg";
+const KEHADIRAN_SHEET_RANGE = "Kehadiran!A2:D1000";
+const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets";
+
+// Hanya 3 akaun ini boleh mengedit Kehadiran Staf (berasingan daripada senarai editor umum).
+const KEHADIRAN_EDITOR_ALLOWLIST = [
+  "falishafaisal@gmail.com",
+  "carlvinds@gmail.com",
+  "neel.jay98@gmail.com"
+];
+function isAllowedKehadiranEditor(email){
+  return KEHADIRAN_EDITOR_ALLOWLIST.map(e=>e.toLowerCase()).includes((email||'').toLowerCase());
+}
 
 // ============================================================
 // AKSES KAWALAN — Senarai e-mel staf yang dibenarkan
@@ -1718,6 +1856,222 @@ async function loadAllowlistFromSheet(){
     buildFallbackSets();
   }
 }
+
+// ============================================================
+// KEHADIRAN STAF — baca/tulis terus ke Google Sheet
+// ============================================================
+let kehadiranRecords = []; // { rowIndex, nama, tarikh, masuk, keluar, jam }
+let kehadiranLoaded = false;
+
+function calcHours(masuk, keluar){
+  if(!masuk || !keluar) return null;
+  const [h1,m1] = masuk.split(':').map(Number);
+  const [h2,m2] = keluar.split(':').map(Number);
+  let mins = (h2*60+m2) - (h1*60+m1);
+  if(mins < 0) mins += 24*60; // handle overnight shift
+  return mins / 60;
+}
+
+function fmtHours(h){
+  if(h === null || isNaN(h)) return '-';
+  const hrs = Math.floor(h);
+  const mins = Math.round((h - hrs) * 60);
+  return mins === 0 ? `${hrs} jam` : `${hrs} jam ${mins} min`;
+}
+
+async function loadKehadiranFromSheet(){
+  const wrap = document.getElementById('khTableWrap');
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if(!res.ok) throw new Error('status ' + res.status);
+    const data = await res.json();
+    const rows = data.values || [];
+
+    kehadiranRecords = rows.map((row, idx) => {
+      const [tarikh, nama, masuk, keluar] = row;
+      if(!nama && !tarikh) return null;
+      return {
+        rowIndex: idx + 2, // +2 because range starts at A2 and sheet rows are 1-indexed
+        nama: nama || '',
+        tarikh: tarikh || '',
+        masuk: masuk || '',
+        keluar: keluar || '',
+        jam: calcHours(masuk, keluar)
+      };
+    }).filter(Boolean);
+
+    kehadiranRecords.sort((a,b) => b.tarikh.localeCompare(a.tarikh) || a.nama.localeCompare(b.nama));
+    kehadiranLoaded = true;
+    renderKehadiranTable();
+  }catch(e){
+    console.error('loadKehadiranFromSheet failed:', e);
+    wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan rekod</div>Sila semak sambungan atau cuba semula.</div>`;
+  }
+}
+
+function renderKehadiranTable(){
+  const wrap = document.getElementById('khTableWrap');
+  const canEdit = currentUser && isAllowedKehadiranEditor(currentUser.email);
+
+  if(kehadiranRecords.length === 0){
+    wrap.innerHTML = `<div class="empty-state"><div class="big">Tiada rekod lagi</div>Tambah rekod kehadiran pertama menggunakan borang di atas.</div>`;
+    return;
+  }
+
+  const rows = kehadiranRecords.map(r => `
+    <tr>
+      <td>${r.tarikh}</td>
+      <td>${r.nama}</td>
+      <td>${r.masuk}</td>
+      <td>${r.keluar}</td>
+      <td class="kh-hours-cell">${fmtHours(r.jam)}</td>
+      ${canEdit ? `<td class="kh-delete-cell"><button class="kh-row-delete-btn" onclick="deleteKehadiranRow(${r.rowIndex})">Padam</button></td>` : ''}
+    </tr>
+  `).join('');
+
+  wrap.innerHTML = `
+    <table class="kh-table">
+      <thead>
+        <tr>
+          <th>Tarikh</th><th>Nama</th><th>Masa Masuk</th><th>Masa Keluar</th><th>Jumlah Jam</th>${canEdit ? '<th></th>' : ''}
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+async function saveKehadiranRecord(){
+  const nama = document.getElementById('kh-nama').value.trim();
+  const tarikh = document.getElementById('kh-tarikh').value;
+  const masuk = document.getElementById('kh-masuk').value;
+  const keluar = document.getElementById('kh-keluar').value;
+  const note = document.getElementById('khNote');
+  const btn = document.getElementById('khSaveBtn');
+
+  if(!nama || !tarikh || !masuk || !keluar){
+    note.textContent = 'Sila isi semua medan: nama, tarikh, masa masuk, dan masa keluar.';
+    return;
+  }
+
+  // Enforce one entry per staff per day.
+  const dup = kehadiranRecords.find(r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh);
+  if(dup){
+    note.textContent = `${nama} sudah mempunyai rekod pada ${tarikh}. Padam rekod lama dahulu jika perlu membetulkan.`;
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  note.textContent = '';
+
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:D')}:append?valueInputOption=USER_ENTERED`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[tarikh, nama, masuk, keluar]] })
+    });
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+    }
+    document.getElementById('kh-nama').value = '';
+    document.getElementById('kh-masuk').value = '';
+    document.getElementById('kh-keluar').value = '';
+    document.getElementById('khHoursPreview').textContent = '';
+    await loadKehadiranFromSheet();
+    note.textContent = 'Rekod berjaya disimpan.';
+  }catch(e){
+    note.textContent = 'Ralat: ' + e.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Simpan Rekod';
+  }
+}
+
+async function deleteKehadiranRow(rowIndex){
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+  const confirmed = window.confirm('Adakah anda pasti mahu memadam rekod ini?');
+  if(!confirmed) return;
+
+  try{
+    // Clear the row's values (keeps row structure stable) via a batch update.
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A'+rowIndex+':D'+rowIndex)}:clear`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if(!res.ok) throw new Error('status ' + res.status);
+    await loadKehadiranFromSheet();
+  }catch(e){
+    alert('Ralat memadam rekod: ' + e.message);
+  }
+}
+
+function generateKehadiranPDF(){
+  const note = document.getElementById('khPrintNote');
+  const btn = document.getElementById('khPrintBtn');
+  note.textContent = '';
+
+  if(kehadiranRecords.length === 0){
+    note.textContent = 'Tiada rekod untuk dicetak.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Menjana PDF...';
+
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(31, 58, 46);
+    doc.text('LEMBAGA PADI DAN BERAS SABAH (LPBS)', 40, 30);
+    doc.setFontSize(14);
+    doc.text('Rekod Kehadiran Staf', 40, 48);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    const todayStr = new Date().toLocaleDateString('en-GB');
+    doc.text(`Jumlah rekod: ${kehadiranRecords.length} | Dicetak: ${todayStr}`, 40, 60);
+
+    const rows = kehadiranRecords.map(r => [r.tarikh, r.nama, r.masuk, r.keluar, fmtHours(r.jam)]);
+
+    doc.autoTable({
+      startY: 72,
+      head: [['Tarikh','Nama','Masa Masuk','Masa Keluar','Jumlah Jam']],
+      body: rows,
+      styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 5 },
+      headStyles: { fillColor: [31,58,46], textColor: [255,255,255], fontStyle: 'bold' },
+      theme: 'grid'
+    });
+
+    doc.save(`LPBS_Kehadiran_Staf_${fmtKey(new Date())}.pdf`);
+    note.textContent = `PDF berjaya dijana (${kehadiranRecords.length} rekod).`;
+  }catch(err){
+    note.textContent = 'Ralat menjana PDF: ' + err.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '\u{1F4BE} Muat turun PDF';
+  }
+}
+
+function updateHoursPreview(){
+  const masuk = document.getElementById('kh-masuk').value;
+  const keluar = document.getElementById('kh-keluar').value;
+  const preview = document.getElementById('khHoursPreview');
+  const h = calcHours(masuk, keluar);
+  preview.innerHTML = h !== null ? `Jumlah jam bekerja: <b>${fmtHours(h)}</b>` : '';
+}
+
+document.getElementById('kh-masuk').addEventListener('input', updateHoursPreview);
+document.getElementById('kh-keluar').addEventListener('input', updateHoursPreview);
+document.getElementById('khSaveBtn').addEventListener('click', saveKehadiranRecord);
+document.getElementById('khPrintBtn').addEventListener('click', generateKehadiranPDF);
 
 let currentUser = null; // { email, name } once signed in
 
@@ -2022,11 +2376,11 @@ const SECTION_TITLES = {
 
 function switchSection(section){
   appSection = section;
-  ['Aktiviti','Analitik','Cetak'].forEach(name=>{
+  ['Aktiviti','Analitik','Cetak','Kehadiran'].forEach(name=>{
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
-  ['tabAktiviti','tabAnalitik','tabCetak'].forEach(id=>{
+  ['tabAktiviti','tabAnalitik','tabCetak','tabKehadiran'].forEach(id=>{
     const tab = document.getElementById(id);
     if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
   });
@@ -2041,6 +2395,11 @@ function switchSection(section){
     refreshAnalytics();
   } else if(section === 'cetak'){
     renderPrintControls();
+  } else if(section === 'kehadiran'){
+    if(!document.getElementById('kh-tarikh').value){
+      document.getElementById('kh-tarikh').value = fmtKey(new Date());
+    }
+    loadKehadiranFromSheet();
   }
 
   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -2424,6 +2783,10 @@ function syncSignInButtons(){
   document.getElementById('addBtnRange').style.display = visible;
   document.getElementById('tabCetak').style.display = canEdit ? '' : 'none';
   document.getElementById('tabAddCenter').style.display = canEdit ? '' : 'none';
+
+  const canEditKehadiran = isAllowedKehadiranEditor(currentUser.email);
+  document.getElementById('tabKehadiran').style.display = canEditKehadiran ? '' : 'none';
+  document.getElementById('kehadiranForm').style.display = canEditKehadiran ? '' : 'none';
 
   const namePart = currentUser.email.split('@')[0];
   const initial = namePart.charAt(0).toUpperCase();
