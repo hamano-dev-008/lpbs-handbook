@@ -1408,7 +1408,10 @@ const MONTH_NAMES = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogo
 let currentDate = new Date("2026-06-17T00:00:00");
 
 function fmtKey(d){
-  return d.toISOString().slice(0,10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
 }
 
 function buildEventCard(e, uid){
