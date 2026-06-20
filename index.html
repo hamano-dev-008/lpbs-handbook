@@ -927,80 +927,6 @@
     margin:0;
     font-weight:500;
   }
-  .section-heading-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-top:24px;
-    margin-bottom:4px;
-  }
-  .section-heading{
-    font-family:'Fraunces',serif;
-    font-weight:500;
-    font-size:18px;
-    color:var(--ink);
-    margin:0;
-  }
-  .today-link-btn{
-    border:none;
-    background:none;
-    color:var(--paddy-light);
-    font-size:13px;
-    font-weight:600;
-    cursor:pointer;
-    padding:4px;
-  }
-  .today-link-btn:hover{text-decoration:underline;}
-  .day-strip-wrap{
-    margin-top:12px;
-    overflow-x:auto;
-    -ms-overflow-style:none;
-    scrollbar-width:none;
-  }
-  .day-strip-wrap::-webkit-scrollbar{display:none;}
-  .day-strip{
-    display:flex;
-    gap:8px;
-    padding:2px 2px 6px;
-  }
-  .day-strip-item{
-    flex-shrink:0;
-    width:46px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:6px;
-    padding:10px 0;
-    border-radius:14px;
-    cursor:pointer;
-    background:var(--bg-card);
-    border:1px solid var(--line);
-  }
-  .day-strip-item .ds-dow{
-    font-size:10.5px;
-    font-weight:600;
-    letter-spacing:0.02em;
-    color:var(--sage);
-  }
-  .day-strip-item .ds-num{
-    font-family:'Fraunces',serif;
-    font-weight:500;
-    font-size:16px;
-    color:var(--ink);
-  }
-  .day-strip-item.active{
-    background:var(--paddy);
-    border-color:var(--paddy);
-  }
-  .day-strip-item.active .ds-dow, .day-strip-item.active .ds-num{color:#fff;}
-  .day-strip-item .ds-dot{
-    width:5px;height:5px;
-    border-radius:50%;
-    background:var(--amber);
-    visibility:hidden;
-  }
-  .day-strip-item.has-events .ds-dot{visibility:visible;}
-  .day-strip-item.active .ds-dot{background:#fff;}
   .tab-add-center{
     width:52px;
     height:52px;
@@ -1503,15 +1429,6 @@
       <h3 class="stat-card-num" id="statVipCount">0</h3>
       <p class="stat-card-label">Peringkat VIP/VVIP</p>
     </div>
-  </div>
-
-  <div class="section-heading-row">
-    <h2 class="section-heading">Jadual Anda</h2>
-    <button class="today-link-btn" id="todayBtnHero">Hari ini</button>
-  </div>
-
-  <div class="day-strip-wrap" id="dayStripWrap">
-    <div class="day-strip" id="dayStrip"></div>
   </div>
 
   <div class="view-switch-row">
@@ -2048,35 +1965,8 @@ function updateStatCards(){
   document.getElementById('statVipCount').textContent = vipCount;
 }
 
-function renderDayStrip(){
-  const strip = document.getElementById('dayStrip');
-  const centerDate = new Date(currentDate);
-  const items = [];
-  for(let offset=-3; offset<=3; offset++){
-    const d = new Date(centerDate);
-    d.setDate(d.getDate()+offset);
-    const key = fmtKey(d);
-    const hasEvents = !!(SAMPLE_EVENTS[key] && SAMPLE_EVENTS[key].length);
-    const isActive = offset === 0;
-    items.push(`
-      <div class="day-strip-item ${isActive?'active':''} ${hasEvents?'has-events':''}" data-key="${key}" onclick="jumpToDay('${key}')">
-        <span class="ds-dow">${DAY_NAMES[d.getDay()].slice(0,3)}</span>
-        <span class="ds-num">${d.getDate()}</span>
-        <span class="ds-dot"></span>
-      </div>
-    `);
-  }
-  strip.innerHTML = items.join('');
-  // Center the active day in the scrollable strip.
-  requestAnimationFrame(() => {
-    const activeEl = strip.querySelector('.day-strip-item.active');
-    if(activeEl) activeEl.scrollIntoView({ block: 'nearest', inline: 'center' });
-  });
-}
-
 function render(){
   renderHero();
-  renderDayStrip();
   updateStatCards();
 
   const key = fmtKey(currentDate);
@@ -2114,10 +2004,6 @@ document.getElementById('nextDay').onclick = () => {
   render();
 };
 document.getElementById('todayBtn').onclick = () => {
-  currentDate = new Date();
-  render();
-};
-document.getElementById('todayBtnHero').onclick = () => {
   currentDate = new Date();
   render();
 };
