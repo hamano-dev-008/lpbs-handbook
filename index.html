@@ -386,7 +386,7 @@
   }
   .toast-container{
     position:fixed;
-    bottom:24px;
+    bottom:calc(84px + env(safe-area-inset-bottom));
     left:50%;
     transform:translateX(-50%);
     z-index:100;
@@ -489,7 +489,7 @@
     color:var(--ink);
   }
   .app-content{
-    padding-bottom:90px;
+    padding-bottom:calc(100px + env(safe-area-inset-bottom));
   }
   .bottom-tabs{
     position:fixed;
@@ -837,6 +837,93 @@
     cursor:pointer;
   }
   .save-btn:hover{background:var(--paddy-light);}
+  .search-bar-wrap{
+    position:relative;
+    margin-top:20px;
+  }
+  .search-input-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--bg-card);
+    border:1px solid var(--sage-line);
+    border-radius:10px;
+    padding:10px 14px;
+  }
+  .search-input-row:focus-within{
+    border-color:var(--paddy-light);
+  }
+  .search-icon{
+    font-size:15px;
+    color:var(--sage);
+    flex-shrink:0;
+  }
+  .search-input-row input{
+    flex:1;
+    border:none;
+    background:none;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    outline:none;
+  }
+  .search-input-row input::placeholder{color:var(--sage);}
+  .search-clear-btn{
+    border:none;
+    background:none;
+    color:var(--sage);
+    font-size:20px;
+    line-height:1;
+    cursor:pointer;
+    flex-shrink:0;
+    padding:0 2px;
+  }
+  .search-clear-btn:hover{color:var(--ink-soft);}
+  .search-results{
+    position:absolute;
+    top:calc(100% + 6px);
+    left:0;
+    right:0;
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.1);
+    max-height:360px;
+    overflow-y:auto;
+    z-index:25;
+  }
+  .search-result-item{
+    display:block;
+    padding:12px 16px;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+  }
+  .search-result-item:last-child{border-bottom:none;}
+  .search-result-item:hover{background:var(--bg);}
+  .sr-date{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--paddy-light);
+    margin-bottom:3px;
+  }
+  .sr-title{
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+    margin-bottom:2px;
+  }
+  .sr-meta{
+    font-size:12px;
+    color:var(--sage);
+  }
+  .search-no-results{
+    padding:20px 16px;
+    text-align:center;
+    color:var(--sage);
+    font-size:13.5px;
+  }
   .view-switch-row{
     display:flex;
     justify-content:space-between;
@@ -1200,6 +1287,15 @@
   <div class="app-content">
 
   <div id="sectionAktiviti">
+
+  <div class="search-bar-wrap">
+    <div class="search-input-row">
+      <span class="search-icon">&#128269;</span>
+      <input type="text" id="searchInput" placeholder="Cari aktiviti mengikut tajuk, lokasi, atau VIP...">
+      <button class="search-clear-btn" id="searchClearBtn" style="display:none;">&times;</button>
+    </div>
+    <div class="search-results" id="searchResults" style="display:none;"></div>
+  </div>
 
   <div class="view-switch-row">
     <div class="period-toggle" id="viewToggle">
@@ -1953,6 +2049,86 @@ function jumpToDay(key){
   daySubView = 'single';
   switchToView('day');
 }
+
+// ============================================================
+// CARI AKTIVITI — carian global merentasi semua tarikh
+// ============================================================
+function searchEvents(query){
+  const q = query.trim().toLowerCase();
+  if(!q) return [];
+
+  const all = allEventsFlat();
+  const matches = all.filter(e => {
+    const haystack = [
+      e.title, e.location, e.vip, e.urusSetia, e.kehadiran, e.category
+    ].filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(q);
+  });
+
+  matches.sort((a,b) => a.dateKey.localeCompare(b.dateKey));
+  return matches.slice(0, 30); // cap results to keep the dropdown manageable
+}
+
+function renderSearchResults(query){
+  const resultsEl = document.getElementById('searchResults');
+  const clearBtn = document.getElementById('searchClearBtn');
+  clearBtn.style.display = query ? '' : 'none';
+
+  if(!query.trim()){
+    resultsEl.style.display = 'none';
+    resultsEl.innerHTML = '';
+    return;
+  }
+
+  const matches = searchEvents(query);
+  if(matches.length === 0){
+    resultsEl.innerHTML = '<div class="search-no-results">Tiada aktiviti dijumpai.</div>';
+    resultsEl.style.display = '';
+    return;
+  }
+
+  resultsEl.innerHTML = matches.map(e => {
+    const d = new Date(e.dateKey + "T00:00:00");
+    const dateLabel = `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()} \u00b7 ${DAY_NAMES[d.getDay()]}`;
+    const timeLabel = e.allDay ? 'Sepanjang hari' : (e.time || '');
+    return `
+      <div class="search-result-item" onclick="goToSearchResult('${e.dateKey}')">
+        <div class="sr-date">${dateLabel}</div>
+        <div class="sr-title">${e.title}</div>
+        <div class="sr-meta">${timeLabel}${e.location ? ' &middot; ' + e.location : ''}</div>
+      </div>
+    `;
+  }).join('');
+  resultsEl.style.display = '';
+}
+
+function goToSearchResult(dateKey){
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').style.display = 'none';
+  document.getElementById('searchClearBtn').style.display = 'none';
+  jumpToDay(dateKey);
+}
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  renderSearchResults(e.target.value);
+});
+document.getElementById('searchClearBtn').addEventListener('click', () => {
+  const input = document.getElementById('searchInput');
+  input.value = '';
+  renderSearchResults('');
+  input.focus();
+});
+document.addEventListener('click', (e) => {
+  const wrap = document.querySelector('.search-bar-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('searchResults').style.display = 'none';
+  }
+});
+document.getElementById('searchInput').addEventListener('focus', () => {
+  if(document.getElementById('searchInput').value.trim()){
+    renderSearchResults(document.getElementById('searchInput').value);
+  }
+});
 
 let daySubView = 'single';
 let rangeStart = "2026-06-15";
