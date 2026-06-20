@@ -837,9 +837,123 @@
     cursor:pointer;
   }
   .save-btn:hover{background:var(--paddy-light);}
+  .hero-card{
+    background:linear-gradient(135deg, var(--paddy) 0%, var(--paddy-light) 100%);
+    border-radius:24px;
+    padding:24px 22px 20px;
+    margin-top:16px;
+    color:#fff;
+  }
+  .hero-top-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:18px;
+  }
+  .hero-greeting{
+    font-size:12.5px;
+    color:rgba(255,255,255,0.75);
+    margin:0 0 4px;
+    font-weight:500;
+  }
+  .hero-date{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:19px;
+    color:#fff;
+    margin:0;
+  }
+  .today-btn-hero{
+    border:1px solid rgba(255,255,255,0.35);
+    background:rgba(255,255,255,0.12);
+    color:#fff;
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:600;
+    padding:7px 13px;
+    border-radius:8px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .today-btn-hero:hover{background:rgba(255,255,255,0.22);}
+  .hero-search .search-input-row{
+    background:rgba(255,255,255,0.95);
+    border:none;
+  }
+  .day-strip-wrap{
+    margin-top:16px;
+    overflow-x:auto;
+    -ms-overflow-style:none;
+    scrollbar-width:none;
+  }
+  .day-strip-wrap::-webkit-scrollbar{display:none;}
+  .day-strip{
+    display:flex;
+    gap:8px;
+    padding:2px 2px 6px;
+  }
+  .day-strip-item{
+    flex-shrink:0;
+    width:46px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    padding:10px 0;
+    border-radius:14px;
+    cursor:pointer;
+    background:var(--bg-card);
+    border:1px solid var(--line);
+  }
+  .day-strip-item .ds-dow{
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    color:var(--sage);
+  }
+  .day-strip-item .ds-num{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:16px;
+    color:var(--ink);
+  }
+  .day-strip-item.active{
+    background:var(--paddy);
+    border-color:var(--paddy);
+  }
+  .day-strip-item.active .ds-dow, .day-strip-item.active .ds-num{color:#fff;}
+  .day-strip-item .ds-dot{
+    width:5px;height:5px;
+    border-radius:50%;
+    background:var(--amber);
+    visibility:hidden;
+  }
+  .day-strip-item.has-events .ds-dot{visibility:visible;}
+  .day-strip-item.active .ds-dot{background:#fff;}
+  .tab-add-center{
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    background:var(--paddy);
+    color:#fff;
+    border:4px solid var(--bg-card);
+    font-size:24px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    margin-top:-26px;
+    box-shadow:0 4px 12px rgba(27,58,107,0.35);
+    flex-shrink:0;
+  }
+  .tab-add-center:hover{background:var(--paddy-light);}
   .search-bar-wrap{
     position:relative;
     margin-top:20px;
+  }
+  .search-bar-wrap.hero-search{
+    margin-top:0;
   }
   .search-input-row{
     display:flex;
@@ -880,10 +994,8 @@
   }
   .search-clear-btn:hover{color:var(--ink-soft);}
   .search-results{
-    position:absolute;
-    top:calc(100% + 6px);
-    left:0;
-    right:0;
+    position:relative;
+    margin-top:8px;
     background:var(--bg-card);
     border:1px solid var(--line);
     border-radius:10px;
@@ -1281,6 +1393,7 @@
         <span class="app-brand-mark">LPBS</span>
         <span class="app-brand-title" id="pageTitle">Papar Aktiviti</span>
       </div>
+      <span class="user-badge" id="userBadge"></span>
     </div>
   </header>
 
@@ -1288,13 +1401,26 @@
 
   <div id="sectionAktiviti">
 
-  <div class="search-bar-wrap">
-    <div class="search-input-row">
-      <span class="search-icon">&#128269;</span>
-      <input type="text" id="searchInput" placeholder="Cari aktiviti mengikut tajuk, lokasi, atau VIP...">
-      <button class="search-clear-btn" id="searchClearBtn" style="display:none;">&times;</button>
+  <div class="hero-card" id="heroCard">
+    <div class="hero-top-row">
+      <div>
+        <p class="hero-greeting" id="heroGreeting">Selamat sejahtera</p>
+        <p class="hero-date" id="heroDateLabel">Rabu, 17 Jun 2026</p>
+      </div>
+      <button class="today-btn-hero" id="todayBtnHero">Hari ini</button>
     </div>
-    <div class="search-results" id="searchResults" style="display:none;"></div>
+    <div class="search-bar-wrap hero-search">
+      <div class="search-input-row">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" id="searchInput" placeholder="Cari aktiviti mengikut tajuk, lokasi, atau VIP...">
+        <button class="search-clear-btn" id="searchClearBtn" style="display:none;">&times;</button>
+      </div>
+    </div>
+  </div>
+  <div class="search-results" id="searchResults" style="display:none;"></div>
+
+  <div class="day-strip-wrap" id="dayStripWrap">
+    <div class="day-strip" id="dayStrip"></div>
   </div>
 
   <div class="view-switch-row">
@@ -1313,7 +1439,7 @@
     </div>
   </div>
 
-  <div class="datebar" id="dayControls">
+  <div class="datebar" id="dayControls" style="display:none;">
     <button class="nav-btn" id="prevDay">&#8249;</button>
     <div class="date-display">
       <span class="day-name" id="dayName">SELASA</span>
@@ -1323,7 +1449,6 @@
     <input type="date" id="datePicker" value="2026-06-17">
     <button class="today-btn" id="todayBtn">Hari ini</button>
     <div style="flex:1;"></div>
-    <span class="user-badge" id="userBadge"></span>
     <button class="add-btn" id="addBtn" style="display:none;">+ Tambah aktiviti</button>
   </div>
 
@@ -1333,7 +1458,6 @@
     <span class="range-label">Hingga</span>
     <input type="date" id="rangeEnd" value="2026-06-19">
     <div style="flex:1;"></div>
-    <span class="user-badge" id="userBadgeRange"></span>
     <button class="add-btn" id="addBtnRange" style="display:none;">+ Tambah aktiviti</button>
   </div>
 
@@ -1345,7 +1469,6 @@
     </div>
     <button class="nav-btn" id="nextMonth">&#8250;</button>
     <div style="flex:1;"></div>
-    <span class="user-badge" id="userBadgeMonth"></span>
     <button class="add-btn" id="addBtnMonth" style="display:none;">+ Tambah aktiviti</button>
   </div>
 
@@ -1411,6 +1534,9 @@
     <button class="tab-btn" id="tabAnalitik" onclick="switchSection('analitik')">
       <span class="tab-icon">&#128202;</span>
       <span class="tab-label">Analitik</span>
+    </button>
+    <button class="tab-add-center" id="tabAddCenter" style="display:none;" onclick="openModal()" aria-label="Tambah aktiviti">
+      <span>&#43;</span>
     </button>
     <button class="tab-btn" id="tabCetak" onclick="switchSection('cetak')" style="display:none;">
       <span class="tab-icon">&#128190;</span>
@@ -1742,7 +1868,7 @@ const CATEGORY_MAP = {
 const DAY_NAMES = ["AHAD","ISNIN","SELASA","RABU","KHAMIS","JUMAAT","SABTU"];
 const MONTH_NAMES = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
 
-let currentDate = new Date("2026-06-17T00:00:00");
+let currentDate = new Date();
 
 function fmtKey(d){
   const y = d.getFullYear();
@@ -1817,7 +1943,45 @@ function buildSummaryChips(events, suffix){
   return chips;
 }
 
+function renderHero(){
+  const d = currentDate;
+  document.getElementById('heroDateLabel').textContent =
+    `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Selamat pagi' : (hour < 18 ? 'Selamat tengah hari' : 'Selamat petang');
+  document.getElementById('heroGreeting').textContent = greeting;
+}
+
+function renderDayStrip(){
+  const strip = document.getElementById('dayStrip');
+  const centerDate = new Date(currentDate);
+  const items = [];
+  for(let offset=-3; offset<=3; offset++){
+    const d = new Date(centerDate);
+    d.setDate(d.getDate()+offset);
+    const key = fmtKey(d);
+    const hasEvents = !!(SAMPLE_EVENTS[key] && SAMPLE_EVENTS[key].length);
+    const isActive = offset === 0;
+    items.push(`
+      <div class="day-strip-item ${isActive?'active':''} ${hasEvents?'has-events':''}" data-key="${key}" onclick="jumpToDay('${key}')">
+        <span class="ds-dow">${DAY_NAMES[d.getDay()].slice(0,3)}</span>
+        <span class="ds-num">${d.getDate()}</span>
+        <span class="ds-dot"></span>
+      </div>
+    `);
+  }
+  strip.innerHTML = items.join('');
+  // Center the active day in the scrollable strip.
+  requestAnimationFrame(() => {
+    const activeEl = strip.querySelector('.day-strip-item.active');
+    if(activeEl) activeEl.scrollIntoView({ block: 'nearest', inline: 'center' });
+  });
+}
+
 function render(){
+  renderHero();
+  renderDayStrip();
+
   const key = fmtKey(currentDate);
   document.getElementById('datePicker').value = key;
   document.getElementById('dayName').textContent = DAY_NAMES[currentDate.getDay()];
@@ -1854,7 +2018,11 @@ document.getElementById('nextDay').onclick = () => {
   render();
 };
 document.getElementById('todayBtn').onclick = () => {
-  currentDate = new Date("2026-06-17T00:00:00");
+  currentDate = new Date();
+  render();
+};
+document.getElementById('todayBtnHero').onclick = () => {
+  currentDate = new Date();
   render();
 };
 document.getElementById('datePicker').onchange = (e) => {
@@ -1900,7 +2068,7 @@ function switchSection(section){
 let currentView = 'day';
 let monthSubView = 'grid';
 let monthCursor = new Date("2026-06-01T00:00:00");
-const TODAY_KEY = "2026-06-17";
+const TODAY_KEY = fmtKey(new Date());
 
 function eventsForMonth(year, month){
   const out = {};
@@ -2120,7 +2288,9 @@ document.getElementById('searchClearBtn').addEventListener('click', () => {
 });
 document.addEventListener('click', (e) => {
   const wrap = document.querySelector('.search-bar-wrap');
-  if(wrap && !wrap.contains(e.target)){
+  const results = document.getElementById('searchResults');
+  const clickedInside = (wrap && wrap.contains(e.target)) || (results && results.contains(e.target));
+  if(!clickedInside){
     document.getElementById('searchResults').style.display = 'none';
   }
 });
@@ -2272,14 +2442,12 @@ function syncSignInButtons(){
   document.getElementById('addBtnMonth').style.display = visible;
   document.getElementById('addBtnRange').style.display = visible;
   document.getElementById('tabCetak').style.display = canEdit ? '' : 'none';
+  document.getElementById('tabAddCenter').style.display = canEdit ? '' : 'none';
 
   const badgeHtml = `<i class="g-icon">G</i> ${currentUser.email}`;
-  const badgeClass = canEdit ? 'user-badge editor' : 'user-badge';
-  ['userBadge','userBadgeMonth','userBadgeRange'].forEach(id=>{
-    const el = document.getElementById(id);
-    el.className = badgeClass;
-    el.innerHTML = badgeHtml;
-  });
+  const badgeEl = document.getElementById('userBadge');
+  badgeEl.className = canEdit ? 'user-badge editor' : 'user-badge';
+  badgeEl.innerHTML = badgeHtml;
 }
 document.getElementById('addBtnMonth').onclick = openModal;
 
