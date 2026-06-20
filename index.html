@@ -2,8 +2,17 @@
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LPBS — Aktiviti Harian</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B3A6B">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LPBS">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -41,11 +50,6 @@
     margin:0 auto;
     padding:0 24px 80px;
   }
-  header.top{
-    padding:48px 0 28px;
-    border-bottom:1px solid var(--line);
-    margin-bottom:8px;
-  }
   .eyebrow{
     font-size:12px;
     letter-spacing:0.14em;
@@ -53,19 +57,6 @@
     color:var(--paddy-light);
     font-weight:600;
     margin:0 0 10px;
-  }
-  h1{
-    font-family:'Fraunces',serif;
-    font-weight:500;
-    font-size:34px;
-    margin:0 0 6px;
-    color:var(--paddy);
-    letter-spacing:-0.01em;
-  }
-  .sub{
-    color:var(--ink-soft);
-    font-size:15px;
-    margin:0;
   }
   .datebar{
     display:flex;
@@ -460,55 +451,79 @@
     padding-top:0;
     border-top:none;
   }
-  .back-btn{
-    border:1px solid var(--sage-line);
-    background:var(--bg-card);
-    color:var(--ink-soft);
-    font-family:'Inter',sans-serif;
-    font-size:13px;
+  .app-header{
+    position:sticky;
+    top:0;
+    z-index:30;
+    background:var(--bg);
+    border-bottom:1px solid var(--line);
+    padding:14px 20px;
+    margin:0 -24px;
+  }
+  .app-header-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    max-width:832px;
+    margin:0 auto;
+  }
+  .app-brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .app-brand-mark{
+    font-family:'Fraunces',serif;
     font-weight:600;
-    padding:8px 16px;
-    border-radius:8px;
-    cursor:pointer;
-    margin-bottom:24px;
+    font-size:13px;
+    letter-spacing:0.04em;
+    color:#fff;
+    background:var(--paddy);
+    padding:4px 9px;
+    border-radius:6px;
   }
-  .back-btn:hover{background:var(--amber-bg); border-color:var(--amber); color:var(--amber-text);}
-  .home-menu{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
-    gap:20px;
-    margin-top:32px;
-  }
-  .menu-card{
-    background:var(--bg-card);
-    border:1px solid var(--line);
-    border-radius:16px;
-    padding:32px 26px;
-    cursor:pointer;
-    transition:border-color .15s, box-shadow .15s, transform .15s;
-  }
-  .menu-card:hover{
-    border-color:var(--paddy-light);
-    box-shadow:0 6px 24px rgba(27,58,107,0.1);
-    transform:translateY(-2px);
-  }
-  .menu-card-icon{
-    font-size:34px;
-    margin-bottom:14px;
-  }
-  .menu-card h3{
+  .app-brand-title{
     font-family:'Fraunces',serif;
     font-weight:500;
-    font-size:20px;
-    color:var(--paddy);
-    margin:0 0 8px;
+    font-size:17px;
+    color:var(--ink);
   }
-  .menu-card p{
-    font-size:13.5px;
-    color:var(--ink-soft);
-    line-height:1.5;
-    margin:0;
+  .app-content{
+    padding-bottom:90px;
   }
+  .bottom-tabs{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    z-index:40;
+    background:var(--bg-card);
+    border-top:1px solid var(--line);
+    display:flex;
+    justify-content:center;
+    gap:4px;
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 16px rgba(0,0,0,0.04);
+  }
+  .tab-btn{
+    flex:1;
+    max-width:130px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:6px 8px;
+    border-radius:10px;
+    color:var(--sage);
+    transition:color .15s, background .15s;
+  }
+  .tab-btn:hover{background:var(--bg);}
+  .tab-btn.active{color:var(--paddy);}
+  .tab-icon{font-size:20px; line-height:1;}
+  .tab-label{font-size:11px; font-weight:600; letter-spacing:0.01em;}
   .analytics-head{
     display:flex;
     justify-content:space-between;
@@ -1173,36 +1188,23 @@
 </div>
 
 <div class="app" id="mainApp" style="display:none;">
-  <header class="top">
-    <p class="eyebrow">Lembaga Padi dan Beras Sabah</p>
-    <h1 id="pageTitle">Papar Aktiviti Harian</h1>
-    <p class="sub" id="pageSub">Gambaran keseluruhan jadual dan program LPBS bagi tarikh yang dipilih.</p>
+  <header class="app-header">
+    <div class="app-header-row">
+      <div class="app-brand">
+        <span class="app-brand-mark">LPBS</span>
+        <span class="app-brand-title" id="pageTitle">Papar Aktiviti</span>
+      </div>
+    </div>
   </header>
 
-  <div id="sectionHome" class="home-menu">
-    <div class="menu-card" id="menuCardAktiviti" onclick="switchSection('aktiviti')">
-      <div class="menu-card-icon">&#128197;</div>
-      <h3>Papar Aktiviti</h3>
-      <p>Lihat jadual harian, julat tarikh, atau pandangan bulanan bagi aktiviti LPBS.</p>
-    </div>
-    <div class="menu-card" id="menuCardAnalitik" onclick="switchSection('analitik')">
-      <div class="menu-card-icon">&#128202;</div>
-      <h3>Analitik</h3>
-      <p>Taburan jenis aktiviti mengikut hari, bulan, atau tahun.</p>
-    </div>
-    <div class="menu-card" id="menuCardCetak" onclick="switchSection('cetak')" style="display:none;">
-      <div class="menu-card-icon">&#128190;</div>
-      <h3>Cetak / Eksport</h3>
-      <p>Jana senarai aktiviti dalam format PDF untuk tempoh tertentu.</p>
-    </div>
-  </div>
+  <div class="app-content">
 
-  <div id="sectionAktiviti" style="display:none;">
-  <button class="back-btn" onclick="switchSection('home')">&#8249; Kembali ke menu</button>
+  <div id="sectionAktiviti">
 
   <div class="view-switch-row">
     <div class="period-toggle" id="viewToggle">
       <button class="period-btn active" data-view="day">Hari</button>
+
       <button class="period-btn" data-view="month">Bulan</button>
     </div>
     <div class="period-toggle" id="daySubToggle">
@@ -1262,7 +1264,6 @@
   </div>
 
   <div id="sectionAnalitik" style="display:none;">
-  <button class="back-btn" onclick="switchSection('home')">&#8249; Kembali ke menu</button>
 
   <section class="analytics no-border-top">
     <div class="analytics-head">
@@ -1284,7 +1285,6 @@
   </div>
 
   <div id="sectionCetak" style="display:none;">
-  <button class="back-btn" onclick="switchSection('home')">&#8249; Kembali ke menu</button>
 
   <section class="analytics no-border-top">
     <div class="print-section" id="printSection">
@@ -1305,6 +1305,22 @@
   </div>
 
   <footer>Data disegerakkan terus daripada Kalendar Rasmi LPBS &middot; Google Calendar</footer>
+  </div>
+
+  <nav class="bottom-tabs" id="bottomTabs">
+    <button class="tab-btn active" id="tabAktiviti" onclick="switchSection('aktiviti')">
+      <span class="tab-icon">&#128197;</span>
+      <span class="tab-label">Aktiviti</span>
+    </button>
+    <button class="tab-btn" id="tabAnalitik" onclick="switchSection('analitik')">
+      <span class="tab-icon">&#128202;</span>
+      <span class="tab-label">Analitik</span>
+    </button>
+    <button class="tab-btn" id="tabCetak" onclick="switchSection('cetak')" style="display:none;">
+      <span class="tab-icon">&#128190;</span>
+      <span class="tab-label">Cetak</span>
+    </button>
+  </nav>
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
@@ -1750,25 +1766,27 @@ document.getElementById('datePicker').onchange = (e) => {
   render();
 };
 
-let appSection = 'home'; // 'home' | 'aktiviti' | 'analitik' | 'cetak'
+let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'cetak'
 
 const SECTION_TITLES = {
-  home: { title: 'Papar Aktiviti Harian', sub: 'Pilih bahagian yang ingin anda lihat di bawah.' },
-  aktiviti: { title: 'Papar Aktiviti', sub: 'Gambaran keseluruhan jadual dan program LPBS bagi tarikh yang dipilih.' },
-  analitik: { title: 'Analitik', sub: 'Taburan jenis aktiviti mengikut tempoh yang dipilih.' },
-  cetak: { title: 'Cetak / Eksport', sub: 'Jana senarai aktiviti dalam format PDF untuk tempoh tertentu.' }
+  aktiviti: { title: 'Papar Aktiviti' },
+  analitik: { title: 'Analitik' },
+  cetak: { title: 'Cetak / Eksport' }
 };
 
 function switchSection(section){
   appSection = section;
-  ['Home','Aktiviti','Analitik','Cetak'].forEach(name=>{
+  ['Aktiviti','Analitik','Cetak'].forEach(name=>{
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
+  ['tabAktiviti','tabAnalitik','tabCetak'].forEach(id=>{
+    const tab = document.getElementById(id);
+    if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
+  });
 
-  const titles = SECTION_TITLES[section] || SECTION_TITLES.home;
+  const titles = SECTION_TITLES[section] || SECTION_TITLES.aktiviti;
   document.getElementById('pageTitle').textContent = titles.title;
-  document.getElementById('pageSub').textContent = titles.sub;
 
   // Lazily trigger the right render when entering a section, so data is fresh.
   if(section === 'aktiviti'){
@@ -2077,7 +2095,7 @@ function syncSignInButtons(){
   document.getElementById('addBtn').style.display = visible;
   document.getElementById('addBtnMonth').style.display = visible;
   document.getElementById('addBtnRange').style.display = visible;
-  document.getElementById('menuCardCetak').style.display = canEdit ? '' : 'none';
+  document.getElementById('tabCetak').style.display = canEdit ? '' : 'none';
 
   const badgeHtml = `<i class="g-icon">G</i> ${currentUser.email}`;
   const badgeClass = canEdit ? 'user-badge editor' : 'user-badge';
@@ -2445,6 +2463,13 @@ window.addEventListener('load', () => {
       initGoogleAuth();
     }
   }, 100);
+
+  // Register service worker for PWA installability (Add to Home Screen).
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(err => {
+      console.error('Service worker registration failed:', err);
+    });
+  }
 });
 
 document.getElementById('gateSigninBtn').addEventListener('click', () => {
