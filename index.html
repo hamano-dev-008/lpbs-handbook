@@ -489,6 +489,63 @@
   .tab-icon svg{width:21px; height:21px;}
   .tab-add-center svg{width:24px; height:24px;}
   .tab-label{font-size:11px; font-weight:600; letter-spacing:0.01em;}
+  .lagi-overlay{
+    display:none;
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(26,26,24,0.45);
+    z-index:45;
+  }
+  .lagi-overlay.open{display:block;}
+  .lagi-sheet{
+    display:none;
+    position:fixed;
+    left:0;right:0;
+    bottom:0;
+    background:var(--bg-card);
+    border-radius:18px 18px 0 0;
+    z-index:46;
+    padding:10px 12px calc(14px + env(safe-area-inset-bottom));
+    box-shadow:0 -8px 24px rgba(0,0,0,0.12);
+    max-width:520px;
+    margin:0 auto;
+  }
+  .lagi-sheet.open{display:block;}
+  .lagi-sheet-handle{
+    width:36px;
+    height:4px;
+    border-radius:2px;
+    background:var(--sage-line);
+    margin:4px auto 14px;
+  }
+  .lagi-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    width:100%;
+    background:none;
+    border:none;
+    text-align:left;
+    padding:12px 10px;
+    border-radius:10px;
+    cursor:pointer;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+  }
+  .lagi-row:hover{background:var(--bg);}
+  .lagi-row-icon{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:38px;
+    height:38px;
+    border-radius:10px;
+    background:var(--bg);
+    color:var(--paddy);
+    flex-shrink:0;
+  }
+  .lagi-row-icon svg{width:20px; height:20px;}
+  .lagi-row-label{font-size:14.5px; font-weight:600;}
   .analytics-head{
     display:flex;
     justify-content:space-between;
@@ -1863,15 +1920,24 @@
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 4.002c2.175.012 3.353.109 4.121.877C21 5.758 21 7.172 21 10v6c0 2.829 0 4.243-.879 5.122C19.243 22 17.828 22 15 22H9c-2.828 0-4.243 0-5.121-.878C3 20.242 3 18.829 3 16v-6c0-2.828 0-4.242.879-5.121c.768-.768 1.946-.865 4.121-.877"/><path stroke-linecap="round" d="M10.5 14H17M7 14h.5M7 10.5h.5m-.5 7h.5m3-7H17m-6.5 7H17"/><path d="M8 3.5A1.5 1.5 0 0 1 9.5 2h5A1.5 1.5 0 0 1 16 3.5v1A1.5 1.5 0 0 1 14.5 6h-5A1.5 1.5 0 0 1 8 4.5z"/></g></svg></span>
       <span class="tab-label">Cetak</span>
     </button>
-    <button class="tab-btn" id="tabKehadiran" onclick="switchSection('kehadiran')" style="display:none;">
-      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="6" r="4"/><path stroke-linecap="round" d="M15 9a3 3 0 1 0 0-6"/><ellipse cx="9" cy="17" rx="7" ry="4"/><path stroke-linecap="round" d="M18 14c1.754.385 3 1.359 3 2.5c0 1.03-1.014 1.923-2.5 2.37"/></g></svg></span>
-      <span class="tab-label">Kehadiran</span>
-    </button>
-    <button class="tab-btn" id="tabMinit" onclick="switchSection('minit')" style="display:none;">
-      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L16 18.5l-2 2-2-2-2 2-2-2-2.5 2V5A1.5 1.5 0 0 1 7 3.5Z"/><path stroke-linecap="round" d="M9 8h6M9 11.5h6M9 15h3"/></g></svg></span>
-      <span class="tab-label">Minit</span>
+    <button class="tab-btn" id="tabLagi" onclick="toggleLagiMenu()" style="display:none;">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></g></svg></span>
+      <span class="tab-label">Lagi</span>
     </button>
   </nav>
+
+  <div class="lagi-overlay" id="lagiOverlay" onclick="closeLagiMenu()"></div>
+  <div class="lagi-sheet" id="lagiSheet">
+    <div class="lagi-sheet-handle"></div>
+    <button class="lagi-row" id="lagiRowKehadiran" onclick="openLagiSection('kehadiran')" style="display:none;">
+      <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="6" r="4"/><path stroke-linecap="round" d="M15 9a3 3 0 1 0 0-6"/><ellipse cx="9" cy="17" rx="7" ry="4"/><path stroke-linecap="round" d="M18 14c1.754.385 3 1.359 3 2.5c0 1.03-1.014 1.923-2.5 2.37"/></g></svg></span>
+      <span class="lagi-row-label">Kehadiran Staf</span>
+    </button>
+    <button class="lagi-row" id="lagiRowMinit" onclick="openLagiSection('minit')" style="display:none;">
+      <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L16 18.5l-2 2-2-2-2 2-2-2-2.5 2V5A1.5 1.5 0 0 1 7 3.5Z"/><path stroke-linecap="round" d="M9 8h6M9 11.5h6M9 15h3"/></g></svg></span>
+      <span class="lagi-row-label">Minit Mesyuarat</span>
+    </button>
+  </div>
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
@@ -2954,10 +3020,12 @@ function switchSection(section){
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
-  ['tabAktiviti','tabAnalitik','tabCetak','tabKehadiran','tabMinit'].forEach(id=>{
+  ['tabAktiviti','tabAnalitik','tabCetak'].forEach(id=>{
     const tab = document.getElementById(id);
     if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
   });
+  const tabLagi = document.getElementById('tabLagi');
+  if(tabLagi) tabLagi.classList.toggle('active', section === 'kehadiran' || section === 'minit');
 
   const titles = SECTION_TITLES[section] || SECTION_TITLES.aktiviti;
 
@@ -2985,6 +3053,27 @@ function switchSection(section){
   }
 
   window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function toggleLagiMenu(){
+  const isOpen = document.getElementById('lagiSheet').classList.contains('open');
+  if(isOpen) closeLagiMenu();
+  else openLagiMenu();
+}
+
+function openLagiMenu(){
+  document.getElementById('lagiOverlay').classList.add('open');
+  document.getElementById('lagiSheet').classList.add('open');
+}
+
+function closeLagiMenu(){
+  document.getElementById('lagiOverlay').classList.remove('open');
+  document.getElementById('lagiSheet').classList.remove('open');
+}
+
+function openLagiSection(section){
+  closeLagiMenu();
+  switchSection(section);
 }
 
 let currentView = 'day';
@@ -3367,11 +3456,14 @@ function syncSignInButtons(){
   document.getElementById('tabAddCenter').style.display = canEdit ? '' : 'none';
 
   const canEditKehadiran = isAllowedKehadiranEditor(currentUser.email);
-  document.getElementById('tabKehadiran').style.display = canEditKehadiran ? '' : 'none';
   document.getElementById('kehadiranForm').style.display = canEditKehadiran ? '' : 'none';
+  document.getElementById('lagiRowKehadiran').style.display = canEditKehadiran ? '' : 'none';
 
   const canEditMinit = isAllowedMinitEditor(currentUser.email);
-  document.getElementById('tabMinit').style.display = canEditMinit ? '' : 'none';
+  document.getElementById('lagiRowMinit').style.display = canEditMinit ? '' : 'none';
+
+  document.getElementById('tabLagi').style.display = (canEditKehadiran || canEditMinit) ? '' : 'none';
+  if(!canEditKehadiran && !canEditMinit) closeLagiMenu();
 
   const namePart = currentUser.email.split('@')[0];
   const initial = namePart.charAt(0).toUpperCase();
