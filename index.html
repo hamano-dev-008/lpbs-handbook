@@ -608,6 +608,49 @@
   .task-status-badge.status-belum-mula{background:var(--bg); color:var(--ink-soft); border:1px solid var(--sage-line);}
   .task-status-badge.status-sedang-dijalankan{background:var(--amber-bg); color:var(--amber-text);}
   .task-status-badge.status-selesai{background:#DCE7F0; color:var(--paddy-light);}
+  .task-card.task-highlight{box-shadow:0 0 0 3px var(--amber); transition:box-shadow .3s;}
+  .tag-pill-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:10px;
+  }
+  .tag-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--bg);
+    border:1px solid var(--sage-line);
+    border-radius:999px;
+    padding:5px 10px 5px 12px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  .tag-pill-remove{
+    cursor:pointer;
+    color:var(--sage);
+    font-weight:700;
+    font-size:14px;
+    line-height:1;
+  }
+  .tag-pill-remove:hover{color:var(--red-text);}
+  .notif-dot{
+    display:inline-block;
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:var(--red);
+    margin-right:5px;
+    vertical-align:middle;
+  }
+  .notif-panel-footer{
+    padding:10px 16px;
+    font-size:11px;
+    color:var(--sage);
+    text-align:center;
+    border-top:1px solid var(--line);
+  }
   .analytics-head{
     display:flex;
     justify-content:space-between;
@@ -1730,9 +1773,9 @@
           <h1 class="hero-v2-name" id="heroUserName">Staf LPBS</h1>
         </div>
       </div>
-      <button class="hero-v2-bell" aria-label="Notifikasi">
+      <button class="hero-v2-bell" aria-label="Notifikasi" onclick="toggleNotifPanel()">
         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.75 9v.704c0 .845.24 1.671.692 2.374l1.108 1.723c1.011 1.574.239 3.713-1.52 4.21a25.8 25.8 0 0 1-14.06 0c-1.759-.497-2.531-2.636-1.52-4.21l1.108-1.723a4.4 4.4 0 0 0 .693-2.374V9c0-3.866 3.022-7 6.749-7s6.75 3.134 6.75 7" opacity=".5"/><path fill="currentColor" d="M12.75 6a.75.75 0 0 0-1.5 0v4a.75.75 0 0 0 1.5 0zM7.243 18.545a5.002 5.002 0 0 0 9.513 0c-3.145.59-6.367.59-9.513 0"/></svg>
-        <span class="hero-v2-bell-dot"></span>
+        <span class="hero-v2-bell-dot" id="heroBellDot" style="display:none;"></span>
       </button>
     </div>
     <div class="search-bar-wrap hero-search">
@@ -1745,6 +1788,7 @@
       </div>
     </div>
   </header>
+  <div class="search-results" id="notifPanel" style="display:none;"></div>
   <div class="search-results" id="searchResults" style="display:none;"></div>
 
   <div class="app-content">
@@ -2140,6 +2184,12 @@
           </select>
         </div>
       </div>
+
+      <label class="field-label">Tag Staf</label>
+      <input type="text" id="task-tag-input" placeholder="Taip nama atau emel staf...">
+      <div class="search-results" id="taskTagSuggestions" style="display:none;"></div>
+      <div class="tag-pill-row" id="taskTagPills"></div>
+
       <p class="kh-note" id="taskNote"></p>
     </div>
     <div class="modal-foot">
@@ -2161,7 +2211,9 @@ const ALLOWLIST_SHEET_RANGE = "Senarai!A2:B1000";
 const KEHADIRAN_SHEET_ID = "1lGD1XnlEuOGHHnfrUnaqaMPbYMgfnBvkFTXRsNYNkmg";
 const KEHADIRAN_SHEET_RANGE = "Kehadiran!A2:D1000";
 const TASK_SHEET_ID = "1o7S2umTuo9Njjt8AAqsK5F9cXafmkz_NzKlE7UQKjo4";
-const TASK_SHEET_RANGE = "Tugasan!A2:F1000";
+const TASK_SHEET_RANGE = "Tugasan!A2:G1000";
+const NOTIF_READ_SHEET_ID = "1hKBAZXg-ueqWgHDOLGRfP3EkulRcmbLzq6FvMpOhKTA";
+const NOTIF_READ_SHEET_RANGE = "Dibaca!A2:B1000";
 const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets";
 
 // Hanya 3 akaun ini boleh mengedit Kehadiran Staf (berasingan daripada senarai editor umum).
@@ -2864,10 +2916,11 @@ document.getElementById('minitGenerateBtn').addEventListener('click', generateMi
 // ============================================================
 // TUGASAN — baca/tulis terus ke Google Sheet
 // ============================================================
-let taskRecords = []; // { rowIndex, tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir }
+let taskRecords = []; // { rowIndex, tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir, tagStaf }
 let taskLoaded = false;
 let taskStatusFilter = 'semua'; // 'semua' | 'Belum Mula' | 'Sedang Dijalankan' | 'Selesai'
 const TASK_STATUS_CYCLE = ['Belum Mula', 'Sedang Dijalankan', 'Selesai'];
+let newTaskTags = []; // emails picked in the "Tambah Tugasan" modal, before save
 
 function taskStatusSlug(status){
   return (status || 'Belum Mula').toLowerCase().replace(/\s+/g, '-');
@@ -2888,7 +2941,7 @@ async function loadTaskFromSheet(){
     const rows = data.values || [];
 
     taskRecords = rows.map((row, idx) => {
-      const [tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir] = row;
+      const [tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir, tagStafRaw] = row;
       if(!tajuk) return null;
       return {
         rowIndex: idx + 2, // +2 because range starts at A2 and sheet rows are 1-indexed
@@ -2897,12 +2950,14 @@ async function loadTaskFromSheet(){
         bahagian: bahagian || '',
         keutamaan: keutamaan || 'Sederhana',
         status: status || 'Belum Mula',
-        tarikhAkhir: tarikhAkhir || ''
+        tarikhAkhir: tarikhAkhir || '',
+        tagStaf: (tagStafRaw || '').split(',').map(s => s.trim()).filter(Boolean)
       };
     }).filter(Boolean);
 
     taskLoaded = true;
     renderTaskList();
+    refreshNotifBell();
   }catch(e){
     console.error('loadTaskFromSheet failed:', e);
     wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan tugasan</div>Sila semak sambungan atau cuba semula.</div>`;
@@ -2940,6 +2995,7 @@ function taskCardHtml(t, canEdit){
 function renderTaskList(){
   const wrap = document.getElementById('taskListWrap');
   const canEdit = currentUser && isAllowedTaskEditor(currentUser.email);
+  refreshNotifBell();
 
   const counts = {
     semua: taskRecords.length,
@@ -3011,7 +3067,7 @@ function deleteTaskPrompt(rowIndex){
 
   const onExpire = async () => {
     try{
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent('Tugasan!A' + rowIndex + ':F' + rowIndex)}:clear`;
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent('Tugasan!A' + rowIndex + ':G' + rowIndex)}:clear`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` }
@@ -3028,6 +3084,61 @@ function deleteTaskPrompt(rowIndex){
   pendingDeletes[uid] = { timeoutId, onUndo };
 }
 
+function getStaffSuggestionList(){
+  const set = VIEWER_SET || new Set();
+  return Array.from(set).sort();
+}
+
+function renderTaskTagSuggestions(query){
+  const box = document.getElementById('taskTagSuggestions');
+  const q = query.trim().toLowerCase();
+  if(!q){
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+  const matches = getStaffSuggestionList()
+    .filter(email => email.includes(q) && !newTaskTags.includes(email))
+    .slice(0, 8);
+
+  if(matches.length === 0){
+    box.innerHTML = '<div class="search-no-results">Tiada staf dijumpai.</div>';
+    box.style.display = '';
+    return;
+  }
+  box.innerHTML = matches.map(email => `
+    <div class="search-result-item" onclick="addTaskTag('${email}')">
+      <div class="sr-title">${email.split('@')[0]}</div>
+      <div class="sr-meta">${email}</div>
+    </div>
+  `).join('');
+  box.style.display = '';
+}
+
+function renderTaskTagPills(){
+  const wrap = document.getElementById('taskTagPills');
+  wrap.innerHTML = newTaskTags.map(email => `
+    <span class="tag-pill">${email.split('@')[0]}<span class="tag-pill-remove" onclick="removeTaskTag('${email}')">&times;</span></span>
+  `).join('');
+}
+
+function addTaskTag(email){
+  if(!newTaskTags.includes(email)) newTaskTags.push(email);
+  document.getElementById('task-tag-input').value = '';
+  document.getElementById('taskTagSuggestions').style.display = 'none';
+  renderTaskTagPills();
+}
+
+function removeTaskTag(email){
+  newTaskTags = newTaskTags.filter(e => e !== email);
+  renderTaskTagPills();
+}
+
+document.getElementById('task-tag-input').addEventListener('input', (e) => renderTaskTagSuggestions(e.target.value));
+document.getElementById('task-tag-input').addEventListener('focus', (e) => {
+  if(e.target.value.trim()) renderTaskTagSuggestions(e.target.value);
+});
+
 function openTaskModal(){
   if(!currentUser || !isAllowedTaskEditor(currentUser.email)) return;
   document.getElementById('task-tajuk').value = '';
@@ -3037,6 +3148,10 @@ function openTaskModal(){
   document.getElementById('task-keutamaan').value = 'Sederhana';
   document.getElementById('task-status').value = 'Belum Mula';
   document.getElementById('taskNote').textContent = '';
+  document.getElementById('task-tag-input').value = '';
+  document.getElementById('taskTagSuggestions').style.display = 'none';
+  newTaskTags = [];
+  renderTaskTagPills();
   document.getElementById('taskModalOverlay').classList.add('open');
 }
 
@@ -3051,6 +3166,7 @@ async function saveNewTask(){
   const tarikhAkhir = document.getElementById('task-tarikh-akhir').value;
   const keutamaan = document.getElementById('task-keutamaan').value;
   const status = document.getElementById('task-status').value;
+  const tagStaf = newTaskTags.join(',');
   const note = document.getElementById('taskNote');
   const btn = document.getElementById('taskModalSave');
 
@@ -3064,11 +3180,11 @@ async function saveNewTask(){
   note.textContent = '';
 
   try{
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent('Tugasan!A:F')}:append?valueInputOption=USER_ENTERED`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent('Tugasan!A:G')}:append?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ values: [[tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir]] })
+      body: JSON.stringify({ values: [[tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir, tagStaf]] })
     });
     if(!res.ok){
       const errData = await res.json().catch(()=>({}));
@@ -3089,6 +3205,155 @@ document.getElementById('taskModalCancel').onclick = closeTaskModal;
 document.getElementById('taskModalSave').addEventListener('click', saveNewTask);
 const taskModalOverlay = document.getElementById('taskModalOverlay');
 taskModalOverlay.onclick = (e) => { if(e.target === taskModalOverlay) closeTaskModal(); };
+
+// ============================================================
+// NOTIFIKASI TUGASAN — kesedaran dalam aplikasi sahaja.
+// Ini BUKAN push notification peranti (PWA ini tidak mendaftar
+// sebarang perkhidmatan push); ia hanya memaparkan loceng/panel
+// dalam aplikasi apabila pengguna log masuk dan melayari semula.
+// Status "telah dibaca" disimpan di Google Sheet (bukan localStorage)
+// supaya konsisten merentasi peranti yang sama bagi satu akaun.
+// ============================================================
+let notifReadRecords = []; // { rowIndex, emel, ids: string[] }
+let notifReadLoaded = false;
+let currentUserReadRowIndex = null; // row in Dibaca sheet for this user, or null if none yet
+let currentUserReadIds = new Set(); // Set<string> of task rowIndex values already read
+
+async function loadNotifReadFromSheet(){
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${NOTIF_READ_SHEET_ID}/values/${encodeURIComponent(NOTIF_READ_SHEET_RANGE)}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if(!res.ok) throw new Error('status ' + res.status);
+    const data = await res.json();
+    const rows = data.values || [];
+
+    notifReadRecords = rows.map((row, idx) => {
+      const [emel, idList] = row;
+      if(!emel) return null;
+      return {
+        rowIndex: idx + 2,
+        emel: emel,
+        ids: (idList || '').split(',').map(s => s.trim()).filter(Boolean)
+      };
+    }).filter(Boolean);
+
+    notifReadLoaded = true;
+    const mine = notifReadRecords.find(r => r.emel.toLowerCase() === ((currentUser && currentUser.email) || '').toLowerCase());
+    currentUserReadRowIndex = mine ? mine.rowIndex : null;
+    currentUserReadIds = new Set(mine ? mine.ids : []);
+    refreshNotifBell();
+  }catch(e){
+    console.error('loadNotifReadFromSheet failed:', e);
+    // Fail open: treat as "nothing read yet" rather than blocking notifications entirely.
+    currentUserReadRowIndex = null;
+    currentUserReadIds = new Set();
+  }
+}
+
+function getTaggedTasksForCurrentUser(){
+  if(!currentUser) return [];
+  const email = currentUser.email.toLowerCase();
+  return taskRecords
+    .filter(t => (t.tagStaf || []).some(e => e.toLowerCase() === email))
+    .sort((a, b) => b.rowIndex - a.rowIndex);
+}
+
+function isTaskReadByCurrentUser(rowIndex){
+  return currentUserReadIds.has(String(rowIndex));
+}
+
+function refreshNotifBell(){
+  const dot = document.getElementById('heroBellDot');
+  if(!dot) return;
+  const tagged = getTaggedTasksForCurrentUser();
+  const hasUnread = tagged.some(t => !isTaskReadByCurrentUser(t.rowIndex));
+  dot.style.display = hasUnread ? '' : 'none';
+}
+
+function renderNotifPanel(){
+  const panel = document.getElementById('notifPanel');
+  const tagged = getTaggedTasksForCurrentUser();
+
+  let body;
+  if(tagged.length === 0){
+    body = '<div class="search-no-results">Tiada notifikasi.</div>';
+  } else {
+    body = tagged.map(t => {
+      const unread = !isTaskReadByCurrentUser(t.rowIndex);
+      const dueLabel = t.tarikhAkhir ? `Tarikh akhir: ${t.tarikhAkhir}` : 'Tiada tarikh akhir';
+      return `
+        <div class="search-result-item" onclick="openNotifTask(${t.rowIndex})">
+          <div class="sr-date">${unread ? '<span class="notif-dot"></span>' : ''}${dueLabel}</div>
+          <div class="sr-title">${t.tajuk}</div>
+          <div class="sr-meta">${t.status}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  panel.innerHTML = body + '<div class="notif-panel-footer">Makluman dalam aplikasi sahaja &middot; bukan push notification peranti.</div>';
+}
+
+function toggleNotifPanel(){
+  const panel = document.getElementById('notifPanel');
+  document.getElementById('searchResults').style.display = 'none';
+  const willOpen = panel.style.display === 'none';
+  if(!willOpen){
+    panel.style.display = 'none';
+    return;
+  }
+  renderNotifPanel();
+  panel.style.display = '';
+}
+
+async function markTaskAsRead(rowIndex){
+  if(!currentUser) return;
+  const idStr = String(rowIndex);
+  if(currentUserReadIds.has(idStr)) return; // already read, nothing to write
+
+  currentUserReadIds.add(idStr); // optimistic
+  refreshNotifBell();
+
+  const idsList = Array.from(currentUserReadIds).join(',');
+  try{
+    if(currentUserReadRowIndex){
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${NOTIF_READ_SHEET_ID}/values/${encodeURIComponent('Dibaca!B' + currentUserReadRowIndex)}?valueInputOption=USER_ENTERED`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [[idsList]] })
+      });
+      if(!res.ok) throw new Error('status ' + res.status);
+    } else {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${NOTIF_READ_SHEET_ID}/values/${encodeURIComponent('Dibaca!A:B')}:append?valueInputOption=USER_ENTERED`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [[currentUser.email, idsList]] })
+      });
+      if(!res.ok) throw new Error('status ' + res.status);
+      await loadNotifReadFromSheet(); // refresh so we learn our new rowIndex for next time
+    }
+  }catch(e){
+    console.error('markTaskAsRead failed:', e);
+  }
+}
+
+async function openNotifTask(rowIndex){
+  document.getElementById('notifPanel').style.display = 'none';
+  await markTaskAsRead(rowIndex);
+  taskStatusFilter = 'semua';
+  switchSection('task');
+  await loadTaskFromSheet();
+  requestAnimationFrame(() => {
+    const card = document.querySelector(`.task-card[data-row="${rowIndex}"]`);
+    if(card){
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('task-highlight');
+      setTimeout(() => card.classList.remove('task-highlight'), 2000);
+    }
+  });
+}
 
 let currentUser = null; // { email, name } once signed in
 
@@ -3683,6 +3948,20 @@ document.addEventListener('click', (e) => {
   if(!clickedInside){
     document.getElementById('searchResults').style.display = 'none';
   }
+
+  const bell = document.querySelector('.hero-v2-bell');
+  const notifPanel = document.getElementById('notifPanel');
+  const clickedInsideNotif = (bell && bell.contains(e.target)) || (notifPanel && notifPanel.contains(e.target));
+  if(!clickedInsideNotif && notifPanel){
+    notifPanel.style.display = 'none';
+  }
+
+  const tagInput = document.getElementById('task-tag-input');
+  const tagBox = document.getElementById('taskTagSuggestions');
+  if(tagInput){
+    const clickedInsideTag = tagInput.contains(e.target) || (tagBox && tagBox.contains(e.target));
+    if(!clickedInsideTag && tagBox) tagBox.style.display = 'none';
+  }
 });
 document.getElementById('searchInput').addEventListener('focus', () => {
   if(document.getElementById('searchInput').value.trim()){
@@ -4197,6 +4476,9 @@ function attemptSignIn(email){
     syncSignInButtons();
     document.getElementById('timeline').innerHTML = '<div class="empty-state"><div class="big">Memuatkan data...</div>Sila tunggu sebentar.</div>';
     loadEventsFromGoogleCalendar();
+    // Loaded proactively (not gated by Task-editor access) so any tagged staff
+    // member sees their notification dot, even if they never open the Task section.
+    loadTaskFromSheet().then(() => loadNotifReadFromSheet());
   } else {
     showGateError(`Akaun "${email}" tidak dibenarkan mengakses sistem ini. Sila hubungi pentadbir LPBS.`);
     accessToken = null;
