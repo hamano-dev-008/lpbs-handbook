@@ -651,6 +651,56 @@
     text-align:center;
     border-top:1px solid var(--line);
   }
+  .staff-info-name{
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .staff-info-jawatan{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:1px;
+  }
+  .staff-info-email{
+    font-size:11px;
+    color:var(--sage);
+    margin-top:3px;
+  }
+  .tag-bulk-link{
+    display:inline-block;
+    margin-top:8px;
+    border:none;
+    background:none;
+    color:var(--paddy);
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    padding:0;
+  }
+  .tag-bulk-link:hover{text-decoration:underline;}
+  .staff-checklist{
+    max-height:340px;
+    overflow-y:auto;
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+  .staff-checklist-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:11px 14px;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+  }
+  .staff-checklist-row:last-child{border-bottom:none;}
+  .staff-checklist-row:hover{background:var(--bg);}
+  .staff-checklist-row input[type="checkbox"]{
+    width:17px;
+    height:17px;
+    flex-shrink:0;
+    accent-color:var(--paddy);
+  }
   .analytics-head{
     display:flex;
     justify-content:space-between;
@@ -2201,6 +2251,7 @@
       <label class="field-label">Tag Staf</label>
       <input type="text" id="task-tag-input" placeholder="Taip nama atau emel staf...">
       <div class="search-results" id="taskTagSuggestions" style="display:none;"></div>
+      <button type="button" class="tag-bulk-link" id="taskBulkTagBtn" onclick="openBulkTagModal()">Pilih beberapa staf</button>
       <div class="tag-pill-row" id="taskTagPills"></div>
 
       <p class="kh-note" id="taskNote"></p>
@@ -2212,6 +2263,22 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="bulkTagModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Pilih Beberapa Staf</h3>
+      <button class="modal-close" id="bulkTagModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="staff-checklist" id="bulkTagChecklist"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="cancel-btn" id="bulkTagModalCancel">Batal</button>
+      <button class="save-btn" id="bulkTagModalConfirm">Tambah Staf Dipilih</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // KONFIGURASI — Google OAuth & Kalendar
@@ -2219,7 +2286,7 @@
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
-const ALLOWLIST_SHEET_RANGE = "Senarai!A2:B1000";
+const ALLOWLIST_SHEET_RANGE = "Senarai!A2:D1000";
 // TODO: ganti dengan ID Sheet "LPBS Kehadiran Staf" sebenar selepas dicipta.
 const KEHADIRAN_SHEET_ID = "1lGD1XnlEuOGHHnfrUnaqaMPbYMgfnBvkFTXRsNYNkmg";
 const KEHADIRAN_SHEET_RANGE = "Kehadiran!A2:D1000";
@@ -2305,10 +2372,19 @@ let EDITOR_SET = null;
 let VIEWER_SET = null;
 let allowlistSource = 'belum dimuatkan'; // 'sheet' | 'fallback' | 'belum dimuatkan'
 
+// Lookup of staff display info keyed by lowercased email: { nama, jawatan }.
+// Populated from Senarai columns C/D (Nama Penuh, Jawatan). Many rows may not
+// have these filled in yet — callers must fall back gracefully (see
+// getStaffDisplayName()/getStaffDisplayLabel() below), never show "undefined".
+let STAFF_DIRECTORY = new Map();
+
 function buildFallbackSets(){
   EDITOR_SET = new Set(FALLBACK_EDITOR_ALLOWLIST.map(e=>e.toLowerCase()));
   VIEWER_SET = new Set([...FALLBACK_VIEW_ONLY_ALLOWLIST, ...FALLBACK_EDITOR_ALLOWLIST].map(e=>e.toLowerCase()));
   allowlistSource = 'fallback';
+  // No Nama Penuh/Jawatan data available in the fallback path — directory stays empty,
+  // so lookups simply fall back to email everywhere.
+  STAFF_DIRECTORY = new Map();
 }
 
 async function loadAllowlistFromSheet(){
@@ -2321,23 +2397,42 @@ async function loadAllowlistFromSheet(){
 
     const editors = new Set();
     const viewers = new Set();
+    const directory = new Map();
     rows.forEach(row => {
       const email = (row[0] || '').trim().toLowerCase();
       const role = (row[1] || '').trim().toLowerCase();
+      const nama = (row[2] || '').trim();
+      const jawatan = (row[3] || '').trim();
       if(!email) return;
       viewers.add(email);
       if(role === 'editor') editors.add(email);
+      directory.set(email, { nama, jawatan });
     });
 
     if(viewers.size === 0) throw new Error('Sheet returned no valid rows');
 
     EDITOR_SET = editors;
     VIEWER_SET = viewers;
+    STAFF_DIRECTORY = directory;
     allowlistSource = 'sheet';
   }catch(e){
     console.error('loadAllowlistFromSheet failed, using fallback list:', e);
     buildFallbackSets();
   }
+}
+
+// Best display name for an email: Nama Penuh if on file, else the email's
+// username portion, else the raw email. Never returns "undefined"/blank.
+function getStaffDisplayName(email){
+  const lower = (email || '').toLowerCase();
+  const entry = STAFF_DIRECTORY.get(lower);
+  if(entry && entry.nama) return entry.nama;
+  return lower ? lower.split('@')[0] : (email || '');
+}
+
+function getStaffJawatan(email){
+  const entry = STAFF_DIRECTORY.get((email || '').toLowerCase());
+  return (entry && entry.jawatan) || '';
 }
 
 // ============================================================
@@ -3099,7 +3194,19 @@ function deleteTaskPrompt(rowIndex){
 
 function getStaffSuggestionList(){
   const set = VIEWER_SET || new Set();
-  return Array.from(set).sort();
+  return Array.from(set).map(email => ({
+    email,
+    nama: getStaffDisplayName(email),
+    jawatan: getStaffJawatan(email)
+  })).sort((a, b) => a.nama.localeCompare(b.nama));
+}
+
+function staffInfoBlockHtml(s){
+  return `
+    <div class="staff-info-name">${escapeHtml(s.nama)}</div>
+    ${s.jawatan ? `<div class="staff-info-jawatan">${escapeHtml(s.jawatan)}</div>` : ''}
+    <div class="staff-info-email">${escapeHtml(s.email)}</div>
+  `;
 }
 
 function renderTaskTagSuggestions(query){
@@ -3111,7 +3218,8 @@ function renderTaskTagSuggestions(query){
     return;
   }
   const matches = getStaffSuggestionList()
-    .filter(email => email.includes(q) && !newTaskTags.includes(email))
+    .filter(s => !newTaskTags.includes(s.email) &&
+      (s.email.includes(q) || s.nama.toLowerCase().includes(q) || s.jawatan.toLowerCase().includes(q)))
     .slice(0, 8);
 
   if(matches.length === 0){
@@ -3119,10 +3227,9 @@ function renderTaskTagSuggestions(query){
     box.style.display = '';
     return;
   }
-  box.innerHTML = matches.map(email => `
-    <div class="search-result-item" onclick="addTaskTag('${email}')">
-      <div class="sr-title">${email.split('@')[0]}</div>
-      <div class="sr-meta">${email}</div>
+  box.innerHTML = matches.map(s => `
+    <div class="search-result-item" onclick="addTaskTag('${s.email}')">
+      ${staffInfoBlockHtml(s)}
     </div>
   `).join('');
   box.style.display = '';
@@ -3131,7 +3238,7 @@ function renderTaskTagSuggestions(query){
 function renderTaskTagPills(){
   const wrap = document.getElementById('taskTagPills');
   wrap.innerHTML = newTaskTags.map(email => `
-    <span class="tag-pill">${email.split('@')[0]}<span class="tag-pill-remove" onclick="removeTaskTag('${email}')">&times;</span></span>
+    <span class="tag-pill">${escapeHtml(getStaffDisplayName(email))}<span class="tag-pill-remove" onclick="removeTaskTag('${email}')">&times;</span></span>
   `).join('');
 }
 
@@ -3151,6 +3258,62 @@ document.getElementById('task-tag-input').addEventListener('input', (e) => rende
 document.getElementById('task-tag-input').addEventListener('focus', (e) => {
   if(e.target.value.trim()) renderTaskTagSuggestions(e.target.value);
 });
+
+// ============================================================
+// PILIH BEBERAPA STAF — checklist pukal untuk Tag Staf
+// ============================================================
+let bulkTagChecked = new Set();
+
+function openBulkTagModal(){
+  bulkTagChecked = new Set();
+  renderBulkTagChecklist();
+  document.getElementById('bulkTagModalOverlay').classList.add('open');
+}
+
+function closeBulkTagModal(){
+  document.getElementById('bulkTagModalOverlay').classList.remove('open');
+}
+
+function renderBulkTagChecklist(){
+  const wrap = document.getElementById('bulkTagChecklist');
+  const staff = getStaffSuggestionList();
+
+  if(staff.length === 0){
+    wrap.innerHTML = '<div class="search-no-results">Tiada staf dalam senarai akses.</div>';
+    return;
+  }
+
+  wrap.innerHTML = staff.map(s => {
+    const checked = newTaskTags.includes(s.email) || bulkTagChecked.has(s.email);
+    const alreadyTagged = newTaskTags.includes(s.email);
+    return `
+      <label class="staff-checklist-row">
+        <input type="checkbox" data-email="${s.email}" ${checked ? 'checked' : ''} ${alreadyTagged ? 'disabled' : ''} onchange="toggleBulkTagChecked('${s.email}', this.checked)">
+        <div>${staffInfoBlockHtml(s)}</div>
+      </label>
+    `;
+  }).join('');
+}
+
+function toggleBulkTagChecked(email, isChecked){
+  if(isChecked) bulkTagChecked.add(email);
+  else bulkTagChecked.delete(email);
+}
+
+function confirmBulkTag(){
+  bulkTagChecked.forEach(email => {
+    if(!newTaskTags.includes(email)) newTaskTags.push(email);
+  });
+  bulkTagChecked = new Set();
+  renderTaskTagPills();
+  closeBulkTagModal();
+}
+
+document.getElementById('bulkTagModalClose').onclick = closeBulkTagModal;
+document.getElementById('bulkTagModalCancel').onclick = closeBulkTagModal;
+document.getElementById('bulkTagModalConfirm').addEventListener('click', confirmBulkTag);
+const bulkTagModalOverlay = document.getElementById('bulkTagModalOverlay');
+bulkTagModalOverlay.onclick = (e) => { if(e.target === bulkTagModalOverlay) closeBulkTagModal(); };
 
 function openTaskModal(){
   if(!currentUser || !isAllowedTaskEditor(currentUser.email)) return;
