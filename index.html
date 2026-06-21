@@ -758,6 +758,122 @@
   #khExcludeStaff{
     min-width:180px;
   }
+  .minit-agenda-card{
+    background:var(--bg);
+    border:1px solid var(--sage-line);
+    border-radius:10px;
+    padding:14px;
+    margin-top:12px;
+  }
+  .minit-agenda-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .minit-bil-badge{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    color:var(--paddy);
+    background:var(--bg-card);
+    border:1px solid var(--sage-line);
+    border-radius:6px;
+    padding:4px 9px;
+    font-size:13px;
+    flex-shrink:0;
+  }
+  .minit-tajuk-input{
+    flex:1;
+    min-width:140px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    border:1px solid var(--sage-line);
+    background:var(--bg-card);
+    color:var(--ink);
+    padding:8px 10px;
+    border-radius:8px;
+    font-size:13.5px;
+  }
+  .minit-agenda-actions{
+    display:flex;
+    gap:4px;
+    flex-shrink:0;
+  }
+  .minit-agenda-actions button{
+    border:1px solid var(--sage-line);
+    background:var(--bg-card);
+    color:var(--ink-soft);
+    border-radius:6px;
+    padding:5px 9px;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .minit-agenda-actions button:disabled{opacity:0.35; cursor:default;}
+  .minit-agenda-actions button:hover:not(:disabled){background:var(--bg);}
+  .minit-subpoints{
+    margin-top:10px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .minit-subpoint-row{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+  }
+  .minit-subpoint-label{
+    font-family:'Fraunces',serif;
+    font-size:12.5px;
+    color:var(--sage);
+    padding-top:9px;
+    flex-shrink:0;
+    width:32px;
+  }
+  .minit-subpoint-row textarea{
+    flex:1;
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--sage-line);
+    background:var(--bg-card);
+    color:var(--ink);
+    padding:8px 10px;
+    border-radius:8px;
+    font-size:13px;
+    resize:vertical;
+  }
+  .minit-mini-btn{
+    border:none;
+    background:none;
+    color:var(--red-text);
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+    padding:6px 4px;
+    flex-shrink:0;
+  }
+  .minit-add-sub-btn{
+    margin-top:10px;
+    border:none;
+    background:none;
+    color:var(--paddy);
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    padding:4px 0;
+  }
+  .minit-add-sub-btn:hover{text-decoration:underline;}
+  .minit-add-agenda-btn{
+    margin-top:14px;
+    width:100%;
+    border:1px dashed var(--sage-line);
+    background:none;
+    color:var(--paddy);
+    font-weight:600;
+    font-size:13.5px;
+    padding:10px;
+    border-radius:9px;
+    cursor:pointer;
+  }
+  .minit-add-agenda-btn:hover{background:var(--bg-card);}
   .signin-btn{
     display:flex;
     align-items:center;
@@ -1684,6 +1800,50 @@
   </section>
   </div>
 
+  <div id="sectionMinit" style="display:none;">
+
+  <section class="analytics no-border-top">
+    <div class="print-head">
+      <p class="eyebrow">Minit Mesyuarat</p>
+      <h2 class="ana-title">Jana Minit Mesyuarat</h2>
+    </div>
+
+    <div class="kehadiran-form" id="minitForm">
+      <div class="field-row">
+        <div>
+          <label class="field-label">Bilangan Mesyuarat</label>
+          <input type="number" id="minit-bilangan" min="1" placeholder="Contoh: 2">
+        </div>
+        <div>
+          <label class="field-label">Tahun</label>
+          <input type="number" id="minit-tahun" placeholder="Contoh: 2026">
+        </div>
+      </div>
+
+      <label class="field-label">Tarikh</label>
+      <input type="date" id="minit-tarikh">
+
+      <label class="field-label">Masa</label>
+      <input type="text" id="minit-masa" placeholder="Contoh: 9.00 Pagi - 11.30 Pagi">
+
+      <label class="field-label">Tempat</label>
+      <input type="text" id="minit-tempat" placeholder="Contoh: Bilik Mesyuarat Utama, Tingkat 5, Blok A">
+
+      <div class="section-heading-row" style="margin-top:28px;">
+        <h2 class="section-heading">Agenda Mesyuarat</h2>
+      </div>
+      <div id="minitAgendaList"></div>
+      <button type="button" class="minit-add-agenda-btn" id="minitAddAgendaBtn">+ Tambah Agenda</button>
+
+      <label class="field-label" style="margin-top:20px;">Disediakan oleh (nama agensi)</label>
+      <input type="text" id="minit-disediakan" value="Lembaga Padi dan Beras Sabah">
+
+      <button class="save-btn" id="minitGenerateBtn" style="margin-top:18px;">Jana Minit Mesyuarat (.docx)</button>
+      <p class="kh-note" id="minitNote"></p>
+    </div>
+  </section>
+  </div>
+
   <footer>Data disegerakkan terus daripada Kalendar Rasmi LPBS &middot; Google Calendar</footer>
   </div>
 
@@ -1706,6 +1866,10 @@
     <button class="tab-btn" id="tabKehadiran" onclick="switchSection('kehadiran')" style="display:none;">
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="6" r="4"/><path stroke-linecap="round" d="M15 9a3 3 0 1 0 0-6"/><ellipse cx="9" cy="17" rx="7" ry="4"/><path stroke-linecap="round" d="M18 14c1.754.385 3 1.359 3 2.5c0 1.03-1.014 1.923-2.5 2.37"/></g></svg></span>
       <span class="tab-label">Kehadiran</span>
+    </button>
+    <button class="tab-btn" id="tabMinit" onclick="switchSection('minit')" style="display:none;">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L16 18.5l-2 2-2-2-2 2-2-2-2.5 2V5A1.5 1.5 0 0 1 7 3.5Z"/><path stroke-linecap="round" d="M9 8h6M9 11.5h6M9 15h3"/></g></svg></span>
+      <span class="tab-label">Minit</span>
     </button>
   </nav>
 </div>
@@ -1807,6 +1971,14 @@ const KEHADIRAN_EDITOR_ALLOWLIST = [
 ];
 function isAllowedKehadiranEditor(email){
   return KEHADIRAN_EDITOR_ALLOWLIST.map(e=>e.toLowerCase()).includes((email||'').toLowerCase());
+}
+
+// Hanya akaun ini boleh menjana Minit Mesyuarat.
+const MINIT_EDITOR_ALLOWLIST = [
+  "neel.jay98@gmail.com"
+];
+function isAllowedMinitEditor(email){
+  return MINIT_EDITOR_ALLOWLIST.map(e=>e.toLowerCase()).includes((email||'').toLowerCase());
 }
 
 // ============================================================
@@ -2184,6 +2356,297 @@ document.getElementById('kh-keluar').addEventListener('input', updateHoursPrevie
 document.getElementById('khSaveBtn').addEventListener('click', saveKehadiranRecord);
 document.getElementById('khPrintBtn').addEventListener('click', generateKehadiranPDF);
 
+// ============================================================
+// MINIT MESYUARAT — jana dokumen .docx terus dalam pelayar
+// ============================================================
+function escapeHtml(str){
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+let minitAgendaItems = [
+  { tajuk: 'KATA ALU-ALUAN PENGERUSI', subpoints: [''], tindakan: 'Makluman' },
+  { tajuk: 'PENUTUP', subpoints: [''], tindakan: 'Makluman' }
+];
+
+function renderMinitAgendaItems(){
+  const wrap = document.getElementById('minitAgendaList');
+  wrap.innerHTML = minitAgendaItems.map((item, i) => {
+    const bil = `${i + 1}.0`;
+    const subpointsHtml = item.subpoints.map((sp, j) => `
+      <div class="minit-subpoint-row">
+        <span class="minit-subpoint-label">${i + 1}.${j + 1}</span>
+        <textarea rows="2" oninput="updateMinitSubpoint(${i},${j},this.value)" placeholder="Catatan perbincangan...">${escapeHtml(sp)}</textarea>
+        <button type="button" class="minit-mini-btn" onclick="removeMinitSubpoint(${i},${j})" title="Buang sub-perkara">&times;</button>
+      </div>
+    `).join('');
+
+    return `
+      <div class="minit-agenda-card">
+        <div class="minit-agenda-head">
+          <span class="minit-bil-badge">${bil}</span>
+          <input type="text" class="minit-tajuk-input" value="${escapeHtml(item.tajuk)}" oninput="updateMinitField(${i},'tajuk',this.value)" placeholder="Tajuk agenda (huruf besar)">
+          <div class="minit-agenda-actions">
+            <button type="button" onclick="moveMinitAgendaItem(${i},-1)" ${i === 0 ? 'disabled' : ''} title="Naik">&uarr;</button>
+            <button type="button" onclick="moveMinitAgendaItem(${i},1)" ${i === minitAgendaItems.length - 1 ? 'disabled' : ''} title="Turun">&darr;</button>
+            <button type="button" class="kh-row-delete-btn" onclick="removeMinitAgendaItem(${i})">Padam</button>
+          </div>
+        </div>
+        <div class="minit-subpoints">${subpointsHtml}</div>
+        <button type="button" class="minit-add-sub-btn" onclick="addMinitSubpoint(${i})">+ Tambah sub-perkara</button>
+        <label class="field-label">Tindakan</label>
+        <input type="text" value="${escapeHtml(item.tindakan)}" oninput="updateMinitField(${i},'tindakan',this.value)" placeholder="Contoh: Urus Setia">
+      </div>
+    `;
+  }).join('');
+}
+
+function updateMinitField(i, field, value){
+  minitAgendaItems[i][field] = value;
+}
+
+function updateMinitSubpoint(i, j, value){
+  minitAgendaItems[i].subpoints[j] = value;
+}
+
+function addMinitSubpoint(i){
+  minitAgendaItems[i].subpoints.push('');
+  renderMinitAgendaItems();
+}
+
+function removeMinitSubpoint(i, j){
+  minitAgendaItems[i].subpoints.splice(j, 1);
+  renderMinitAgendaItems();
+}
+
+function addMinitAgendaItem(){
+  const insertAt = Math.max(minitAgendaItems.length - 1, 0);
+  minitAgendaItems.splice(insertAt, 0, { tajuk: '', subpoints: [''], tindakan: '' });
+  renderMinitAgendaItems();
+}
+
+function removeMinitAgendaItem(i){
+  minitAgendaItems.splice(i, 1);
+  renderMinitAgendaItems();
+}
+
+function moveMinitAgendaItem(i, dir){
+  const j = i + dir;
+  if(j < 0 || j >= minitAgendaItems.length) return;
+  [minitAgendaItems[i], minitAgendaItems[j]] = [minitAgendaItems[j], minitAgendaItems[i]];
+  renderMinitAgendaItems();
+}
+
+document.getElementById('minitAddAgendaBtn').addEventListener('click', addMinitAgendaItem);
+
+function formatTarikhMalay(dateStr){
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const dayName = DAY_NAMES[dt.getDay()];
+  const dayNameTitle = dayName.charAt(0) + dayName.slice(1).toLowerCase();
+  return `${d} ${MONTH_NAMES[m - 1]} ${y} (${dayNameTitle})`;
+}
+
+async function generateMinitDocx(){
+  const note = document.getElementById('minitNote');
+  const btn = document.getElementById('minitGenerateBtn');
+  note.textContent = '';
+
+  const bilangan = document.getElementById('minit-bilangan').value.trim();
+  const tahun = document.getElementById('minit-tahun').value.trim();
+  const tarikhRaw = document.getElementById('minit-tarikh').value;
+  const masa = document.getElementById('minit-masa').value.trim();
+  const tempat = document.getElementById('minit-tempat').value.trim();
+  const disediakan = document.getElementById('minit-disediakan').value.trim() || 'Lembaga Padi dan Beras Sabah';
+
+  if(!bilangan || !tahun || !tarikhRaw || !masa || !tempat){
+    note.textContent = 'Sila isi semua medan: bilangan, tahun, tarikh, masa, dan tempat.';
+    return;
+  }
+  if(minitAgendaItems.length === 0){
+    note.textContent = 'Sila tambah sekurang-kurangnya satu agenda.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Menjana dokumen...';
+
+  try{
+    const {
+      Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+      WidthType, AlignmentType, BorderStyle, ShadingType, VerticalAlignTable,
+      LineRuleType, TableBorders, TableLayoutType
+    } = await import('https://esm.sh/docx@9.7.1');
+
+    const NAVY = '003366';
+    const GRAY = '666666';
+    const TEXT = '333333';
+    const tarikhFormatted = formatTarikhMalay(tarikhRaw);
+
+    const titlePara = new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 80 },
+      children: [ new TextRun({ text: 'MINIT MESYUARAT LEMBAGA PADI DAN BERAS SABAH', bold: true, color: NAVY, size: 28, font: 'Arial' }) ]
+    });
+    const subtitlePara = new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 480 },
+      children: [ new TextRun({ text: `BILANGAN ${bilangan} TAHUN ${tahun}`, bold: true, color: GRAY, size: 24, font: 'Arial' }) ]
+    });
+
+    function infoRow(label, value){
+      return new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 2160, type: WidthType.DXA },
+            children: [ new Paragraph({ spacing: { after: 80 }, children: [ new TextRun({ text: label, bold: true, color: NAVY, size: 22, font: 'Arial' }) ] }) ]
+          }),
+          new TableCell({
+            width: { size: 7200, type: WidthType.DXA },
+            children: [ new Paragraph({ spacing: { after: 80 }, children: [ new TextRun({ text: value, color: TEXT, size: 22, font: 'Arial' }) ] }) ]
+          })
+        ]
+      });
+    }
+
+    const infoTable = new Table({
+      alignment: AlignmentType.CENTER,
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: [2160, 7200],
+      borders: TableBorders.NONE,
+      rows: [
+        infoRow('TARIKH:', tarikhFormatted),
+        infoRow('MASA:', masa),
+        infoRow('TEMPAT:', tempat)
+      ]
+    });
+
+    const gapAfterInfo = new Paragraph({ spacing: { after: 240 } });
+
+    function headerCell(text, width, center){
+      return new TableCell({
+        width: { size: width, type: WidthType.DXA },
+        shading: { fill: NAVY, type: ShadingType.CLEAR, color: 'auto' },
+        margins: { top: 140, bottom: 140, left: 150, right: 150 },
+        children: [ new Paragraph({
+          alignment: center ? AlignmentType.CENTER : AlignmentType.LEFT,
+          spacing: { after: 0 },
+          children: [ new TextRun({ text, bold: true, color: 'FFFFFF', size: 20, font: 'Arial' }) ]
+        }) ]
+      });
+    }
+
+    const headerRow = new TableRow({
+      children: [
+        headerCell('BIL', 1152, true),
+        headerCell('AGENDA / PERKARA', 6048, false),
+        headerCell('TINDAKAN', 2160, true)
+      ]
+    });
+
+    function bodyParagraph(text, opts){
+      opts = opts || {};
+      return new Paragraph({
+        alignment: opts.alignment || AlignmentType.LEFT,
+        spacing: { after: 0, line: 276, lineRule: LineRuleType.AUTO },
+        children: text === '' ? [] : [ new TextRun({ text, bold: !!opts.bold, color: opts.color || TEXT, size: 20, font: 'Arial' }) ]
+      });
+    }
+
+    const bodyRows = minitAgendaItems.map((item, i) => {
+      const bilLabel = `${i + 1}.0`;
+      const agendaParas = [ bodyParagraph(item.tajuk || '(Tiada tajuk)', { bold: true, color: NAVY }) ];
+      item.subpoints.forEach((sp, j) => {
+        agendaParas.push(bodyParagraph(''));
+        agendaParas.push(bodyParagraph(`${i + 1}.${j + 1} ${sp || ''}`.trim()));
+      });
+      const tindakanText = (item.tindakan || 'Makluman').trim();
+      const isInformational = tindakanText.toLowerCase() === 'makluman';
+
+      return new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 1152, type: WidthType.DXA },
+            verticalAlign: VerticalAlignTable.TOP,
+            margins: { top: 120, bottom: 120, left: 150, right: 150 },
+            children: [ bodyParagraph(bilLabel, { bold: true, color: TEXT, alignment: AlignmentType.CENTER }) ]
+          }),
+          new TableCell({
+            width: { size: 6048, type: WidthType.DXA },
+            verticalAlign: VerticalAlignTable.TOP,
+            margins: { top: 120, bottom: 120, left: 150, right: 150 },
+            children: agendaParas
+          }),
+          new TableCell({
+            width: { size: 2160, type: WidthType.DXA },
+            verticalAlign: VerticalAlignTable.TOP,
+            margins: { top: 120, bottom: 120, left: 150, right: 150 },
+            children: [ bodyParagraph(tindakanText, { bold: !isInformational, color: TEXT, alignment: AlignmentType.CENTER }) ]
+          })
+        ]
+      });
+    });
+
+    const agendaTable = new Table({
+      alignment: AlignmentType.CENTER,
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: [1152, 6048, 2160],
+      layout: TableLayoutType.FIXED,
+      borders: {
+        top: { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC' },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC' },
+        left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+        right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: 'E0E0E0' },
+        insideVertical: { style: BorderStyle.NONE, size: 0, color: 'auto' }
+      },
+      rows: [headerRow, ...bodyRows]
+    });
+
+    const gapAfterTable = new Paragraph({ spacing: { after: 480 } });
+
+    const footerParas = [
+      new Paragraph({ spacing: { after: 80 }, children: [ new TextRun({ text: 'Disediakan oleh:', italics: true, size: 20, font: 'Arial' }) ] }),
+      new Paragraph({ spacing: { after: 720 } }),
+      new Paragraph({ spacing: { after: 40 }, children: [ new TextRun({ text: '(URUS SETIA MESYUARAT)', bold: true, size: 20, font: 'Arial' }) ] }),
+      new Paragraph({ spacing: { after: 40 }, children: [ new TextRun({ text: disediakan, size: 20, font: 'Arial' }) ] }),
+      new Paragraph({ spacing: { after: 0 }, children: [ new TextRun({ text: `Tarikh: ${tarikhFormatted}`, size: 20, font: 'Arial' }) ] })
+    ];
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            size: { width: 12240, height: 15840 },
+            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
+          }
+        },
+        children: [ titlePara, subtitlePara, infoTable, gapAfterInfo, agendaTable, gapAfterTable, ...footerParas ]
+      }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const filename = `Minit_Mesyuarat_LPBS_Bil${bilangan}_${tahun}.docx`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    note.textContent = `Dokumen berjaya dijana: ${filename}`;
+  }catch(err){
+    console.error(err);
+    note.textContent = 'Ralat menjana dokumen: ' + err.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Jana Minit Mesyuarat (.docx)';
+  }
+}
+
+document.getElementById('minitGenerateBtn').addEventListener('click', generateMinitDocx);
+
 let currentUser = null; // { email, name } once signed in
 
 function isAllowedViewer(email){
@@ -2487,11 +2950,11 @@ const SECTION_TITLES = {
 
 function switchSection(section){
   appSection = section;
-  ['Aktiviti','Analitik','Cetak','Kehadiran'].forEach(name=>{
+  ['Aktiviti','Analitik','Cetak','Kehadiran','Minit'].forEach(name=>{
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
-  ['tabAktiviti','tabAnalitik','tabCetak','tabKehadiran'].forEach(id=>{
+  ['tabAktiviti','tabAnalitik','tabCetak','tabKehadiran','tabMinit'].forEach(id=>{
     const tab = document.getElementById(id);
     if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
   });
@@ -2511,6 +2974,14 @@ function switchSection(section){
       document.getElementById('kh-tarikh').value = fmtKey(new Date());
     }
     loadKehadiranFromSheet();
+  } else if(section === 'minit'){
+    if(!document.getElementById('minit-tarikh').value){
+      document.getElementById('minit-tarikh').value = fmtKey(new Date());
+    }
+    if(!document.getElementById('minit-tahun').value){
+      document.getElementById('minit-tahun').value = new Date().getFullYear();
+    }
+    renderMinitAgendaItems();
   }
 
   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -2898,6 +3369,9 @@ function syncSignInButtons(){
   const canEditKehadiran = isAllowedKehadiranEditor(currentUser.email);
   document.getElementById('tabKehadiran').style.display = canEditKehadiran ? '' : 'none';
   document.getElementById('kehadiranForm').style.display = canEditKehadiran ? '' : 'none';
+
+  const canEditMinit = isAllowedMinitEditor(currentUser.email);
+  document.getElementById('tabMinit').style.display = canEditMinit ? '' : 'none';
 
   const namePart = currentUser.email.split('@')[0];
   const initial = namePart.charAt(0).toUpperCase();
