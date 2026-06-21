@@ -1675,6 +1675,15 @@
     text-align:center;
     box-shadow:0 4px 24px rgba(31,58,46,0.06);
   }
+  .gate-video{
+    width:140px;
+    max-width:100%;
+    height:auto;
+    display:block;
+    margin:6px auto 14px;
+    border-radius:14px;
+    background:var(--bg);
+  }
   .gate-title{
     font-family:'Space Grotesk',sans-serif;
     font-weight:500;
@@ -1756,6 +1765,10 @@
 <div class="gate" id="gateScreen">
   <div class="gate-card">
     <p class="eyebrow">Lembaga Padi dan Beras Sabah</p>
+    <video class="gate-video" autoplay loop muted playsinline poster="icons/icon-512.png" onerror="handleGateVideoError(this)">
+      <source src="icons/paddy-animation.mp4" type="video/mp4">
+      <img src="icons/icon-512.png" class="gate-video" alt="Lembaga Padi dan Beras Sabah">
+    </video>
     <h1 class="gate-title">Papar Aktiviti Harian</h1>
     <p class="gate-sub">Akses terhad kepada staf LPBS yang dibenarkan sahaja.</p>
     <button class="gate-signin-btn" id="gateSigninBtn"><i class="g-icon">G</i> Log masuk dengan Google</button>
@@ -4437,6 +4450,16 @@ function showGateError(msg, isInfo){
   const el = document.getElementById('gateNote');
   el.textContent = msg;
   el.style.color = isInfo ? 'var(--ink-soft)' : '';
+}
+
+// If the paddy animation can't load (slow connection, old browser), swap it
+// for the static logo so the gate screen never shows a broken video box.
+function handleGateVideoError(videoEl){
+  const img = document.createElement('img');
+  img.src = 'icons/icon-512.png';
+  img.alt = 'Lembaga Padi dan Beras Sabah';
+  img.className = 'gate-video';
+  videoEl.replaceWith(img);
 }
 
 async function fetchUserInfoAndProceed(){
