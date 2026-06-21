@@ -1988,7 +1988,8 @@
       <input type="date" id="kh-tarikh">
 
       <label class="field-label">Nama Staf</label>
-      <input type="text" id="kh-nama" placeholder="Contoh: Ahmad bin Ali">
+      <input type="text" id="kh-nama" placeholder="Contoh: Ahmad bin Ali" autocomplete="off">
+      <div class="search-results" id="khNameSuggestions" style="display:none;"></div>
 
       <div class="field-row">
         <div>
@@ -2433,6 +2434,14 @@ function getStaffDisplayName(email){
 function getStaffJawatan(email){
   const entry = STAFF_DIRECTORY.get((email || '').toLowerCase());
   return (entry && entry.jawatan) || '';
+}
+
+// True only if a real Nama Penuh is on file (not the email-username fallback
+// that getStaffDisplayName() returns). Callers that need to choose between
+// filling in a real name vs. falling back to the raw email use this.
+function hasStaffNama(email){
+  const entry = STAFF_DIRECTORY.get((email || '').toLowerCase());
+  return !!(entry && entry.nama);
 }
 
 // ============================================================
@@ -3257,6 +3266,48 @@ function removeTaskTag(email){
 document.getElementById('task-tag-input').addEventListener('input', (e) => renderTaskTagSuggestions(e.target.value));
 document.getElementById('task-tag-input').addEventListener('focus', (e) => {
   if(e.target.value.trim()) renderTaskTagSuggestions(e.target.value);
+});
+
+// ============================================================
+// AUTOLENGKAP NAMA STAF (Kehadiran) — guna STAFF_DIRECTORY yang sama,
+// tetapi mengisi medan teks bebas terus (bukan pill/tag berbilang seperti
+// Tag Staf Tugasan). Taip bebas masih dibenarkan jika staf tiada dalam senarai.
+// ============================================================
+function renderKehadiranNameSuggestions(query){
+  const box = document.getElementById('khNameSuggestions');
+  const q = query.trim().toLowerCase();
+  if(!q){
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+  const matches = getStaffSuggestionList()
+    .filter(s => s.email.includes(q) || s.nama.toLowerCase().includes(q) || s.jawatan.toLowerCase().includes(q))
+    .slice(0, 8);
+
+  if(matches.length === 0){
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+  box.innerHTML = matches.map(s => `
+    <div class="search-result-item" onclick="selectKehadiranName('${s.email}')">
+      ${staffInfoBlockHtml(s)}
+    </div>
+  `).join('');
+  box.style.display = '';
+}
+
+function selectKehadiranName(email){
+  // Fill with the real Nama Penuh if on file; otherwise fall back to the
+  // raw email (not the auto-derived username) since that's what gets saved.
+  document.getElementById('kh-nama').value = hasStaffNama(email) ? getStaffDisplayName(email) : email;
+  document.getElementById('khNameSuggestions').style.display = 'none';
+}
+
+document.getElementById('kh-nama').addEventListener('input', (e) => renderKehadiranNameSuggestions(e.target.value));
+document.getElementById('kh-nama').addEventListener('focus', (e) => {
+  if(e.target.value.trim()) renderKehadiranNameSuggestions(e.target.value);
 });
 
 // ============================================================
@@ -4137,6 +4188,13 @@ document.addEventListener('click', (e) => {
   if(tagInput){
     const clickedInsideTag = tagInput.contains(e.target) || (tagBox && tagBox.contains(e.target));
     if(!clickedInsideTag && tagBox) tagBox.style.display = 'none';
+  }
+
+  const khNameInput = document.getElementById('kh-nama');
+  const khNameBox = document.getElementById('khNameSuggestions');
+  if(khNameInput){
+    const clickedInsideKhName = khNameInput.contains(e.target) || (khNameBox && khNameBox.contains(e.target));
+    if(!clickedInsideKhName && khNameBox) khNameBox.style.display = 'none';
   }
 });
 document.getElementById('searchInput').addEventListener('focus', () => {
