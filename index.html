@@ -213,6 +213,7 @@
   .category.taklimat{background:#E5EEF2; color:#2C5870;}
   .category.perjalanan{background:#F0E5EE; color:#7A3868;}
   .category.sesi{background:#EEEBE0; color:#5C5340;}
+  .category.bahagian{background:var(--bg); color:var(--ink-soft); border:1px solid var(--sage-line);}
   .protocol-tag{
     font-size:11px;
     font-weight:700;
@@ -546,6 +547,67 @@
   }
   .lagi-row-icon svg{width:20px; height:20px;}
   .lagi-row-label{font-size:14.5px; font-weight:600;}
+  .task-status-toggle{
+    margin-bottom:16px;
+    overflow-x:auto;
+    max-width:100%;
+  }
+  .task-status-toggle .period-btn{white-space:nowrap;}
+  .task-card{
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-left:4px solid var(--sage);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:12px;
+  }
+  .task-card.priority-tinggi{border-left-color:var(--red);}
+  .task-card.priority-sederhana{border-left-color:var(--amber);}
+  .task-card.priority-rendah{border-left-color:var(--sage);}
+  .task-card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .task-title{
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    color:var(--ink);
+    margin:0 0 4px;
+  }
+  .task-desc{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0;
+  }
+  .task-card.task-done{opacity:0.6;}
+  .task-card.task-done .task-title{text-decoration:line-through; color:var(--sage);}
+  .task-card.task-done .task-desc{text-decoration:line-through;}
+  .task-card-meta{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:10px;
+  }
+  .task-due{
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .task-status-badge{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    padding:4px 10px;
+    border-radius:999px;
+    margin-left:auto;
+  }
+  .task-status-badge.editable{cursor:pointer;}
+  .task-status-badge.status-belum-mula{background:var(--bg); color:var(--ink-soft); border:1px solid var(--sage-line);}
+  .task-status-badge.status-sedang-dijalankan{background:var(--amber-bg); color:var(--amber-text);}
+  .task-status-badge.status-selesai{background:#DCE7F0; color:var(--paddy-light);}
   .analytics-head{
     display:flex;
     justify-content:space-between;
@@ -1901,6 +1963,22 @@
   </section>
   </div>
 
+  <div id="sectionTask" style="display:none;">
+
+  <section class="analytics no-border-top">
+    <div class="print-head">
+      <p class="eyebrow">Pengurusan Tugasan</p>
+      <h2 class="ana-title">Tugasan</h2>
+    </div>
+
+    <div id="taskListWrap">
+      <div class="empty-state"><div class="big">Memuatkan tugasan...</div></div>
+    </div>
+
+    <button type="button" class="minit-add-agenda-btn" id="taskAddBtn" style="display:none;" onclick="openTaskModal()">+ Tambah Tugasan</button>
+  </section>
+  </div>
+
   <footer>Data disegerakkan terus daripada Kalendar Rasmi LPBS &middot; Google Calendar<br>Dibangunkan oleh neel_jay</footer>
   </div>
 
@@ -1936,6 +2014,10 @@
     <button class="lagi-row" id="lagiRowMinit" onclick="openLagiSection('minit')" style="display:none;">
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L16 18.5l-2 2-2-2-2 2-2-2-2.5 2V5A1.5 1.5 0 0 1 7 3.5Z"/><path stroke-linecap="round" d="M9 8h6M9 11.5h6M9 15h3"/></g></svg></span>
       <span class="lagi-row-label">Minit Mesyuarat</span>
+    </button>
+    <button class="lagi-row" id="lagiRowTask" onclick="openLagiSection('task')" style="display:none;">
+      <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 4h8a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M9 4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><path stroke-linecap="round" d="m9 13l2 2l4-4"/></g></svg></span>
+      <span class="lagi-row-label">Tugasan</span>
     </button>
   </div>
 </div>
@@ -2016,6 +2098,57 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="taskModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Tambah Tugasan</h3>
+      <button class="modal-close" id="taskModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Tajuk</label>
+      <input type="text" id="task-tajuk" placeholder="Contoh: Sediakan laporan suku tahun">
+
+      <label class="field-label">Keterangan</label>
+      <input type="text" id="task-keterangan" placeholder="Penerangan ringkas tugasan">
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Bahagian</label>
+          <input type="text" id="task-bahagian" placeholder="Contoh: Bahagian Kewangan">
+        </div>
+        <div>
+          <label class="field-label">Tarikh Akhir</label>
+          <input type="date" id="task-tarikh-akhir">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Keutamaan</label>
+          <select id="task-keutamaan">
+            <option value="Tinggi">Tinggi</option>
+            <option value="Sederhana" selected>Sederhana</option>
+            <option value="Rendah">Rendah</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Status</label>
+          <select id="task-status">
+            <option value="Belum Mula" selected>Belum Mula</option>
+            <option value="Sedang Dijalankan">Sedang Dijalankan</option>
+            <option value="Selesai">Selesai</option>
+          </select>
+        </div>
+      </div>
+      <p class="kh-note" id="taskNote"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="cancel-btn" id="taskModalCancel">Batal</button>
+      <button class="save-btn" id="taskModalSave">Simpan Tugasan</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // KONFIGURASI — Google OAuth & Kalendar
@@ -2027,6 +2160,8 @@ const ALLOWLIST_SHEET_RANGE = "Senarai!A2:B1000";
 // TODO: ganti dengan ID Sheet "LPBS Kehadiran Staf" sebenar selepas dicipta.
 const KEHADIRAN_SHEET_ID = "1lGD1XnlEuOGHHnfrUnaqaMPbYMgfnBvkFTXRsNYNkmg";
 const KEHADIRAN_SHEET_RANGE = "Kehadiran!A2:D1000";
+const TASK_SHEET_ID = "1o7S2umTuo9Njjt8AAqsK5F9cXafmkz_NzKlE7UQKjo4";
+const TASK_SHEET_RANGE = "Tugasan!A2:F1000";
 const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets";
 
 // Hanya 3 akaun ini boleh mengedit Kehadiran Staf (berasingan daripada senarai editor umum).
@@ -2045,6 +2180,19 @@ const MINIT_EDITOR_ALLOWLIST = [
 ];
 function isAllowedMinitEditor(email){
   return MINIT_EDITOR_ALLOWLIST.map(e=>e.toLowerCase()).includes((email||'').toLowerCase());
+}
+
+// Hanya akaun ini boleh mengurus Tugasan.
+const TASK_EDITOR_ALLOWLIST = [
+  "rosnileong1967@gmail.com",
+  "shafikahoyeaw777@gmail.com",
+  "carlvinds@gmail.com",
+  "neel.jay98@gmail.com",
+  "ramlekasin@gmail.com",
+  "nestor652022@gmail.com"
+];
+function isAllowedTaskEditor(email){
+  return TASK_EDITOR_ALLOWLIST.map(e=>e.toLowerCase()).includes((email||'').toLowerCase());
 }
 
 // ============================================================
@@ -2713,6 +2861,235 @@ async function generateMinitDocx(){
 
 document.getElementById('minitGenerateBtn').addEventListener('click', generateMinitDocx);
 
+// ============================================================
+// TUGASAN — baca/tulis terus ke Google Sheet
+// ============================================================
+let taskRecords = []; // { rowIndex, tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir }
+let taskLoaded = false;
+let taskStatusFilter = 'semua'; // 'semua' | 'Belum Mula' | 'Sedang Dijalankan' | 'Selesai'
+const TASK_STATUS_CYCLE = ['Belum Mula', 'Sedang Dijalankan', 'Selesai'];
+
+function taskStatusSlug(status){
+  return (status || 'Belum Mula').toLowerCase().replace(/\s+/g, '-');
+}
+
+function taskPrioritySlug(priority){
+  const p = (priority || 'Sederhana').toLowerCase();
+  return ['tinggi','sederhana','rendah'].includes(p) ? p : 'sederhana';
+}
+
+async function loadTaskFromSheet(){
+  const wrap = document.getElementById('taskListWrap');
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent(TASK_SHEET_RANGE)}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if(!res.ok) throw new Error('status ' + res.status);
+    const data = await res.json();
+    const rows = data.values || [];
+
+    taskRecords = rows.map((row, idx) => {
+      const [tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir] = row;
+      if(!tajuk) return null;
+      return {
+        rowIndex: idx + 2, // +2 because range starts at A2 and sheet rows are 1-indexed
+        tajuk: tajuk || '',
+        keterangan: keterangan || '',
+        bahagian: bahagian || '',
+        keutamaan: keutamaan || 'Sederhana',
+        status: status || 'Belum Mula',
+        tarikhAkhir: tarikhAkhir || ''
+      };
+    }).filter(Boolean);
+
+    taskLoaded = true;
+    renderTaskList();
+  }catch(e){
+    console.error('loadTaskFromSheet failed:', e);
+    wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan tugasan</div>Sila semak sambungan atau cuba semula.</div>`;
+  }
+}
+
+function setTaskStatusFilter(status){
+  taskStatusFilter = status;
+  renderTaskList();
+}
+
+function taskCardHtml(t, canEdit){
+  const isDone = t.status === 'Selesai';
+  const prioSlug = taskPrioritySlug(t.keutamaan);
+  const statusSlug = taskStatusSlug(t.status);
+
+  return `
+    <div class="task-card priority-${prioSlug} ${isDone ? 'task-done' : ''}" data-row="${t.rowIndex}">
+      <div class="task-card-top">
+        <div>
+          <h3 class="task-title">${t.tajuk}</h3>
+          ${t.keterangan ? `<p class="task-desc">${t.keterangan}</p>` : ''}
+        </div>
+        ${canEdit ? `<button class="kh-row-delete-btn" onclick="deleteTaskPrompt(${t.rowIndex})">Padam</button>` : ''}
+      </div>
+      <div class="task-card-meta">
+        ${t.bahagian ? `<span class="category bahagian">${t.bahagian}</span>` : ''}
+        ${t.tarikhAkhir ? `<span class="task-due">Tarikh akhir: ${t.tarikhAkhir}</span>` : ''}
+        <span class="task-status-badge status-${statusSlug} ${canEdit ? 'editable' : ''}" ${canEdit ? `onclick="cycleTaskStatus(${t.rowIndex})"` : ''} title="${canEdit ? 'Klik untuk tukar status' : ''}">${t.status}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderTaskList(){
+  const wrap = document.getElementById('taskListWrap');
+  const canEdit = currentUser && isAllowedTaskEditor(currentUser.email);
+
+  const counts = {
+    semua: taskRecords.length,
+    'Belum Mula': taskRecords.filter(t => t.status === 'Belum Mula').length,
+    'Sedang Dijalankan': taskRecords.filter(t => t.status === 'Sedang Dijalankan').length,
+    'Selesai': taskRecords.filter(t => t.status === 'Selesai').length
+  };
+
+  const toggleHtml = `
+    <div class="period-toggle task-status-toggle" id="taskStatusToggle">
+      <button class="period-btn ${taskStatusFilter === 'semua' ? 'active' : ''}" onclick="setTaskStatusFilter('semua')">Semua (${counts.semua})</button>
+      <button class="period-btn ${taskStatusFilter === 'Belum Mula' ? 'active' : ''}" onclick="setTaskStatusFilter('Belum Mula')">Belum Mula (${counts['Belum Mula']})</button>
+      <button class="period-btn ${taskStatusFilter === 'Sedang Dijalankan' ? 'active' : ''}" onclick="setTaskStatusFilter('Sedang Dijalankan')">Sedang Dijalankan (${counts['Sedang Dijalankan']})</button>
+      <button class="period-btn ${taskStatusFilter === 'Selesai' ? 'active' : ''}" onclick="setTaskStatusFilter('Selesai')">Selesai (${counts['Selesai']})</button>
+    </div>
+  `;
+
+  const filtered = taskStatusFilter === 'semua' ? taskRecords : taskRecords.filter(t => t.status === taskStatusFilter);
+
+  if(filtered.length === 0){
+    wrap.innerHTML = toggleHtml + `<div class="empty-state"><div class="big">Tiada tugasan</div>${taskRecords.length === 0 ? 'Tambah tugasan pertama menggunakan butang di bawah.' : 'Tiada tugasan untuk status ini.'}</div>`;
+    return;
+  }
+
+  wrap.innerHTML = toggleHtml + filtered.map(t => taskCardHtml(t, canEdit)).join('');
+}
+
+async function cycleTaskStatus(rowIndex){
+  if(!currentUser || !isAllowedTaskEditor(currentUser.email)) return;
+  const task = taskRecords.find(t => t.rowIndex === rowIndex);
+  if(!task) return;
+
+  const idx = TASK_STATUS_CYCLE.indexOf(task.status);
+  const nextStatus = TASK_STATUS_CYCLE[(idx + 1) % TASK_STATUS_CYCLE.length];
+  const prevStatus = task.status;
+  task.status = nextStatus; // optimistic
+  renderTaskList();
+
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent('Tugasan!E' + rowIndex)}?valueInputOption=USER_ENTERED`;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[nextStatus]] })
+    });
+    if(!res.ok) throw new Error('status ' + res.status);
+  }catch(e){
+    task.status = prevStatus;
+    renderTaskList();
+    alert('Ralat mengemaskini status: ' + e.message);
+  }
+}
+
+function deleteTaskPrompt(rowIndex){
+  if(!currentUser || !isAllowedTaskEditor(currentUser.email)) return;
+  const task = taskRecords.find(t => t.rowIndex === rowIndex);
+  if(!task) return;
+
+  const confirmed = window.confirm(`Adakah anda pasti mahu memadam "${task.tajuk}"? Anda boleh "Buat asal" dalam masa 10 saat selepas ini.`);
+  if(!confirmed) return;
+
+  const cardEl = document.querySelector(`.task-card[data-row="${rowIndex}"]`);
+  if(cardEl) cardEl.style.display = 'none';
+
+  const uid = 'task-' + rowIndex;
+  const onUndo = () => {
+    if(cardEl) cardEl.style.display = '';
+  };
+
+  const onExpire = async () => {
+    try{
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent('Tugasan!A' + rowIndex + ':F' + rowIndex)}:clear`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if(!res.ok) throw new Error('status ' + res.status);
+      await loadTaskFromSheet();
+    }catch(e){
+      alert('Ralat memadam tugasan: ' + e.message);
+      if(cardEl) cardEl.style.display = '';
+    }
+  };
+
+  const timeoutId = showUndoToast(uid, task.tajuk, onExpire);
+  pendingDeletes[uid] = { timeoutId, onUndo };
+}
+
+function openTaskModal(){
+  if(!currentUser || !isAllowedTaskEditor(currentUser.email)) return;
+  document.getElementById('task-tajuk').value = '';
+  document.getElementById('task-keterangan').value = '';
+  document.getElementById('task-bahagian').value = '';
+  document.getElementById('task-tarikh-akhir').value = '';
+  document.getElementById('task-keutamaan').value = 'Sederhana';
+  document.getElementById('task-status').value = 'Belum Mula';
+  document.getElementById('taskNote').textContent = '';
+  document.getElementById('taskModalOverlay').classList.add('open');
+}
+
+function closeTaskModal(){
+  document.getElementById('taskModalOverlay').classList.remove('open');
+}
+
+async function saveNewTask(){
+  const tajuk = document.getElementById('task-tajuk').value.trim();
+  const keterangan = document.getElementById('task-keterangan').value.trim();
+  const bahagian = document.getElementById('task-bahagian').value.trim();
+  const tarikhAkhir = document.getElementById('task-tarikh-akhir').value;
+  const keutamaan = document.getElementById('task-keutamaan').value;
+  const status = document.getElementById('task-status').value;
+  const note = document.getElementById('taskNote');
+  const btn = document.getElementById('taskModalSave');
+
+  if(!tajuk){
+    note.textContent = 'Sila isi sekurang-kurangnya tajuk tugasan.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  note.textContent = '';
+
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent('Tugasan!A:F')}:append?valueInputOption=USER_ENTERED`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir]] })
+    });
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+    }
+    await loadTaskFromSheet();
+    closeTaskModal();
+  }catch(e){
+    note.textContent = 'Ralat: ' + e.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Simpan Tugasan';
+  }
+}
+
+document.getElementById('taskModalClose').onclick = closeTaskModal;
+document.getElementById('taskModalCancel').onclick = closeTaskModal;
+document.getElementById('taskModalSave').addEventListener('click', saveNewTask);
+const taskModalOverlay = document.getElementById('taskModalOverlay');
+taskModalOverlay.onclick = (e) => { if(e.target === taskModalOverlay) closeTaskModal(); };
+
 let currentUser = null; // { email, name } once signed in
 
 function isAllowedViewer(email){
@@ -3016,7 +3393,7 @@ const SECTION_TITLES = {
 
 function switchSection(section){
   appSection = section;
-  ['Aktiviti','Analitik','Cetak','Kehadiran','Minit'].forEach(name=>{
+  ['Aktiviti','Analitik','Cetak','Kehadiran','Minit','Task'].forEach(name=>{
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
@@ -3025,7 +3402,7 @@ function switchSection(section){
     if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
   });
   const tabLagi = document.getElementById('tabLagi');
-  if(tabLagi) tabLagi.classList.toggle('active', section === 'kehadiran' || section === 'minit');
+  if(tabLagi) tabLagi.classList.toggle('active', section === 'kehadiran' || section === 'minit' || section === 'task');
 
   const titles = SECTION_TITLES[section] || SECTION_TITLES.aktiviti;
 
@@ -3050,6 +3427,8 @@ function switchSection(section){
       document.getElementById('minit-tahun').value = new Date().getFullYear();
     }
     renderMinitAgendaItems();
+  } else if(section === 'task'){
+    loadTaskFromSheet();
   }
 
   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -3462,8 +3841,12 @@ function syncSignInButtons(){
   const canEditMinit = isAllowedMinitEditor(currentUser.email);
   document.getElementById('lagiRowMinit').style.display = canEditMinit ? '' : 'none';
 
-  document.getElementById('tabLagi').style.display = (canEditKehadiran || canEditMinit) ? '' : 'none';
-  if(!canEditKehadiran && !canEditMinit) closeLagiMenu();
+  const canEditTask = isAllowedTaskEditor(currentUser.email);
+  document.getElementById('lagiRowTask').style.display = canEditTask ? '' : 'none';
+  document.getElementById('taskAddBtn').style.display = canEditTask ? '' : 'none';
+
+  document.getElementById('tabLagi').style.display = (canEditKehadiran || canEditMinit || canEditTask) ? '' : 'none';
+  if(!canEditKehadiran && !canEditMinit && !canEditTask) closeLagiMenu();
 
   const namePart = currentUser.email.split('@')[0];
   const initial = namePart.charAt(0).toUpperCase();
