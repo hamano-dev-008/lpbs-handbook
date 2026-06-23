@@ -335,6 +335,12 @@
     grid-template-columns:1fr 1fr;
     gap:10px;
   }
+  .edit-form .multiday-toggle input[type="checkbox"]{
+    width:17px;
+    height:17px;
+    flex-shrink:0;
+    padding:0;
+  }
   .edit-actions-row{
     margin-top:14px;
     padding-top:14px;
@@ -1195,6 +1201,26 @@
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:12px;
+  }
+  .multiday-toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:14px 0 6px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .multiday-toggle input[type="checkbox"]{
+    width:17px;
+    height:17px;
+    flex-shrink:0;
+    accent-color:var(--paddy);
+  }
+  .field-error{
+    font-size:12px;
+    color:var(--red-text);
+    margin:4px 0 0;
   }
   .form-note{
     font-size:12px;
@@ -2163,7 +2189,12 @@
         </div>
       </div>
 
-      <div class="field-row">
+      <label class="multiday-toggle">
+        <input type="checkbox" id="f-multiday" onchange="toggleMultiDayFields(null, this.checked)">
+        Acara berlangsung beberapa hari
+      </label>
+
+      <div class="field-row" id="f-singleday-row">
         <div>
           <label class="field-label">Tarikh</label>
           <input type="date" id="f-date">
@@ -2173,6 +2204,18 @@
           <input type="time" id="f-time">
         </div>
       </div>
+
+      <div class="field-row" id="f-multiday-row" style="display:none;">
+        <div>
+          <label class="field-label">Tarikh mula</label>
+          <input type="date" id="f-date-start">
+        </div>
+        <div>
+          <label class="field-label">Tarikh tamat</label>
+          <input type="date" id="f-date-end">
+        </div>
+      </div>
+      <p class="field-error" id="f-date-range-error" style="display:none;">Tarikh tamat tidak boleh sebelum tarikh mula.</p>
 
       <label class="field-label">Lokasi</label>
       <input type="text" id="f-location" placeholder="Contoh: BMU MAFFI">
@@ -3672,6 +3715,25 @@ function dateKeyFromGoogleEvent(gEvent){
   return null;
 }
 
+// Returns every 'YYYY-MM-DD' key an event occupies, so multi-day all-day
+// events appear on each day they span (not just their start day). All-day
+// end.date is exclusive, so the last included key is end.date minus one day.
+function dateKeysSpannedByGoogleEvent(gEvent){
+  const startKey = dateKeyFromGoogleEvent(gEvent);
+  if(!startKey) return [];
+  if(!(gEvent.start && gEvent.start.date && gEvent.end && gEvent.end.date)){
+    return [startKey];
+  }
+  const keys = [];
+  let cursor = new Date(startKey + "T00:00:00");
+  const endExclusive = new Date(gEvent.end.date + "T00:00:00");
+  while(cursor < endExclusive){
+    keys.push(fmtKey(cursor));
+    cursor.setDate(cursor.getDate()+1);
+  }
+  return keys.length ? keys : [startKey];
+}
+
 async function loadEventsFromGoogleCalendar(){
   if(!accessToken) return;
   calendarLoadError = null;
@@ -3707,10 +3769,13 @@ async function loadEventsFromGoogleCalendar(){
     Object.keys(SAMPLE_EVENTS).forEach(k => delete SAMPLE_EVENTS[k]);
     allItems.forEach(gEvent => {
       if(gEvent.status === 'cancelled') return;
-      const key = dateKeyFromGoogleEvent(gEvent);
-      if(!key) return;
-      if(!SAMPLE_EVENTS[key]) SAMPLE_EVENTS[key] = [];
-      SAMPLE_EVENTS[key].push(googleEventToInternal(gEvent));
+      const keys = dateKeysSpannedByGoogleEvent(gEvent);
+      if(!keys.length) return;
+      const internal = googleEventToInternal(gEvent);
+      keys.forEach(key => {
+        if(!SAMPLE_EVENTS[key]) SAMPLE_EVENTS[key] = [];
+        SAMPLE_EVENTS[key].push(internal);
+      });
     });
 
     calendarLoaded = true;
@@ -3746,6 +3811,23 @@ function fmtKey(d){
   const m = String(d.getMonth()+1).padStart(2,'0');
   const day = String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
+}
+
+// Google Calendar all-day events use an EXCLUSIVE end.date (the day after the
+// last actual day of the event). Given the last day the event actually occurs
+// on (a 'YYYY-MM-DD' key), returns the exclusive end.date key to send the API.
+function exclusiveEndDateKey(lastDayKey){
+  const d = new Date(lastDayKey + "T00:00:00");
+  d.setDate(d.getDate()+1);
+  return fmtKey(d);
+}
+
+// Inverse of exclusiveEndDateKey: given an all-day event's exclusive end.date,
+// returns the 'YYYY-MM-DD' key of the last day the event actually occurs on.
+function inclusiveLastDayKey(exclusiveEndKey){
+  const d = new Date(exclusiveEndKey + "T00:00:00");
+  d.setDate(d.getDate()-1);
+  return fmtKey(d);
 }
 
 const eventDataByUid = {}; // uid -> raw event object, used for inline editing
@@ -4758,7 +4840,53 @@ document.getElementById('gateSigninBtn').addEventListener('click', () => {
 const modalOverlay = document.getElementById('modalOverlay');
 function openModal(){
   document.getElementById('f-date').value = fmtKey(currentDate);
+  document.getElementById('f-multiday').checked = false;
+  document.getElementById('f-date-start').value = '';
+  document.getElementById('f-date-end').value = '';
+  toggleMultiDayFields(null, false);
   modalOverlay.classList.add('open');
+}
+
+// Builds the field ids for the multi-day controls of either the add form
+// (uid omitted) or an inline edit form (uid = the event's card uid).
+function multiDayFieldIds(uid){
+  const suffix = uid == null ? '' : `-${uid}`;
+  const prefix = uid == null ? 'f' : 'ef';
+  return {
+    singleRow: `${prefix}-singleday-row${suffix}`,
+    multiRow: `${prefix}-multiday-row${suffix}`,
+    error: `${prefix}-date-range-error${suffix}`,
+    time: `${prefix}-time${suffix}`,
+    dateStart: `${prefix}-date-start${suffix}`,
+    dateEnd: `${prefix}-date-end${suffix}`
+  };
+}
+
+// Shows the single Tarikh+Masa fields, or the Tarikh Mula/Tamat pair.
+function toggleMultiDayFields(uid, isMultiDay){
+  const ids = multiDayFieldIds(uid);
+  const singleRow = document.getElementById(ids.singleRow);
+  const multiRow = document.getElementById(ids.multiRow);
+  const errorEl = document.getElementById(ids.error);
+  if(singleRow) singleRow.style.display = isMultiDay ? 'none' : '';
+  if(multiRow) multiRow.style.display = isMultiDay ? '' : 'none';
+  if(errorEl) errorEl.style.display = 'none';
+  if(isMultiDay){
+    const timeEl = document.getElementById(ids.time);
+    if(timeEl) timeEl.value = '';
+  }
+}
+
+// Validates Tarikh Mula <= Tarikh Tamat, showing/hiding the inline error.
+// Returns true when the range is valid (or fields are empty/not multi-day).
+function validateDateRange(uid){
+  const ids = multiDayFieldIds(uid);
+  const errorEl = document.getElementById(ids.error);
+  const startVal = document.getElementById(ids.dateStart).value;
+  const endVal = document.getElementById(ids.dateEnd).value;
+  const isInvalid = !!startVal && !!endVal && endVal < startVal;
+  if(errorEl) errorEl.style.display = isInvalid ? '' : 'none';
+  return !isInvalid;
 }
 function closeModal(){
   modalOverlay.classList.remove('open');
@@ -4781,8 +4909,11 @@ function buildEventDescription(fields){
 async function saveNewEventToGoogleCalendar(){
   const saveBtn = document.getElementById('modalSave');
   const title = document.getElementById('f-title').value.trim();
+  const isMultiDay = document.getElementById('f-multiday').checked;
   const date = document.getElementById('f-date').value;
   const time = document.getElementById('f-time').value;
+  const dateStart = document.getElementById('f-date-start').value;
+  const dateEnd = document.getElementById('f-date-end').value;
   const category = document.getElementById('f-category').value;
   const protocol = document.getElementById('f-protocol').value;
   const location = document.getElementById('f-location').value;
@@ -4792,8 +4923,11 @@ async function saveNewEventToGoogleCalendar(){
   const pakaian = document.getElementById('f-pakaian').value;
   const attachmentUrl = document.getElementById('f-attachment').value.trim();
 
-  if(!title || !date){
+  if(!title || (isMultiDay ? (!dateStart || !dateEnd) : !date)){
     alert('Sila isi sekurang-kurangnya tajuk dan tarikh.');
+    return;
+  }
+  if(isMultiDay && !validateDateRange(null)){
     return;
   }
   if(!accessToken){
@@ -4809,17 +4943,18 @@ async function saveNewEventToGoogleCalendar(){
     urusSetia, kehadiran, pakaian
   });
 
-  const isAllDay = !time;
+  const isAllDay = isMultiDay || !time;
   const body = {
     summary,
     description: description || undefined,
     location: location || undefined,
   };
-  if(isAllDay){
-    const endDate = new Date(date + "T00:00:00");
-    endDate.setDate(endDate.getDate()+1);
+  if(isMultiDay){
+    body.start = { date: dateStart };
+    body.end = { date: exclusiveEndDateKey(dateEnd) };
+  } else if(isAllDay){
     body.start = { date };
-    body.end = { date: fmtKey(endDate) };
+    body.end = { date: exclusiveEndDateKey(date) };
   } else {
     const startDT = `${date}T${time}:00`;
     const endHour = (parseInt(time.split(':')[0],10)+1) % 24;
@@ -4852,10 +4987,12 @@ async function saveNewEventToGoogleCalendar(){
     }
 
     closeModal();
-    ['f-title','f-location','f-vip','f-urussetia','f-pakaian','f-kehadiran','f-attachment','f-time'].forEach(id=>{
+    ['f-title','f-location','f-vip','f-urussetia','f-pakaian','f-kehadiran','f-attachment','f-time','f-date-start','f-date-end'].forEach(id=>{
       document.getElementById(id).value = '';
     });
-    currentDate = new Date(date + "T00:00:00");
+    document.getElementById('f-multiday').checked = false;
+    toggleMultiDayFields(null, false);
+    currentDate = new Date((isMultiDay ? dateStart : date) + "T00:00:00");
     daySubView = 'single';
     await loadEventsFromGoogleCalendar();
     switchToView('day');
@@ -4888,6 +5025,17 @@ function enterEditMode(uid){
     `<option value="${val}" ${val===catValue?'selected':''}>${label}</option>`
   ).join('');
 
+  // Detect an existing multi-day all-day event from the raw Calendar event's
+  // start/end dates (end.date is exclusive), so the toggle and range fields
+  // are pre-filled correctly without the user having to re-discover this.
+  const rawStart = e._raw && e._raw.start && e._raw.start.date;
+  const rawEnd = e._raw && e._raw.end && e._raw.end.date;
+  const lastDayKey = rawEnd ? inclusiveLastDayKey(rawEnd) : null;
+  const isMultiDay = !!(e.allDay && rawStart && lastDayKey && lastDayKey > rawStart);
+  const singleDateValue = rawStart || e.dateKey || fmtKey(currentDate);
+  const startDateValue = isMultiDay ? rawStart : singleDateValue;
+  const endDateValue = isMultiDay ? lastDayKey : singleDateValue;
+
   detailEl.dataset.originalHtml = detailEl.innerHTML;
   detailEl.innerHTML = `
     <div class="edit-form" onclick="event.stopPropagation()">
@@ -4909,16 +5057,33 @@ function enterEditMode(uid){
         </div>
       </div>
 
-      <div class="field-row">
+      <label class="multiday-toggle">
+        <input type="checkbox" id="ef-multiday-${uid}" ${isMultiDay?'checked':''} onchange="toggleMultiDayFields('${uid}', this.checked)">
+        Acara berlangsung beberapa hari
+      </label>
+
+      <div class="field-row" id="ef-singleday-row-${uid}" style="${isMultiDay?'display:none;':''}">
         <div>
           <label class="field-label">Tarikh</label>
-          <input type="date" id="ef-date-${uid}" value="${e.dateKey || fmtKey(currentDate)}">
+          <input type="date" id="ef-date-${uid}" value="${singleDateValue}">
         </div>
         <div>
           <label class="field-label">Masa</label>
           <input type="time" id="ef-time-${uid}" value="${e.allDay ? '' : (e.time||'')}">
         </div>
       </div>
+
+      <div class="field-row" id="ef-multiday-row-${uid}" style="${isMultiDay?'':'display:none;'}">
+        <div>
+          <label class="field-label">Tarikh mula</label>
+          <input type="date" id="ef-date-start-${uid}" value="${startDateValue}">
+        </div>
+        <div>
+          <label class="field-label">Tarikh tamat</label>
+          <input type="date" id="ef-date-end-${uid}" value="${endDateValue}">
+        </div>
+      </div>
+      <p class="field-error" id="ef-date-range-error-${uid}" style="display:none;">Tarikh tamat tidak boleh sebelum tarikh mula.</p>
 
       <label class="field-label">Lokasi</label>
       <input type="text" id="ef-location-${uid}" value="${(e.location||'').replace(/"/g,'&quot;')}">
@@ -4965,8 +5130,11 @@ async function saveEditedEvent(uid){
 
   const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
   const title = val(`ef-title-${uid}`).trim();
+  const isMultiDay = !!document.getElementById(`ef-multiday-${uid}`)?.checked;
   const date = val(`ef-date-${uid}`);
   const time = val(`ef-time-${uid}`);
+  const dateStart = val(`ef-date-start-${uid}`);
+  const dateEnd = val(`ef-date-end-${uid}`);
   const category = val(`ef-category-${uid}`);
   const protocol = val(`ef-protocol-${uid}`);
   const location = val(`ef-location-${uid}`);
@@ -4975,8 +5143,11 @@ async function saveEditedEvent(uid){
   const pakaian = val(`ef-pakaian-${uid}`);
   const kehadiran = val(`ef-kehadiran-${uid}`);
 
-  if(!title || !date){
+  if(!title || (isMultiDay ? (!dateStart || !dateEnd) : !date)){
     alert('Sila isi sekurang-kurangnya tajuk dan tarikh.');
+    return;
+  }
+  if(isMultiDay && !validateDateRange(uid)){
     return;
   }
 
@@ -4988,17 +5159,18 @@ async function saveEditedEvent(uid){
     urusSetia, kehadiran, pakaian
   });
 
-  const isAllDay = !time;
+  const isAllDay = isMultiDay || !time;
   const body = {
     summary,
     description: description || '',
     location: location || ''
   };
-  if(isAllDay){
-    const endDate = new Date(date + "T00:00:00");
-    endDate.setDate(endDate.getDate()+1);
+  if(isMultiDay){
+    body.start = { date: dateStart };
+    body.end = { date: exclusiveEndDateKey(dateEnd) };
+  } else if(isAllDay){
     body.start = { date };
-    body.end = { date: fmtKey(endDate) };
+    body.end = { date: exclusiveEndDateKey(date) };
   } else {
     const endHour = (parseInt(time.split(':')[0],10)+1) % 24;
     body.start = { dateTime: `${date}T${time}:00`, timeZone: 'Asia/Kuala_Lumpur' };
