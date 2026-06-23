@@ -4930,6 +4930,8 @@ async function saveNewEventToGoogleCalendar(){
     body.attachments = [{ fileUrl: attachmentUrl, title: 'Lampiran' }];
   }
 
+  console.log('[Tambah Aktiviti] body.start/body.end being sent:', body.start, body.end);
+
   saveBtn.disabled = true;
   saveBtn.textContent = 'Menyimpan...';
   try{
@@ -5124,6 +5126,8 @@ async function saveEditedEvent(uid){
     start: dateBody.start,
     end: dateBody.end
   };
+
+  console.log('[Edit Aktiviti] body.start/body.end being sent:', body.start, body.end);
 
   const saveBtn = document.getElementById(`ef-save-${uid}`);
   if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan...'; }
