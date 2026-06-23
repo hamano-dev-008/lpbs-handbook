@@ -1202,6 +1202,27 @@
     margin:18px 0 0;
     line-height:1.5;
   }
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:4px 0 12px;
+    cursor:pointer;
+  }
+  .checkbox-row input[type="checkbox"]{
+    width:16px;
+    height:16px;
+    margin:0;
+    cursor:pointer;
+  }
+  .form-error{
+    font-size:12px;
+    color:#c0392b;
+    margin:-6px 0 12px;
+    line-height:1.4;
+  }
   .modal-foot{
     display:flex;
     justify-content:flex-end;
@@ -2163,7 +2184,12 @@
         </div>
       </div>
 
-      <div class="field-row">
+      <label class="checkbox-row">
+        <input type="checkbox" id="f-multiday" onchange="toggleMultiDayFields()">
+        Acara berlangsung beberapa hari
+      </label>
+
+      <div class="field-row" id="f-date-single-row">
         <div>
           <label class="field-label">Tarikh</label>
           <input type="date" id="f-date">
@@ -2173,6 +2199,18 @@
           <input type="time" id="f-time">
         </div>
       </div>
+
+      <div class="field-row" id="f-date-range-row" style="display:none;">
+        <div>
+          <label class="field-label">Tarikh Mula</label>
+          <input type="date" id="f-date-start">
+        </div>
+        <div>
+          <label class="field-label">Tarikh Tamat</label>
+          <input type="date" id="f-date-end">
+        </div>
+      </div>
+      <p class="form-error" id="f-date-range-error" style="display:none;"></p>
 
       <label class="field-label">Lokasi</label>
       <input type="text" id="f-location" placeholder="Contoh: BMU MAFFI">
@@ -3646,12 +3684,28 @@ function googleEventToInternal(gEvent){
     time = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
   }
 
+  let startDateKey = null, endDateKey = null, multiDay = false;
+  if(isAllDay){
+    startDateKey = gEvent.start.date;
+    endDateKey = startDateKey;
+    if(gEvent.end && gEvent.end.date){
+      // Google's all-day end.date is exclusive (day after the last actual day).
+      const lastDate = new Date(gEvent.end.date + "T00:00:00");
+      lastDate.setDate(lastDate.getDate()-1);
+      endDateKey = fmtKey(lastDate);
+      multiDay = endDateKey !== startDateKey;
+    }
+  }
+
   const attachments = (gEvent.attachments || []).map(a => ({ title: a.title || a.fileUrl, url: a.fileUrl }));
 
   return {
     id: gEvent.id,
     time,
     allDay: isAllDay,
+    startDateKey,
+    endDateKey,
+    multiDay,
     category,
     title,
     location: gEvent.location || '',
@@ -3707,10 +3761,15 @@ async function loadEventsFromGoogleCalendar(){
     Object.keys(SAMPLE_EVENTS).forEach(k => delete SAMPLE_EVENTS[k]);
     allItems.forEach(gEvent => {
       if(gEvent.status === 'cancelled') return;
-      const key = dateKeyFromGoogleEvent(gEvent);
-      if(!key) return;
-      if(!SAMPLE_EVENTS[key]) SAMPLE_EVENTS[key] = [];
-      SAMPLE_EVENTS[key].push(googleEventToInternal(gEvent));
+      const internal = googleEventToInternal(gEvent);
+      const keys = internal.multiDay
+        ? dateRangeArray(internal.startDateKey, internal.endDateKey)
+        : [dateKeyFromGoogleEvent(gEvent)];
+      keys.forEach(key => {
+        if(!key) return;
+        if(!SAMPLE_EVENTS[key]) SAMPLE_EVENTS[key] = [];
+        SAMPLE_EVENTS[key].push(internal);
+      });
     });
 
     calendarLoaded = true;
@@ -4758,6 +4817,8 @@ document.getElementById('gateSigninBtn').addEventListener('click', () => {
 const modalOverlay = document.getElementById('modalOverlay');
 function openModal(){
   document.getElementById('f-date').value = fmtKey(currentDate);
+  document.getElementById('f-multiday').checked = false;
+  toggleMultiDayFields();
   modalOverlay.classList.add('open');
 }
 function closeModal(){
@@ -4778,11 +4839,51 @@ function buildEventDescription(fields){
   return lines.join('\n');
 }
 
+function buildEventDateBody(opts){
+  // opts: { multiDay, startDate, endDate, singleDate, time }
+  if(opts.multiDay){
+    if(!opts.startDate || !opts.endDate) return { error: 'Sila isi Tarikh Mula dan Tarikh Tamat.' };
+    if(opts.endDate < opts.startDate) return { error: 'Tarikh Tamat tidak boleh sebelum Tarikh Mula.' };
+    // Google's all-day end.date is exclusive — the day after the last actual day.
+    const endDateObj = new Date(opts.endDate + "T00:00:00");
+    endDateObj.setDate(endDateObj.getDate()+1);
+    return { start: { date: opts.startDate }, end: { date: fmtKey(endDateObj) } };
+  }
+  if(!opts.time){
+    const endDate = new Date(opts.singleDate + "T00:00:00");
+    endDate.setDate(endDate.getDate()+1);
+    return { start: { date: opts.singleDate }, end: { date: fmtKey(endDate) } };
+  }
+  const endHour = (parseInt(opts.time.split(':')[0],10)+1) % 24;
+  return {
+    start: { dateTime: `${opts.singleDate}T${opts.time}:00`, timeZone: 'Asia/Kuala_Lumpur' },
+    end: { dateTime: `${opts.singleDate}T${String(endHour).padStart(2,'0')}:${opts.time.split(':')[1]}:00`, timeZone: 'Asia/Kuala_Lumpur' }
+  };
+}
+
+function toggleMultiDayFields(uid){
+  const suffix = uid ? '-' + uid : '';
+  const prefix = uid ? 'ef' : 'f';
+  const checked = document.getElementById(`${prefix}-multiday${suffix}`).checked;
+  document.getElementById(`${prefix}-date-single-row${suffix}`).style.display = checked ? 'none' : '';
+  document.getElementById(`${prefix}-date-range-row${suffix}`).style.display = checked ? '' : 'none';
+  const errEl = document.getElementById(`${prefix}-date-range-error${suffix}`);
+  if(errEl) errEl.style.display = 'none';
+  const timeInput = document.getElementById(`${prefix}-time${suffix}`);
+  if(timeInput){
+    timeInput.disabled = checked;
+    if(checked) timeInput.value = '';
+  }
+}
+
 async function saveNewEventToGoogleCalendar(){
   const saveBtn = document.getElementById('modalSave');
   const title = document.getElementById('f-title').value.trim();
+  const multiDay = document.getElementById('f-multiday').checked;
   const date = document.getElementById('f-date').value;
   const time = document.getElementById('f-time').value;
+  const startDate = document.getElementById('f-date-start').value;
+  const endDate = document.getElementById('f-date-end').value;
   const category = document.getElementById('f-category').value;
   const protocol = document.getElementById('f-protocol').value;
   const location = document.getElementById('f-location').value;
@@ -4791,8 +4892,10 @@ async function saveNewEventToGoogleCalendar(){
   const kehadiran = document.getElementById('f-kehadiran').value;
   const pakaian = document.getElementById('f-pakaian').value;
   const attachmentUrl = document.getElementById('f-attachment').value.trim();
+  const rangeErrorEl = document.getElementById('f-date-range-error');
+  rangeErrorEl.style.display = 'none';
 
-  if(!title || !date){
+  if(!title || (!multiDay && !date) || (multiDay && (!startDate || !endDate))){
     alert('Sila isi sekurang-kurangnya tajuk dan tarikh.');
     return;
   }
@@ -4809,24 +4912,20 @@ async function saveNewEventToGoogleCalendar(){
     urusSetia, kehadiran, pakaian
   });
 
-  const isAllDay = !time;
+  const dateBody = buildEventDateBody({ multiDay, startDate, endDate, singleDate: date, time });
+  if(dateBody.error){
+    rangeErrorEl.textContent = dateBody.error;
+    rangeErrorEl.style.display = '';
+    return;
+  }
+
   const body = {
     summary,
     description: description || undefined,
     location: location || undefined,
+    start: dateBody.start,
+    end: dateBody.end
   };
-  if(isAllDay){
-    const endDate = new Date(date + "T00:00:00");
-    endDate.setDate(endDate.getDate()+1);
-    body.start = { date };
-    body.end = { date: fmtKey(endDate) };
-  } else {
-    const startDT = `${date}T${time}:00`;
-    const endHour = (parseInt(time.split(':')[0],10)+1) % 24;
-    const endDT = `${date}T${String(endHour).padStart(2,'0')}:${time.split(':')[1]}:00`;
-    body.start = { dateTime: startDT, timeZone: 'Asia/Kuala_Lumpur' };
-    body.end = { dateTime: endDT, timeZone: 'Asia/Kuala_Lumpur' };
-  }
   if(attachmentUrl){
     body.attachments = [{ fileUrl: attachmentUrl, title: 'Lampiran' }];
   }
@@ -4852,10 +4951,12 @@ async function saveNewEventToGoogleCalendar(){
     }
 
     closeModal();
-    ['f-title','f-location','f-vip','f-urussetia','f-pakaian','f-kehadiran','f-attachment','f-time'].forEach(id=>{
+    ['f-title','f-location','f-vip','f-urussetia','f-pakaian','f-kehadiran','f-attachment','f-time','f-date-start','f-date-end'].forEach(id=>{
       document.getElementById(id).value = '';
     });
-    currentDate = new Date(date + "T00:00:00");
+    document.getElementById('f-multiday').checked = false;
+    toggleMultiDayFields();
+    currentDate = new Date((multiDay ? startDate : date) + "T00:00:00");
     daySubView = 'single';
     await loadEventsFromGoogleCalendar();
     switchToView('day');
@@ -4909,7 +5010,12 @@ function enterEditMode(uid){
         </div>
       </div>
 
-      <div class="field-row">
+      <label class="checkbox-row">
+        <input type="checkbox" id="ef-multiday-${uid}" ${e.multiDay ? 'checked' : ''} onchange="toggleMultiDayFields('${uid}')">
+        Acara berlangsung beberapa hari
+      </label>
+
+      <div class="field-row" id="ef-date-single-row-${uid}" style="${e.multiDay ? 'display:none;' : ''}">
         <div>
           <label class="field-label">Tarikh</label>
           <input type="date" id="ef-date-${uid}" value="${e.dateKey || fmtKey(currentDate)}">
@@ -4919,6 +5025,18 @@ function enterEditMode(uid){
           <input type="time" id="ef-time-${uid}" value="${e.allDay ? '' : (e.time||'')}">
         </div>
       </div>
+
+      <div class="field-row" id="ef-date-range-row-${uid}" style="${e.multiDay ? '' : 'display:none;'}">
+        <div>
+          <label class="field-label">Tarikh Mula</label>
+          <input type="date" id="ef-date-start-${uid}" value="${e.multiDay ? (e.startDateKey || '') : ''}">
+        </div>
+        <div>
+          <label class="field-label">Tarikh Tamat</label>
+          <input type="date" id="ef-date-end-${uid}" value="${e.multiDay ? (e.endDateKey || '') : ''}">
+        </div>
+      </div>
+      <p class="form-error" id="ef-date-range-error-${uid}" style="display:none;"></p>
 
       <label class="field-label">Lokasi</label>
       <input type="text" id="ef-location-${uid}" value="${(e.location||'').replace(/"/g,'&quot;')}">
@@ -4965,8 +5083,11 @@ async function saveEditedEvent(uid){
 
   const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
   const title = val(`ef-title-${uid}`).trim();
+  const multiDay = !!document.getElementById(`ef-multiday-${uid}`)?.checked;
   const date = val(`ef-date-${uid}`);
   const time = val(`ef-time-${uid}`);
+  const startDate = val(`ef-date-start-${uid}`);
+  const endDate = val(`ef-date-end-${uid}`);
   const category = val(`ef-category-${uid}`);
   const protocol = val(`ef-protocol-${uid}`);
   const location = val(`ef-location-${uid}`);
@@ -4974,8 +5095,10 @@ async function saveEditedEvent(uid){
   const urusSetia = val(`ef-urussetia-${uid}`);
   const pakaian = val(`ef-pakaian-${uid}`);
   const kehadiran = val(`ef-kehadiran-${uid}`);
+  const rangeErrorEl = document.getElementById(`ef-date-range-error-${uid}`);
+  if(rangeErrorEl) rangeErrorEl.style.display = 'none';
 
-  if(!title || !date){
+  if(!title || (!multiDay && !date) || (multiDay && (!startDate || !endDate))){
     alert('Sila isi sekurang-kurangnya tajuk dan tarikh.');
     return;
   }
@@ -4988,22 +5111,19 @@ async function saveEditedEvent(uid){
     urusSetia, kehadiran, pakaian
   });
 
-  const isAllDay = !time;
+  const dateBody = buildEventDateBody({ multiDay, startDate, endDate, singleDate: date, time });
+  if(dateBody.error){
+    if(rangeErrorEl){ rangeErrorEl.textContent = dateBody.error; rangeErrorEl.style.display = ''; }
+    return;
+  }
+
   const body = {
     summary,
     description: description || '',
-    location: location || ''
+    location: location || '',
+    start: dateBody.start,
+    end: dateBody.end
   };
-  if(isAllDay){
-    const endDate = new Date(date + "T00:00:00");
-    endDate.setDate(endDate.getDate()+1);
-    body.start = { date };
-    body.end = { date: fmtKey(endDate) };
-  } else {
-    const endHour = (parseInt(time.split(':')[0],10)+1) % 24;
-    body.start = { dateTime: `${date}T${time}:00`, timeZone: 'Asia/Kuala_Lumpur' };
-    body.end = { dateTime: `${date}T${String(endHour).padStart(2,'0')}:${time.split(':')[1]}:00`, timeZone: 'Asia/Kuala_Lumpur' };
-  }
 
   const saveBtn = document.getElementById(`ef-save-${uid}`);
   if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan...'; }
