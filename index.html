@@ -4861,6 +4861,20 @@ function buildEventDateBody(opts){
   };
 }
 
+// events.patch merges start/end at the field level rather than replacing the whole
+// object, so toggling between an all-day event and a timed event (or vice versa)
+// needs the OTHER shape's keys explicitly nulled out — otherwise the server merges
+// old + new keys onto the same start/end object and rejects it with "Invalid start
+// time" because both date and dateTime end up set simultaneously.
+function clearOppositeDateShapeKeys(dateBody){
+  const isAllDay = !!dateBody.start.date;
+  const clearKeys = isAllDay ? { dateTime: null, timeZone: null } : { date: null };
+  return {
+    start: Object.assign({}, dateBody.start, clearKeys),
+    end: Object.assign({}, dateBody.end, clearKeys)
+  };
+}
+
 function toggleMultiDayFields(uid){
   const suffix = uid ? '-' + uid : '';
   const prefix = uid ? 'ef' : 'f';
@@ -4930,7 +4944,7 @@ async function saveNewEventToGoogleCalendar(){
     body.attachments = [{ fileUrl: attachmentUrl, title: 'Lampiran' }];
   }
 
-  console.log('[Tambah Aktiviti] body.start/body.end being sent:', body.start, body.end);
+  console.log('[Tambah Aktiviti] full POST body being sent:', JSON.stringify(body, null, 2));
 
   saveBtn.disabled = true;
   saveBtn.textContent = 'Menyimpan...';
@@ -4949,6 +4963,7 @@ async function saveNewEventToGoogleCalendar(){
     );
     if(!res.ok){
       const errData = await res.json().catch(()=>({}));
+      console.error('[Tambah Aktiviti] Calendar API error response:', JSON.stringify(errData, null, 2));
       throw new Error(errData.error?.message || 'Gagal menyimpan aktiviti.');
     }
 
@@ -5118,16 +5133,17 @@ async function saveEditedEvent(uid){
     if(rangeErrorEl){ rangeErrorEl.textContent = dateBody.error; rangeErrorEl.style.display = ''; }
     return;
   }
+  const clearedDateBody = clearOppositeDateShapeKeys(dateBody);
 
   const body = {
     summary,
     description: description || '',
     location: location || '',
-    start: dateBody.start,
-    end: dateBody.end
+    start: clearedDateBody.start,
+    end: clearedDateBody.end
   };
 
-  console.log('[Edit Aktiviti] body.start/body.end being sent:', body.start, body.end);
+  console.log('[Edit Aktiviti] full PATCH body being sent:', JSON.stringify(body, null, 2));
 
   const saveBtn = document.getElementById(`ef-save-${uid}`);
   if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan...'; }
@@ -5143,6 +5159,7 @@ async function saveEditedEvent(uid){
     );
     if(!res.ok){
       const errData = await res.json().catch(()=>({}));
+      console.error('[Edit Aktiviti] Calendar API error response:', JSON.stringify(errData, null, 2));
       throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
     }
     await loadEventsFromGoogleCalendar();
