@@ -3865,9 +3865,10 @@ function buildEventCard(e, uid, dateKey){
 }
 
 function buildSummaryChips(events, suffix){
-  const vvipCount = events.filter(e=>e.protocol==='vvip').length;
-  const vipCount = events.filter(e=>e.protocol==='vip').length;
-  let chips = `<div class="summary-chip"><b>${events.length}</b> aktiviti${suffix||''}</div>`;
+  const deduped = dedupeEventsById(events);
+  const vvipCount = deduped.filter(e=>e.protocol==='vvip').length;
+  const vipCount = deduped.filter(e=>e.protocol==='vip').length;
+  let chips = `<div class="summary-chip"><b>${deduped.length}</b> aktiviti${suffix||''}</div>`;
   if(vvipCount>0) chips += `<div class="summary-chip vvip"><b>${vvipCount}</b> peringkat VVIP</div>`;
   if(vipCount>0) chips += `<div class="summary-chip"><b>${vipCount}</b> peringkat VIP</div>`;
   return chips;
@@ -3881,7 +3882,7 @@ function renderHero(){
 
 function updateStatCards(){
   const key = fmtKey(currentDate);
-  const events = SAMPLE_EVENTS[key] || [];
+  const events = dedupeEventsById(SAMPLE_EVENTS[key] || []);
   const vipCount = events.filter(e => e.protocol === 'vip' || e.protocol === 'vvip').length;
   document.getElementById('statTodayCount').textContent = events.length;
   document.getElementById('statVipCount').textContent = vipCount;
@@ -4124,7 +4125,7 @@ function updateMonthSummary(){
   const year = monthCursor.getFullYear();
   const month = monthCursor.getMonth();
   const monthEvents = eventsForMonth(year, month);
-  const allMonthEvents = Object.values(monthEvents).flat();
+  const allMonthEvents = dedupeEventsById(Object.values(monthEvents).flat());
 
   const summaryRow = document.getElementById('summaryRow');
   if(allMonthEvents.length === 0){
@@ -4455,9 +4456,28 @@ function allEventsFlat(){
   return out;
 }
 
+// Multi-day events are deliberately stored once per day they span (so calendar
+// views show them on every day), but that means any aggregate/total taken across
+// more than one day will count the same event multiple times unless deduped by
+// its real Google Calendar id first. Use this before any count/aggregate that
+// spans multiple days — per-day listings (e.g. range view's per-day rows, PDF rows)
+// should NOT dedupe, since showing the event on each day it spans is correct there.
+function dedupeEventsById(events){
+  const seen = new Set();
+  const out = [];
+  events.forEach(e => {
+    if(e.id){
+      if(seen.has(e.id)) return;
+      seen.add(e.id);
+    }
+    out.push(e);
+  });
+  return out;
+}
+
 function aggregateByCategory(events){
   const counts = {};
-  events.forEach(e => {
+  dedupeEventsById(events).forEach(e => {
     const cat = e.category || 'LAIN';
     counts[cat] = (counts[cat]||0) + 1;
   });
@@ -4649,7 +4669,10 @@ function generatePrintPDF(){
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     const todayStr = new Date().toLocaleDateString('en-GB');
-    doc.text(`Jumlah aktiviti: ${result.events.length} | Tempoh: ${result.startKey} hingga ${result.endKey} | Dicetak: ${todayStr}`, 40, 60);
+    // "Jumlah aktiviti" counts distinct activities (dedup by id); the table below still
+    // lists a multi-day activity once per day, same as the calendar views do.
+    const totalUniqueActivities = dedupeEventsById(result.events).length;
+    doc.text(`Jumlah aktiviti: ${totalUniqueActivities} | Tempoh: ${result.startKey} hingga ${result.endKey} | Dicetak: ${todayStr}`, 40, 60);
 
     const rows = result.events.map(e => {
       const d = new Date(e.dateKey + "T00:00:00");
