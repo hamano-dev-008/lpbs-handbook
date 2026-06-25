@@ -1907,34 +1907,17 @@
 
       <button class="period-btn" data-view="month">Bulan</button>
     </div>
-    <div class="period-toggle" id="daySubToggle">
-      <button class="period-btn active" data-daysub="single">Tunggal</button>
-      <button class="period-btn" data-daysub="range">Julat</button>
-    </div>
     <div class="period-toggle" id="monthSubToggle" style="display:none;">
       <button class="period-btn active" data-sub="grid">Grid</button>
       <button class="period-btn" data-sub="list">Senarai</button>
     </div>
   </div>
 
-  <div class="datebar" id="dayControls" style="display:none;">
-    <button class="nav-btn" id="prevDay">&#8249;</button>
-    <div class="date-display">
-      <span class="day-name" id="dayName">SELASA</span>
-      <span id="dateText">17 Jun 2026</span>
-    </div>
-    <button class="nav-btn" id="nextDay">&#8250;</button>
-    <input type="date" id="datePicker" value="2026-06-17">
-    <button class="today-btn" id="todayBtn">Hari ini</button>
-    <div style="flex:1;"></div>
-    <button class="add-btn" id="addBtn" style="display:none;">+ Tambah aktiviti</button>
-  </div>
-
-  <div class="datebar" id="rangeControls" style="display:none;">
+  <div class="datebar" id="rangeControls">
     <span class="range-label">Dari</span>
-    <input type="date" id="rangeStart" value="2026-06-15">
+    <input type="date" id="rangeStart">
     <span class="range-label">Hingga</span>
-    <input type="date" id="rangeEnd" value="2026-06-19">
+    <input type="date" id="rangeEnd">
     <div style="flex:1;"></div>
     <button class="add-btn" id="addBtnRange" style="display:none;">+ Tambah aktiviti</button>
   </div>
@@ -1952,9 +1935,7 @@
 
   <div class="summary-row" id="summaryRow"></div>
 
-  <div class="timeline" id="timeline"></div>
-
-  <div id="rangeView" class="range-view" style="display:none;"></div>
+  <div id="rangeView" class="range-view"></div>
 
   <div id="monthGridView" class="month-grid-view" style="display:none;"></div>
   <div id="monthListView" class="month-list-view" style="display:none;"></div>
@@ -3779,16 +3760,17 @@ async function loadEventsFromGoogleCalendar(){
     });
 
     calendarLoaded = true;
-    render();
+    renderHero();
+    updateStatCards();
     if(currentView === 'month') renderMonthView();
-    if(currentView === 'day' && daySubView === 'range') renderRangeView();
+    else renderRangeView();
     refreshAnalytics();
   }catch(e){
     calendarLoadError = e.message === 'PERMISSION'
       ? 'Akaun anda tidak mempunyai kebenaran untuk melihat kalendar ini. Sila hubungi pentadbir LPBS.'
       : 'Gagal memuatkan data kalendar. Sila muat semula halaman.';
-    const timeline = document.getElementById('timeline');
-    if(timeline) timeline.innerHTML = `<div class="empty-state"><div class="big">Ralat memuatkan data</div>${calendarLoadError}</div>`;
+    const rangeViewEl = document.getElementById('rangeView');
+    if(rangeViewEl) rangeViewEl.innerHTML = `<div class="empty-state"><div class="big">Ralat memuatkan data</div>${calendarLoadError}</div>`;
   }
 }
 
@@ -3803,8 +3785,6 @@ const CATEGORY_MAP = {
 
 const DAY_NAMES = ["AHAD","ISNIN","SELASA","RABU","KHAMIS","JUMAAT","SABTU"];
 const MONTH_NAMES = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
-
-let currentDate = new Date();
 
 function fmtKey(d){
   const y = d.getFullYear();
@@ -3903,59 +3883,17 @@ function renderHero(){
 }
 
 function updateStatCards(){
-  const key = fmtKey(currentDate);
+  const key = fmtKey(new Date());
   const events = SAMPLE_EVENTS[key] || [];
   const vipCount = events.filter(e => e.protocol === 'vip' || e.protocol === 'vvip').length;
   document.getElementById('statTodayCount').textContent = events.length;
   document.getElementById('statVipCount').textContent = vipCount;
 }
 
-function render(){
-  renderHero();
-  updateStatCards();
-
-  const key = fmtKey(currentDate);
-  document.getElementById('datePicker').value = key;
-  document.getElementById('dayName').textContent = DAY_NAMES[currentDate.getDay()];
-  document.getElementById('dateText').textContent =
-    currentDate.getDate() + ' ' + MONTH_NAMES[currentDate.getMonth()] + ' ' + currentDate.getFullYear();
-
-  const events = (SAMPLE_EVENTS[key] || []).slice().sort((a,b)=> (a.time||'').localeCompare(b.time||''));
-  const timeline = document.getElementById('timeline');
-  const summaryRow = document.getElementById('summaryRow');
-  summaryRow.innerHTML = ''; // stat cards in the hero already show today's counts
-
-  if(events.length === 0){
-    timeline.style.paddingLeft = '0';
-    timeline.innerHTML = '<div class="empty-state"><div class="big">Tiada aktiviti dijadualkan</div>Tidak ada acara LPBS pada tarikh ini.</div>';
-    return;
-  }
-  timeline.style.paddingLeft = '28px';
-
-  timeline.innerHTML = events.map((e, idx) => buildEventCard(e, key+'-'+idx, key)).join('');
-}
-
 function toggleEvent(uid){
   const el = document.querySelector(`.event[data-uid="${uid}"]`);
   if(el) el.classList.toggle('open');
 }
-
-document.getElementById('prevDay').onclick = () => {
-  currentDate.setDate(currentDate.getDate()-1);
-  render();
-};
-document.getElementById('nextDay').onclick = () => {
-  currentDate.setDate(currentDate.getDate()+1);
-  render();
-};
-document.getElementById('todayBtn').onclick = () => {
-  currentDate = new Date();
-  render();
-};
-document.getElementById('datePicker').onchange = (e) => {
-  currentDate = new Date(e.target.value + "T00:00:00");
-  render();
-};
 
 let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'cetak'
 
@@ -3982,7 +3920,9 @@ function switchSection(section){
 
   // Lazily trigger the right render when entering a section, so data is fresh.
   if(section === 'aktiviti'){
-    if(currentView === 'day') render();
+    renderHero();
+    updateStatCards();
+    if(currentView === 'day') renderRangeView();
     else renderMonthView();
   } else if(section === 'analitik'){
     refreshAnalytics();
@@ -4177,8 +4117,8 @@ function renderMonthView(){
 }
 
 function jumpToDay(key){
-  currentDate = new Date(key+"T00:00:00");
-  daySubView = 'single';
+  rangeStart = key;
+  rangeEnd = key;
   switchToView('day');
 }
 
@@ -4285,9 +4225,8 @@ document.getElementById('searchInput').addEventListener('focus', () => {
   }
 });
 
-let daySubView = 'single';
-let rangeStart = "2026-06-15";
-let rangeEnd = "2026-06-19";
+let rangeStart = fmtKey(new Date());
+let rangeEnd = fmtKey(new Date());
 
 function dateRangeArray(startKey, endKey){
   const out = [];
@@ -4349,45 +4288,23 @@ function switchToView(view){
     document.getElementById('monthSubToggle').style.display = 'none';
     document.getElementById('monthGridView').style.display = 'none';
     document.getElementById('monthListView').style.display = 'none';
-    document.getElementById('daySubToggle').style.display = '';
-    document.querySelectorAll('#daySubToggle .period-btn').forEach(b=>{
-      b.classList.toggle('active', b.dataset.daysub === daySubView);
-    });
-
-    if(daySubView === 'single'){
-      document.getElementById('dayControls').style.display = '';
-      document.getElementById('rangeControls').style.display = 'none';
-      document.getElementById('timeline').style.display = '';
-      document.getElementById('rangeView').style.display = 'none';
-      render();
-    } else {
-      document.getElementById('dayControls').style.display = 'none';
-      document.getElementById('rangeControls').style.display = '';
-      document.getElementById('timeline').style.display = 'none';
-      document.getElementById('rangeView').style.display = '';
-      syncSignInButtons();
-      renderRangeView();
-    }
+    document.getElementById('rangeControls').style.display = '';
+    document.getElementById('rangeView').style.display = '';
+    renderHero();
+    updateStatCards();
+    syncSignInButtons();
+    renderRangeView();
   } else {
-    document.getElementById('dayControls').style.display = 'none';
     document.getElementById('rangeControls').style.display = 'none';
-    document.getElementById('daySubToggle').style.display = 'none';
-    document.getElementById('timeline').style.display = 'none';
     document.getElementById('rangeView').style.display = 'none';
     document.getElementById('monthControls').style.display = '';
     document.getElementById('monthSubToggle').style.display = '';
-    monthCursor = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    monthCursor = new Date(rangeStart+"T00:00:00");
     syncSignInButtons();
     renderMonthView();
   }
 }
 
-document.querySelectorAll('#daySubToggle .period-btn').forEach(btn=>{
-  btn.addEventListener('click', () => {
-    daySubView = btn.dataset.daysub;
-    switchToView('day');
-  });
-});
 document.getElementById('rangeStart').addEventListener('change', (e)=>{
   rangeStart = e.target.value;
   renderRangeView();
@@ -4423,7 +4340,6 @@ function syncSignInButtons(){
   const canEdit = isAllowedEditor(currentUser.email);
   const visible = canEdit ? 'inline-flex' : 'none';
 
-  document.getElementById('addBtn').style.display = visible;
   document.getElementById('addBtnMonth').style.display = visible;
   document.getElementById('addBtnRange').style.display = visible;
   document.getElementById('tabCetak').style.display = canEdit ? '' : 'none';
@@ -4800,7 +4716,7 @@ function attemptSignIn(email){
     document.getElementById('gateScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = '';
     syncSignInButtons();
-    document.getElementById('timeline').innerHTML = '<div class="empty-state"><div class="big">Memuatkan data...</div>Sila tunggu sebentar.</div>';
+    document.getElementById('rangeView').innerHTML = '<div class="empty-state"><div class="big">Memuatkan data...</div>Sila tunggu sebentar.</div>';
     loadEventsFromGoogleCalendar();
     // Loaded proactively (not gated by Task-editor access) so any tagged staff
     // member sees their notification dot, even if they never open the Task section.
@@ -4839,7 +4755,7 @@ document.getElementById('gateSigninBtn').addEventListener('click', () => {
 
 const modalOverlay = document.getElementById('modalOverlay');
 function openModal(){
-  document.getElementById('f-date').value = fmtKey(currentDate);
+  document.getElementById('f-date').value = rangeStart;
   document.getElementById('f-multiday').checked = false;
   document.getElementById('f-date-start').value = '';
   document.getElementById('f-date-end').value = '';
@@ -4891,7 +4807,6 @@ function validateDateRange(uid){
 function closeModal(){
   modalOverlay.classList.remove('open');
 }
-document.getElementById('addBtn').onclick = openModal;
 document.getElementById('modalClose').onclick = closeModal;
 document.getElementById('modalCancel').onclick = closeModal;
 modalOverlay.onclick = (e) => { if(e.target === modalOverlay) closeModal(); };
@@ -4992,8 +4907,8 @@ async function saveNewEventToGoogleCalendar(){
     });
     document.getElementById('f-multiday').checked = false;
     toggleMultiDayFields(null, false);
-    currentDate = new Date((isMultiDay ? dateStart : date) + "T00:00:00");
-    daySubView = 'single';
+    rangeStart = isMultiDay ? dateStart : date;
+    rangeEnd = isMultiDay ? dateEnd : date;
     await loadEventsFromGoogleCalendar();
     switchToView('day');
   }catch(e){
@@ -5032,7 +4947,7 @@ function enterEditMode(uid){
   const rawEnd = e._raw && e._raw.end && e._raw.end.date;
   const lastDayKey = rawEnd ? inclusiveLastDayKey(rawEnd) : null;
   const isMultiDay = !!(e.allDay && rawStart && lastDayKey && lastDayKey > rawStart);
-  const singleDateValue = rawStart || e.dateKey || fmtKey(currentDate);
+  const singleDateValue = rawStart || e.dateKey || fmtKey(new Date());
   const startDateValue = isMultiDay ? rawStart : singleDateValue;
   const endDateValue = isMultiDay ? lastDayKey : singleDateValue;
 
@@ -5194,8 +5109,6 @@ async function saveEditedEvent(uid){
       throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
     }
     await loadEventsFromGoogleCalendar();
-    if(currentView === 'month') renderMonthView();
-    if(currentView === 'day' && daySubView === 'range') renderRangeView();
   }catch(err){
     alert('Ralat menyimpan perubahan: ' + err.message);
     if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'Simpan perubahan'; }
@@ -5279,8 +5192,6 @@ async function deleteEventPrompt(eventId, uid){
         throw new Error(errData.error?.message || ('Gagal memadam (status ' + res.status + ')'));
       }
       await loadEventsFromGoogleCalendar();
-      if(currentView === 'month') renderMonthView();
-      if(currentView === 'day' && daySubView === 'range') renderRangeView();
     }catch(e){
       alert('Ralat memadam aktiviti: ' + e.message);
       if(eventEl) eventEl.style.display = ''; // restore on failure
