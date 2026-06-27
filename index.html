@@ -4306,7 +4306,6 @@ function syncSignInButtons(){
   const canEdit = isAllowedEditor(currentUser.email);
   const visible = canEdit ? 'inline-flex' : 'none';
 
-  document.getElementById('addBtn').style.display = visible;
   document.getElementById('addBtnMonth').style.display = visible;
   document.getElementById('addBtnRange').style.display = visible;
   document.getElementById('tabCetak').style.display = canEdit ? '' : 'none';
@@ -4752,7 +4751,6 @@ function openModal(){
 function closeModal(){
   modalOverlay.classList.remove('open');
 }
-document.getElementById('addBtn').onclick = openModal;
 document.getElementById('modalClose').onclick = closeModal;
 document.getElementById('modalCancel').onclick = closeModal;
 modalOverlay.onclick = (e) => { if(e.target === modalOverlay) closeModal(); };
