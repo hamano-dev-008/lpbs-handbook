@@ -1994,6 +1994,7 @@
       <p class="kh-hours-preview" id="khHoursPreview"></p>
 
       <button class="save-btn" id="khSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
+      <button class="save-btn" id="khBulkAddBtn" style="margin-top:8px;background:var(--paddy-light);">Tambah Semua Staf untuk Tarikh Ini</button>
       <p class="kh-note" id="khNote"></p>
     </div>
 
@@ -2660,6 +2661,77 @@ async function saveKehadiranRecord(){
   }
 }
 
+async function bulkAddAllStaff(){
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+
+  const tarikh = document.getElementById('kh-tarikh').value;
+  const note = document.getElementById('khNote');
+  const btn = document.getElementById('khBulkAddBtn');
+
+  if(!tarikh){
+    note.textContent = 'Sila pilih Tarikh dahulu sebelum menambah semua staf.';
+    return;
+  }
+
+  if(STAFF_DIRECTORY.size === 0){
+    note.textContent = 'Senarai staf belum dimuatkan. Cuba log keluar dan log masuk semula.';
+    return;
+  }
+
+  const existingOnDate = new Set(
+    kehadiranRecords
+      .filter(r => r.tarikh === tarikh)
+      .map(r => r.nama.toLowerCase())
+  );
+
+  // Build rows for staff not already recorded on this date.
+  const rowsToAdd = [];
+  for(const [email, info] of STAFF_DIRECTORY){
+    const nama = (info && info.nama) ? info.nama : email;
+    if(!existingOnDate.has(nama.toLowerCase())){
+      rowsToAdd.push([tarikh, nama, '', '']);
+    }
+  }
+
+  const skipped = STAFF_DIRECTORY.size - rowsToAdd.length;
+
+  if(rowsToAdd.length === 0){
+    note.textContent = `Semua ${skipped} staf sudah mempunyai rekod untuk ${tarikh}. Tiada rekod baharu ditambah.`;
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Tambah ${rowsToAdd.length} rekod baharu untuk ${tarikh}?` +
+    (skipped > 0 ? `\n(${skipped} staf sudah mempunyai rekod dan akan dilangkau.)` : '')
+  );
+  if(!confirmed) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Menambah...';
+  note.textContent = '';
+
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:D')}:append?valueInputOption=USER_ENTERED`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: rowsToAdd })
+    });
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+    }
+    await loadKehadiranFromSheet();
+    note.textContent = `${rowsToAdd.length} rekod baharu ditambah` +
+      (skipped > 0 ? `, ${skipped} staf telah mempunyai rekod sedia ada (dilangkau).` : '.');
+  }catch(e){
+    note.textContent = 'Ralat: ' + e.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Tambah Semua Staf untuk Tarikh Ini';
+  }
+}
+
 async function deleteKehadiranRow(rowIndex){
   if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
   const confirmed = window.confirm('Adakah anda pasti mahu memadam rekod ini?');
@@ -2743,6 +2815,7 @@ function updateHoursPreview(){
 document.getElementById('kh-masuk').addEventListener('input', updateHoursPreview);
 document.getElementById('kh-keluar').addEventListener('input', updateHoursPreview);
 document.getElementById('khSaveBtn').addEventListener('click', saveKehadiranRecord);
+document.getElementById('khBulkAddBtn').addEventListener('click', bulkAddAllStaff);
 document.getElementById('khPrintBtn').addEventListener('click', generateKehadiranPDF);
 
 // ============================================================
