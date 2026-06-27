@@ -1941,25 +1941,23 @@
     <div class="ana-controls" id="anaControls"></div>
 
     <div class="ana-body" id="anaBody"></div>
-  </section>
-  </div>
 
-  <div id="sectionCetak" style="display:none;">
-
-  <section class="analytics no-border-top">
-    <div class="print-section" id="printSection">
-      <div class="print-head">
-        <p class="eyebrow">Cetak / Eksport</p>
-        <h2 class="ana-title">Cetak senarai aktiviti</h2>
+    <div id="cetakInAnalitik" style="display:none;">
+      <hr style="border:none;border-top:1px solid var(--border,#e0e0e0);margin:32px 0;">
+      <div class="print-section" id="printSection">
+        <div class="print-head">
+          <p class="eyebrow">Cetak / Eksport</p>
+          <h2 class="ana-title">Cetak senarai aktiviti</h2>
+        </div>
+        <div class="period-toggle" id="printPeriodToggle">
+          <button class="period-btn active" data-pp="day">Hari - Hari</button>
+          <button class="period-btn" data-pp="month">Bulan - Bulan</button>
+          <button class="period-btn" data-pp="year">Tahun</button>
+        </div>
+        <div class="print-controls" id="printControls"></div>
+        <button class="print-btn" id="printDownloadBtn">&#128190; Muat turun PDF</button>
+        <p class="print-note" id="printNote"></p>
       </div>
-      <div class="period-toggle" id="printPeriodToggle">
-        <button class="period-btn active" data-pp="day">Hari - Hari</button>
-        <button class="period-btn" data-pp="month">Bulan - Bulan</button>
-        <button class="period-btn" data-pp="year">Tahun</button>
-      </div>
-      <div class="print-controls" id="printControls"></div>
-      <button class="print-btn" id="printDownloadBtn">&#128190; Muat turun PDF</button>
-      <p class="print-note" id="printNote"></p>
     </div>
   </section>
   </div>
@@ -2092,9 +2090,9 @@
     <button class="tab-add-center" id="tabAddCenter" style="display:none;" onclick="openModal()" aria-label="Tambah aktiviti">
       <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 13H6q-.425 0-.712-.288T5 12t.288-.712T6 11h5V6q0-.425.288-.712T12 5t.713.288T13 6v5h5q.425 0 .713.288T19 12t-.288.713T18 13h-5v5q0 .425-.288.713T12 19t-.712-.288T11 18z"/></svg>
     </button>
-    <button class="tab-btn" id="tabCetak" onclick="switchSection('cetak')" style="display:none;">
-      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 4.002c2.175.012 3.353.109 4.121.877C21 5.758 21 7.172 21 10v6c0 2.829 0 4.243-.879 5.122C19.243 22 17.828 22 15 22H9c-2.828 0-4.243 0-5.121-.878C3 20.242 3 18.829 3 16v-6c0-2.828 0-4.242.879-5.121c.768-.768 1.946-.865 4.121-.877"/><path stroke-linecap="round" d="M10.5 14H17M7 14h.5M7 10.5h.5m-.5 7h.5m3-7H17m-6.5 7H17"/><path d="M8 3.5A1.5 1.5 0 0 1 9.5 2h5A1.5 1.5 0 0 1 16 3.5v1A1.5 1.5 0 0 1 14.5 6h-5A1.5 1.5 0 0 1 8 4.5z"/></g></svg></span>
-      <span class="tab-label">Cetak</span>
+    <button class="tab-btn" id="tabTask" onclick="switchSection('task')" style="display:none;">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 4h8a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M9 4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><path stroke-linecap="round" d="m9 13l2 2l4-4"/></g></svg></span>
+      <span class="tab-label">Tugasan</span>
     </button>
     <button class="tab-btn" id="tabLagi" onclick="toggleLagiMenu()" style="display:none;">
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></g></svg></span>
@@ -2112,10 +2110,6 @@
     <button class="lagi-row" id="lagiRowMinit" onclick="openLagiSection('minit')" style="display:none;">
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L16 18.5l-2 2-2-2-2 2-2-2-2.5 2V5A1.5 1.5 0 0 1 7 3.5Z"/><path stroke-linecap="round" d="M9 8h6M9 11.5h6M9 15h3"/></g></svg></span>
       <span class="lagi-row-label">Minit Mesyuarat</span>
-    </button>
-    <button class="lagi-row" id="lagiRowTask" onclick="openLagiSection('task')" style="display:none;">
-      <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 4h8a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M9 4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><path stroke-linecap="round" d="m9 13l2 2l4-4"/></g></svg></span>
-      <span class="lagi-row-label">Tugasan</span>
     </button>
   </div>
 </div>
@@ -3938,26 +3932,26 @@ function toggleEvent(uid){
   if(el) el.classList.toggle('open');
 }
 
-let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'cetak'
+let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'kehadiran' | 'minit' | 'task'
 
 const SECTION_TITLES = {
   aktiviti: { title: 'Papar Aktiviti' },
   analitik: { title: 'Analitik' },
-  cetak: { title: 'Cetak / Eksport' }
+  task: { title: 'Tugasan' }
 };
 
 function switchSection(section){
   appSection = section;
-  ['Aktiviti','Analitik','Cetak','Kehadiran','Minit','Task'].forEach(name=>{
+  ['Aktiviti','Analitik','Kehadiran','Minit','Task'].forEach(name=>{
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
-  ['tabAktiviti','tabAnalitik','tabCetak'].forEach(id=>{
+  ['tabAktiviti','tabAnalitik','tabTask'].forEach(id=>{
     const tab = document.getElementById(id);
     if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
   });
   const tabLagi = document.getElementById('tabLagi');
-  if(tabLagi) tabLagi.classList.toggle('active', section === 'kehadiran' || section === 'minit' || section === 'task');
+  if(tabLagi) tabLagi.classList.toggle('active', section === 'kehadiran' || section === 'minit');
 
   const titles = SECTION_TITLES[section] || SECTION_TITLES.aktiviti;
 
@@ -3967,7 +3961,6 @@ function switchSection(section){
     switchToView(currentView);
   } else if(section === 'analitik'){
     refreshAnalytics();
-  } else if(section === 'cetak'){
     renderPrintControls();
   } else if(section === 'kehadiran'){
     if(!document.getElementById('kh-tarikh').value){
@@ -4381,7 +4374,7 @@ function syncSignInButtons(){
 
   document.getElementById('addBtnMonth').style.display = visible;
   document.getElementById('addBtnRange').style.display = visible;
-  document.getElementById('tabCetak').style.display = canEdit ? '' : 'none';
+  document.getElementById('cetakInAnalitik').style.display = canEdit ? '' : 'none';
   document.getElementById('tabAddCenter').style.display = canEdit ? '' : 'none';
 
   const canEditKehadiran = isAllowedKehadiranEditor(currentUser.email);
@@ -4392,11 +4385,11 @@ function syncSignInButtons(){
   document.getElementById('lagiRowMinit').style.display = canEditMinit ? '' : 'none';
 
   const canEditTask = isAllowedTaskEditor(currentUser.email);
-  document.getElementById('lagiRowTask').style.display = canEditTask ? '' : 'none';
+  document.getElementById('tabTask').style.display = canEditTask ? '' : 'none';
   document.getElementById('taskAddBtn').style.display = canEditTask ? '' : 'none';
 
-  document.getElementById('tabLagi').style.display = (canEditKehadiran || canEditMinit || canEditTask) ? '' : 'none';
-  if(!canEditKehadiran && !canEditMinit && !canEditTask) closeLagiMenu();
+  document.getElementById('tabLagi').style.display = (canEditKehadiran || canEditMinit) ? '' : 'none';
+  if(!canEditKehadiran && !canEditMinit) closeLagiMenu();
 
   const namePart = currentUser.email.split('@')[0];
   const initial = namePart.charAt(0).toUpperCase();
