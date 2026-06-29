@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -139,19 +139,6 @@
     font-weight:500;
   }
   .summary-chip.vvip b{color:var(--red-text);}
-  .timeline{
-    position:relative;
-    padding-left:28px;
-  }
-  .timeline::before{
-    content:'';
-    position:absolute;
-    left:5px;
-    top:6px;
-    bottom:6px;
-    width:1px;
-    background:var(--sage-line);
-  }
   .event{
     position:relative;
     margin-bottom:14px;
@@ -1228,6 +1215,27 @@
     margin:18px 0 0;
     line-height:1.5;
   }
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:4px 0 12px;
+    cursor:pointer;
+  }
+  .checkbox-row input[type="checkbox"]{
+    width:16px;
+    height:16px;
+    margin:0;
+    cursor:pointer;
+  }
+  .form-error{
+    font-size:12px;
+    color:#c0392b;
+    margin:-6px 0 12px;
+    line-height:1.4;
+  }
   .modal-foot{
     display:flex;
     justify-content:flex-end;
@@ -1913,7 +1921,7 @@
     </div>
   </div>
 
-  <div class="datebar" id="rangeControls">
+  <div class="datebar" id="rangeControls" style="display:none;">
     <span class="range-label">Dari</span>
     <input type="date" id="rangeStart">
     <span class="range-label">Hingga</span>
@@ -1935,7 +1943,7 @@
 
   <div class="summary-row" id="summaryRow"></div>
 
-  <div id="rangeView" class="range-view"></div>
+  <div id="rangeView" class="range-view" style="display:none;"></div>
 
   <div id="monthGridView" class="month-grid-view" style="display:none;"></div>
   <div id="monthListView" class="month-list-view" style="display:none;"></div>
@@ -1959,25 +1967,23 @@
     <div class="ana-controls" id="anaControls"></div>
 
     <div class="ana-body" id="anaBody"></div>
-  </section>
-  </div>
 
-  <div id="sectionCetak" style="display:none;">
-
-  <section class="analytics no-border-top">
-    <div class="print-section" id="printSection">
-      <div class="print-head">
-        <p class="eyebrow">Cetak / Eksport</p>
-        <h2 class="ana-title">Cetak senarai aktiviti</h2>
+    <div id="cetakInAnalitik" style="display:none;">
+      <hr style="border:none;border-top:1px solid var(--border,#e0e0e0);margin:32px 0;">
+      <div class="print-section" id="printSection">
+        <div class="print-head">
+          <p class="eyebrow">Cetak / Eksport</p>
+          <h2 class="ana-title">Cetak senarai aktiviti</h2>
+        </div>
+        <div class="period-toggle" id="printPeriodToggle">
+          <button class="period-btn active" data-pp="day">Hari - Hari</button>
+          <button class="period-btn" data-pp="month">Bulan - Bulan</button>
+          <button class="period-btn" data-pp="year">Tahun</button>
+        </div>
+        <div class="print-controls" id="printControls"></div>
+        <button class="print-btn" id="printDownloadBtn">&#128190; Muat turun PDF</button>
+        <p class="print-note" id="printNote"></p>
       </div>
-      <div class="period-toggle" id="printPeriodToggle">
-        <button class="period-btn active" data-pp="day">Hari - Hari</button>
-        <button class="period-btn" data-pp="month">Bulan - Bulan</button>
-        <button class="period-btn" data-pp="year">Tahun</button>
-      </div>
-      <div class="print-controls" id="printControls"></div>
-      <button class="print-btn" id="printDownloadBtn">&#128190; Muat turun PDF</button>
-      <p class="print-note" id="printNote"></p>
     </div>
   </section>
   </div>
@@ -2012,6 +2018,7 @@
       <p class="kh-hours-preview" id="khHoursPreview"></p>
 
       <button class="save-btn" id="khSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
+      <button class="save-btn" id="khBulkAddBtn" style="margin-top:8px;background:var(--paddy-light);">Tambah Semua Staf untuk Tarikh Ini</button>
       <p class="kh-note" id="khNote"></p>
     </div>
 
@@ -2109,9 +2116,9 @@
     <button class="tab-add-center" id="tabAddCenter" style="display:none;" onclick="openModal()" aria-label="Tambah aktiviti">
       <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 13H6q-.425 0-.712-.288T5 12t.288-.712T6 11h5V6q0-.425.288-.712T12 5t.713.288T13 6v5h5q.425 0 .713.288T19 12t-.288.713T18 13h-5v5q0 .425-.288.713T12 19t-.712-.288T11 18z"/></svg>
     </button>
-    <button class="tab-btn" id="tabCetak" onclick="switchSection('cetak')" style="display:none;">
-      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 4.002c2.175.012 3.353.109 4.121.877C21 5.758 21 7.172 21 10v6c0 2.829 0 4.243-.879 5.122C19.243 22 17.828 22 15 22H9c-2.828 0-4.243 0-5.121-.878C3 20.242 3 18.829 3 16v-6c0-2.828 0-4.242.879-5.121c.768-.768 1.946-.865 4.121-.877"/><path stroke-linecap="round" d="M10.5 14H17M7 14h.5M7 10.5h.5m-.5 7h.5m3-7H17m-6.5 7H17"/><path d="M8 3.5A1.5 1.5 0 0 1 9.5 2h5A1.5 1.5 0 0 1 16 3.5v1A1.5 1.5 0 0 1 14.5 6h-5A1.5 1.5 0 0 1 8 4.5z"/></g></svg></span>
-      <span class="tab-label">Cetak</span>
+    <button class="tab-btn" id="tabTask" onclick="switchSection('task')" style="display:none;">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 4h8a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M9 4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><path stroke-linecap="round" d="m9 13l2 2l4-4"/></g></svg></span>
+      <span class="tab-label">Tugasan</span>
     </button>
     <button class="tab-btn" id="tabLagi" onclick="toggleLagiMenu()" style="display:none;">
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></g></svg></span>
@@ -2129,10 +2136,6 @@
     <button class="lagi-row" id="lagiRowMinit" onclick="openLagiSection('minit')" style="display:none;">
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L16 18.5l-2 2-2-2-2 2-2-2-2.5 2V5A1.5 1.5 0 0 1 7 3.5Z"/><path stroke-linecap="round" d="M9 8h6M9 11.5h6M9 15h3"/></g></svg></span>
       <span class="lagi-row-label">Minit Mesyuarat</span>
-    </button>
-    <button class="lagi-row" id="lagiRowTask" onclick="openLagiSection('task')" style="display:none;">
-      <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 4h8a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M9 4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><path stroke-linecap="round" d="m9 13l2 2l4-4"/></g></svg></span>
-      <span class="lagi-row-label">Tugasan</span>
     </button>
   </div>
 </div>
@@ -2170,12 +2173,12 @@
         </div>
       </div>
 
-      <label class="multiday-toggle">
-        <input type="checkbox" id="f-multiday" onchange="toggleMultiDayFields(null, this.checked)">
+      <label class="checkbox-row">
+        <input type="checkbox" id="f-multiday" onchange="toggleMultiDayFields()">
         Acara berlangsung beberapa hari
       </label>
 
-      <div class="field-row" id="f-singleday-row">
+      <div class="field-row" id="f-date-single-row">
         <div>
           <label class="field-label">Tarikh</label>
           <input type="date" id="f-date">
@@ -2186,17 +2189,17 @@
         </div>
       </div>
 
-      <div class="field-row" id="f-multiday-row" style="display:none;">
+      <div class="field-row" id="f-date-range-row" style="display:none;">
         <div>
-          <label class="field-label">Tarikh mula</label>
+          <label class="field-label">Tarikh Mula</label>
           <input type="date" id="f-date-start">
         </div>
         <div>
-          <label class="field-label">Tarikh tamat</label>
+          <label class="field-label">Tarikh Tamat</label>
           <input type="date" id="f-date-end">
         </div>
       </div>
-      <p class="field-error" id="f-date-range-error" style="display:none;">Tarikh tamat tidak boleh sebelum tarikh mula.</p>
+      <p class="form-error" id="f-date-range-error" style="display:none;"></p>
 
       <label class="field-label">Lokasi</label>
       <input type="text" id="f-location" placeholder="Contoh: BMU MAFFI">
@@ -2678,6 +2681,77 @@ async function saveKehadiranRecord(){
   }
 }
 
+async function bulkAddAllStaff(){
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+
+  const tarikh = document.getElementById('kh-tarikh').value;
+  const note = document.getElementById('khNote');
+  const btn = document.getElementById('khBulkAddBtn');
+
+  if(!tarikh){
+    note.textContent = 'Sila pilih Tarikh dahulu sebelum menambah semua staf.';
+    return;
+  }
+
+  if(STAFF_DIRECTORY.size === 0){
+    note.textContent = 'Senarai staf belum dimuatkan. Cuba log keluar dan log masuk semula.';
+    return;
+  }
+
+  const existingOnDate = new Set(
+    kehadiranRecords
+      .filter(r => r.tarikh === tarikh)
+      .map(r => r.nama.toLowerCase())
+  );
+
+  // Build rows for staff not already recorded on this date.
+  const rowsToAdd = [];
+  for(const [email, info] of STAFF_DIRECTORY){
+    const nama = (info && info.nama) ? info.nama : email;
+    if(!existingOnDate.has(nama.toLowerCase())){
+      rowsToAdd.push([tarikh, nama, '', '']);
+    }
+  }
+
+  const skipped = STAFF_DIRECTORY.size - rowsToAdd.length;
+
+  if(rowsToAdd.length === 0){
+    note.textContent = `Semua ${skipped} staf sudah mempunyai rekod untuk ${tarikh}. Tiada rekod baharu ditambah.`;
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Tambah ${rowsToAdd.length} rekod baharu untuk ${tarikh}?` +
+    (skipped > 0 ? `\n(${skipped} staf sudah mempunyai rekod dan akan dilangkau.)` : '')
+  );
+  if(!confirmed) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Menambah...';
+  note.textContent = '';
+
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:D')}:append?valueInputOption=USER_ENTERED`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: rowsToAdd })
+    });
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+    }
+    await loadKehadiranFromSheet();
+    note.textContent = `${rowsToAdd.length} rekod baharu ditambah` +
+      (skipped > 0 ? `, ${skipped} staf telah mempunyai rekod sedia ada (dilangkau).` : '.');
+  }catch(e){
+    note.textContent = 'Ralat: ' + e.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Tambah Semua Staf untuk Tarikh Ini';
+  }
+}
+
 async function deleteKehadiranRow(rowIndex){
   if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
   const confirmed = window.confirm('Adakah anda pasti mahu memadam rekod ini?');
@@ -2761,6 +2835,7 @@ function updateHoursPreview(){
 document.getElementById('kh-masuk').addEventListener('input', updateHoursPreview);
 document.getElementById('kh-keluar').addEventListener('input', updateHoursPreview);
 document.getElementById('khSaveBtn').addEventListener('click', saveKehadiranRecord);
+document.getElementById('khBulkAddBtn').addEventListener('click', bulkAddAllStaff);
 document.getElementById('khPrintBtn').addEventListener('click', generateKehadiranPDF);
 
 // ============================================================
@@ -3670,12 +3745,28 @@ function googleEventToInternal(gEvent){
     time = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
   }
 
+  let startDateKey = null, endDateKey = null, multiDay = false;
+  if(isAllDay){
+    startDateKey = gEvent.start.date;
+    endDateKey = startDateKey;
+    if(gEvent.end && gEvent.end.date){
+      // Google's all-day end.date is exclusive (day after the last actual day).
+      const lastDate = new Date(gEvent.end.date + "T00:00:00");
+      lastDate.setDate(lastDate.getDate()-1);
+      endDateKey = fmtKey(lastDate);
+      multiDay = endDateKey !== startDateKey;
+    }
+  }
+
   const attachments = (gEvent.attachments || []).map(a => ({ title: a.title || a.fileUrl, url: a.fileUrl }));
 
   return {
     id: gEvent.id,
     time,
     allDay: isAllDay,
+    startDateKey,
+    endDateKey,
+    multiDay,
     category,
     title,
     location: gEvent.location || '',
@@ -3750,10 +3841,12 @@ async function loadEventsFromGoogleCalendar(){
     Object.keys(SAMPLE_EVENTS).forEach(k => delete SAMPLE_EVENTS[k]);
     allItems.forEach(gEvent => {
       if(gEvent.status === 'cancelled') return;
-      const keys = dateKeysSpannedByGoogleEvent(gEvent);
-      if(!keys.length) return;
       const internal = googleEventToInternal(gEvent);
+      const keys = internal.multiDay
+        ? dateRangeArray(internal.startDateKey, internal.endDateKey)
+        : [dateKeyFromGoogleEvent(gEvent)];
       keys.forEach(key => {
+        if(!key) return;
         if(!SAMPLE_EVENTS[key]) SAMPLE_EVENTS[key] = [];
         SAMPLE_EVENTS[key].push(internal);
       });
@@ -3763,14 +3856,13 @@ async function loadEventsFromGoogleCalendar(){
     renderHero();
     updateStatCards();
     if(currentView === 'month') renderMonthView();
-    else renderRangeView();
+    if(currentView === 'day') renderRangeView();
     refreshAnalytics();
   }catch(e){
     calendarLoadError = e.message === 'PERMISSION'
       ? 'Akaun anda tidak mempunyai kebenaran untuk melihat kalendar ini. Sila hubungi pentadbir LPBS.'
       : 'Gagal memuatkan data kalendar. Sila muat semula halaman.';
-    const rangeViewEl = document.getElementById('rangeView');
-    if(rangeViewEl) rangeViewEl.innerHTML = `<div class="empty-state"><div class="big">Ralat memuatkan data</div>${calendarLoadError}</div>`;
+    document.getElementById('rangeView').innerHTML = `<div class="empty-state"><div class="big">Ralat memuatkan data</div>${calendarLoadError}</div>`;
   }
 }
 
@@ -3868,9 +3960,10 @@ function buildEventCard(e, uid, dateKey){
 }
 
 function buildSummaryChips(events, suffix){
-  const vvipCount = events.filter(e=>e.protocol==='vvip').length;
-  const vipCount = events.filter(e=>e.protocol==='vip').length;
-  let chips = `<div class="summary-chip"><b>${events.length}</b> aktiviti${suffix||''}</div>`;
+  const deduped = dedupeEventsById(events);
+  const vvipCount = deduped.filter(e=>e.protocol==='vvip').length;
+  const vipCount = deduped.filter(e=>e.protocol==='vip').length;
+  let chips = `<div class="summary-chip"><b>${deduped.length}</b> aktiviti${suffix||''}</div>`;
   if(vvipCount>0) chips += `<div class="summary-chip vvip"><b>${vvipCount}</b> peringkat VVIP</div>`;
   if(vipCount>0) chips += `<div class="summary-chip"><b>${vipCount}</b> peringkat VIP</div>`;
   return chips;
@@ -3883,11 +3976,16 @@ function renderHero(){
 }
 
 function updateStatCards(){
-  const key = fmtKey(new Date());
-  const events = SAMPLE_EVENTS[key] || [];
+  const key = fmtKey(currentDate);
+  const events = dedupeEventsById(SAMPLE_EVENTS[key] || []);
   const vipCount = events.filter(e => e.protocol === 'vip' || e.protocol === 'vvip').length;
   document.getElementById('statTodayCount').textContent = events.length;
   document.getElementById('statVipCount').textContent = vipCount;
+}
+
+function render(){
+  renderHero();
+  updateStatCards();
 }
 
 function toggleEvent(uid){
@@ -3895,38 +3993,35 @@ function toggleEvent(uid){
   if(el) el.classList.toggle('open');
 }
 
-let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'cetak'
+let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'kehadiran' | 'minit' | 'task'
 
 const SECTION_TITLES = {
   aktiviti: { title: 'Papar Aktiviti' },
   analitik: { title: 'Analitik' },
-  cetak: { title: 'Cetak / Eksport' }
+  task: { title: 'Tugasan' }
 };
 
 function switchSection(section){
   appSection = section;
-  ['Aktiviti','Analitik','Cetak','Kehadiran','Minit','Task'].forEach(name=>{
+  ['Aktiviti','Analitik','Kehadiran','Minit','Task'].forEach(name=>{
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
-  ['tabAktiviti','tabAnalitik','tabCetak'].forEach(id=>{
+  ['tabAktiviti','tabAnalitik','tabTask'].forEach(id=>{
     const tab = document.getElementById(id);
     if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
   });
   const tabLagi = document.getElementById('tabLagi');
-  if(tabLagi) tabLagi.classList.toggle('active', section === 'kehadiran' || section === 'minit' || section === 'task');
+  if(tabLagi) tabLagi.classList.toggle('active', section === 'kehadiran' || section === 'minit');
 
   const titles = SECTION_TITLES[section] || SECTION_TITLES.aktiviti;
 
   // Lazily trigger the right render when entering a section, so data is fresh.
   if(section === 'aktiviti'){
-    renderHero();
-    updateStatCards();
-    if(currentView === 'day') renderRangeView();
-    else renderMonthView();
+    render();
+    switchToView(currentView);
   } else if(section === 'analitik'){
     refreshAnalytics();
-  } else if(section === 'cetak'){
     renderPrintControls();
   } else if(section === 'kehadiran'){
     if(!document.getElementById('kh-tarikh').value){
@@ -4087,7 +4182,7 @@ function updateMonthSummary(){
   const year = monthCursor.getFullYear();
   const month = monthCursor.getMonth();
   const monthEvents = eventsForMonth(year, month);
-  const allMonthEvents = Object.values(monthEvents).flat();
+  const allMonthEvents = dedupeEventsById(Object.values(monthEvents).flat());
 
   const summaryRow = document.getElementById('summaryRow');
   if(allMonthEvents.length === 0){
@@ -4290,8 +4385,6 @@ function switchToView(view){
     document.getElementById('monthListView').style.display = 'none';
     document.getElementById('rangeControls').style.display = '';
     document.getElementById('rangeView').style.display = '';
-    renderHero();
-    updateStatCards();
     syncSignInButtons();
     renderRangeView();
   } else {
@@ -4342,7 +4435,7 @@ function syncSignInButtons(){
 
   document.getElementById('addBtnMonth').style.display = visible;
   document.getElementById('addBtnRange').style.display = visible;
-  document.getElementById('tabCetak').style.display = canEdit ? '' : 'none';
+  document.getElementById('cetakInAnalitik').style.display = canEdit ? '' : 'none';
   document.getElementById('tabAddCenter').style.display = canEdit ? '' : 'none';
 
   const canEditKehadiran = isAllowedKehadiranEditor(currentUser.email);
@@ -4353,11 +4446,11 @@ function syncSignInButtons(){
   document.getElementById('lagiRowMinit').style.display = canEditMinit ? '' : 'none';
 
   const canEditTask = isAllowedTaskEditor(currentUser.email);
-  document.getElementById('lagiRowTask').style.display = canEditTask ? '' : 'none';
+  document.getElementById('tabTask').style.display = canEditTask ? '' : 'none';
   document.getElementById('taskAddBtn').style.display = canEditTask ? '' : 'none';
 
-  document.getElementById('tabLagi').style.display = (canEditKehadiran || canEditMinit || canEditTask) ? '' : 'none';
-  if(!canEditKehadiran && !canEditMinit && !canEditTask) closeLagiMenu();
+  document.getElementById('tabLagi').style.display = (canEditKehadiran || canEditMinit) ? '' : 'none';
+  if(!canEditKehadiran && !canEditMinit) closeLagiMenu();
 
   const namePart = currentUser.email.split('@')[0];
   const initial = namePart.charAt(0).toUpperCase();
@@ -4394,9 +4487,28 @@ function allEventsFlat(){
   return out;
 }
 
+// Multi-day events are deliberately stored once per day they span (so calendar
+// views show them on every day), but that means any aggregate/total taken across
+// more than one day will count the same event multiple times unless deduped by
+// its real Google Calendar id first. Use this before any count/aggregate that
+// spans multiple days — per-day listings (e.g. range view's per-day rows, PDF rows)
+// should NOT dedupe, since showing the event on each day it spans is correct there.
+function dedupeEventsById(events){
+  const seen = new Set();
+  const out = [];
+  events.forEach(e => {
+    if(e.id){
+      if(seen.has(e.id)) return;
+      seen.add(e.id);
+    }
+    out.push(e);
+  });
+  return out;
+}
+
 function aggregateByCategory(events){
   const counts = {};
-  events.forEach(e => {
+  dedupeEventsById(events).forEach(e => {
     const cat = e.category || 'LAIN';
     counts[cat] = (counts[cat]||0) + 1;
   });
@@ -4588,7 +4700,10 @@ function generatePrintPDF(){
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     const todayStr = new Date().toLocaleDateString('en-GB');
-    doc.text(`Jumlah aktiviti: ${result.events.length} | Tempoh: ${result.startKey} hingga ${result.endKey} | Dicetak: ${todayStr}`, 40, 60);
+    // "Jumlah aktiviti" counts distinct activities (dedup by id); the table below still
+    // lists a multi-day activity once per day, same as the calendar views do.
+    const totalUniqueActivities = dedupeEventsById(result.events).length;
+    doc.text(`Jumlah aktiviti: ${totalUniqueActivities} | Tempoh: ${result.startKey} hingga ${result.endKey} | Dicetak: ${todayStr}`, 40, 60);
 
     const rows = result.events.map(e => {
       const d = new Date(e.dateKey + "T00:00:00");
@@ -4716,7 +4831,7 @@ function attemptSignIn(email){
     document.getElementById('gateScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = '';
     syncSignInButtons();
-    document.getElementById('rangeView').innerHTML = '<div class="empty-state"><div class="big">Memuatkan data...</div>Sila tunggu sebentar.</div>';
+    switchToView('day');
     loadEventsFromGoogleCalendar();
     // Loaded proactively (not gated by Task-editor access) so any tagged staff
     // member sees their notification dot, even if they never open the Task section.
@@ -4755,55 +4870,13 @@ document.getElementById('gateSigninBtn').addEventListener('click', () => {
 
 const modalOverlay = document.getElementById('modalOverlay');
 function openModal(){
-  document.getElementById('f-date').value = rangeStart;
+  document.getElementById('f-date').value = fmtKey(currentDate);
   document.getElementById('f-multiday').checked = false;
-  document.getElementById('f-date-start').value = '';
-  document.getElementById('f-date-end').value = '';
-  toggleMultiDayFields(null, false);
+  toggleMultiDayFields();
   modalOverlay.classList.add('open');
 }
 
-// Builds the field ids for the multi-day controls of either the add form
-// (uid omitted) or an inline edit form (uid = the event's card uid).
-function multiDayFieldIds(uid){
-  const suffix = uid == null ? '' : `-${uid}`;
-  const prefix = uid == null ? 'f' : 'ef';
-  return {
-    singleRow: `${prefix}-singleday-row${suffix}`,
-    multiRow: `${prefix}-multiday-row${suffix}`,
-    error: `${prefix}-date-range-error${suffix}`,
-    time: `${prefix}-time${suffix}`,
-    dateStart: `${prefix}-date-start${suffix}`,
-    dateEnd: `${prefix}-date-end${suffix}`
-  };
-}
 
-// Shows the single Tarikh+Masa fields, or the Tarikh Mula/Tamat pair.
-function toggleMultiDayFields(uid, isMultiDay){
-  const ids = multiDayFieldIds(uid);
-  const singleRow = document.getElementById(ids.singleRow);
-  const multiRow = document.getElementById(ids.multiRow);
-  const errorEl = document.getElementById(ids.error);
-  if(singleRow) singleRow.style.display = isMultiDay ? 'none' : '';
-  if(multiRow) multiRow.style.display = isMultiDay ? '' : 'none';
-  if(errorEl) errorEl.style.display = 'none';
-  if(isMultiDay){
-    const timeEl = document.getElementById(ids.time);
-    if(timeEl) timeEl.value = '';
-  }
-}
-
-// Validates Tarikh Mula <= Tarikh Tamat, showing/hiding the inline error.
-// Returns true when the range is valid (or fields are empty/not multi-day).
-function validateDateRange(uid){
-  const ids = multiDayFieldIds(uid);
-  const errorEl = document.getElementById(ids.error);
-  const startVal = document.getElementById(ids.dateStart).value;
-  const endVal = document.getElementById(ids.dateEnd).value;
-  const isInvalid = !!startVal && !!endVal && endVal < startVal;
-  if(errorEl) errorEl.style.display = isInvalid ? '' : 'none';
-  return !isInvalid;
-}
 function closeModal(){
   modalOverlay.classList.remove('open');
 }
@@ -4821,14 +4894,65 @@ function buildEventDescription(fields){
   return lines.join('\n');
 }
 
+function buildEventDateBody(opts){
+  // opts: { multiDay, startDate, endDate, singleDate, time }
+  if(opts.multiDay){
+    if(!opts.startDate || !opts.endDate) return { error: 'Sila isi Tarikh Mula dan Tarikh Tamat.' };
+    if(opts.endDate < opts.startDate) return { error: 'Tarikh Tamat tidak boleh sebelum Tarikh Mula.' };
+    // Google's all-day end.date is exclusive — the day after the last actual day.
+    const endDateObj = new Date(opts.endDate + "T00:00:00");
+    endDateObj.setDate(endDateObj.getDate()+1);
+    return { start: { date: opts.startDate }, end: { date: fmtKey(endDateObj) } };
+  }
+  if(!opts.time){
+    const endDate = new Date(opts.singleDate + "T00:00:00");
+    endDate.setDate(endDate.getDate()+1);
+    return { start: { date: opts.singleDate }, end: { date: fmtKey(endDate) } };
+  }
+  const endHour = (parseInt(opts.time.split(':')[0],10)+1) % 24;
+  return {
+    start: { dateTime: `${opts.singleDate}T${opts.time}:00`, timeZone: 'Asia/Kuala_Lumpur' },
+    end: { dateTime: `${opts.singleDate}T${String(endHour).padStart(2,'0')}:${opts.time.split(':')[1]}:00`, timeZone: 'Asia/Kuala_Lumpur' }
+  };
+}
+
+// events.patch merges start/end at the field level rather than replacing the whole
+// object, so toggling between an all-day event and a timed event (or vice versa)
+// needs the OTHER shape's keys explicitly nulled out — otherwise the server merges
+// old + new keys onto the same start/end object and rejects it with "Invalid start
+// time" because both date and dateTime end up set simultaneously.
+function clearOppositeDateShapeKeys(dateBody){
+  const isAllDay = !!dateBody.start.date;
+  const clearKeys = isAllDay ? { dateTime: null, timeZone: null } : { date: null };
+  return {
+    start: Object.assign({}, dateBody.start, clearKeys),
+    end: Object.assign({}, dateBody.end, clearKeys)
+  };
+}
+
+function toggleMultiDayFields(uid){
+  const suffix = uid ? '-' + uid : '';
+  const prefix = uid ? 'ef' : 'f';
+  const checked = document.getElementById(`${prefix}-multiday${suffix}`).checked;
+  document.getElementById(`${prefix}-date-single-row${suffix}`).style.display = checked ? 'none' : '';
+  document.getElementById(`${prefix}-date-range-row${suffix}`).style.display = checked ? '' : 'none';
+  const errEl = document.getElementById(`${prefix}-date-range-error${suffix}`);
+  if(errEl) errEl.style.display = 'none';
+  const timeInput = document.getElementById(`${prefix}-time${suffix}`);
+  if(timeInput){
+    timeInput.disabled = checked;
+    if(checked) timeInput.value = '';
+  }
+}
+
 async function saveNewEventToGoogleCalendar(){
   const saveBtn = document.getElementById('modalSave');
   const title = document.getElementById('f-title').value.trim();
-  const isMultiDay = document.getElementById('f-multiday').checked;
+  const multiDay = document.getElementById('f-multiday').checked;
   const date = document.getElementById('f-date').value;
   const time = document.getElementById('f-time').value;
-  const dateStart = document.getElementById('f-date-start').value;
-  const dateEnd = document.getElementById('f-date-end').value;
+  const startDate = document.getElementById('f-date-start').value;
+  const endDate = document.getElementById('f-date-end').value;
   const category = document.getElementById('f-category').value;
   const protocol = document.getElementById('f-protocol').value;
   const location = document.getElementById('f-location').value;
@@ -4837,12 +4961,11 @@ async function saveNewEventToGoogleCalendar(){
   const kehadiran = document.getElementById('f-kehadiran').value;
   const pakaian = document.getElementById('f-pakaian').value;
   const attachmentUrl = document.getElementById('f-attachment').value.trim();
+  const rangeErrorEl = document.getElementById('f-date-range-error');
+  rangeErrorEl.style.display = 'none';
 
-  if(!title || (isMultiDay ? (!dateStart || !dateEnd) : !date)){
+  if(!title || (!multiDay && !date) || (multiDay && (!startDate || !endDate))){
     alert('Sila isi sekurang-kurangnya tajuk dan tarikh.');
-    return;
-  }
-  if(isMultiDay && !validateDateRange(null)){
     return;
   }
   if(!accessToken){
@@ -4858,28 +4981,25 @@ async function saveNewEventToGoogleCalendar(){
     urusSetia, kehadiran, pakaian
   });
 
-  const isAllDay = isMultiDay || !time;
+  const dateBody = buildEventDateBody({ multiDay, startDate, endDate, singleDate: date, time });
+  if(dateBody.error){
+    rangeErrorEl.textContent = dateBody.error;
+    rangeErrorEl.style.display = '';
+    return;
+  }
+
   const body = {
     summary,
     description: description || undefined,
     location: location || undefined,
+    start: dateBody.start,
+    end: dateBody.end
   };
-  if(isMultiDay){
-    body.start = { date: dateStart };
-    body.end = { date: exclusiveEndDateKey(dateEnd) };
-  } else if(isAllDay){
-    body.start = { date };
-    body.end = { date: exclusiveEndDateKey(date) };
-  } else {
-    const startDT = `${date}T${time}:00`;
-    const endHour = (parseInt(time.split(':')[0],10)+1) % 24;
-    const endDT = `${date}T${String(endHour).padStart(2,'0')}:${time.split(':')[1]}:00`;
-    body.start = { dateTime: startDT, timeZone: 'Asia/Kuala_Lumpur' };
-    body.end = { dateTime: endDT, timeZone: 'Asia/Kuala_Lumpur' };
-  }
   if(attachmentUrl){
     body.attachments = [{ fileUrl: attachmentUrl, title: 'Lampiran' }];
   }
+
+  console.log('[Tambah Aktiviti] full POST body being sent:', JSON.stringify(body, null, 2));
 
   saveBtn.disabled = true;
   saveBtn.textContent = 'Menyimpan...';
@@ -4898,6 +5018,7 @@ async function saveNewEventToGoogleCalendar(){
     );
     if(!res.ok){
       const errData = await res.json().catch(()=>({}));
+      console.error('[Tambah Aktiviti] Calendar API error response:', JSON.stringify(errData, null, 2));
       throw new Error(errData.error?.message || 'Gagal menyimpan aktiviti.');
     }
 
@@ -4906,9 +5027,8 @@ async function saveNewEventToGoogleCalendar(){
       document.getElementById(id).value = '';
     });
     document.getElementById('f-multiday').checked = false;
-    toggleMultiDayFields(null, false);
-    rangeStart = isMultiDay ? dateStart : date;
-    rangeEnd = isMultiDay ? dateEnd : date;
+    toggleMultiDayFields();
+    currentDate = new Date((multiDay ? startDate : date) + "T00:00:00");
     await loadEventsFromGoogleCalendar();
     switchToView('day');
   }catch(e){
@@ -4972,12 +5092,12 @@ function enterEditMode(uid){
         </div>
       </div>
 
-      <label class="multiday-toggle">
-        <input type="checkbox" id="ef-multiday-${uid}" ${isMultiDay?'checked':''} onchange="toggleMultiDayFields('${uid}', this.checked)">
+      <label class="checkbox-row">
+        <input type="checkbox" id="ef-multiday-${uid}" ${e.multiDay ? 'checked' : ''} onchange="toggleMultiDayFields('${uid}')">
         Acara berlangsung beberapa hari
       </label>
 
-      <div class="field-row" id="ef-singleday-row-${uid}" style="${isMultiDay?'display:none;':''}">
+      <div class="field-row" id="ef-date-single-row-${uid}" style="${e.multiDay ? 'display:none;' : ''}">
         <div>
           <label class="field-label">Tarikh</label>
           <input type="date" id="ef-date-${uid}" value="${singleDateValue}">
@@ -4988,17 +5108,17 @@ function enterEditMode(uid){
         </div>
       </div>
 
-      <div class="field-row" id="ef-multiday-row-${uid}" style="${isMultiDay?'':'display:none;'}">
+      <div class="field-row" id="ef-date-range-row-${uid}" style="${e.multiDay ? '' : 'display:none;'}">
         <div>
-          <label class="field-label">Tarikh mula</label>
-          <input type="date" id="ef-date-start-${uid}" value="${startDateValue}">
+          <label class="field-label">Tarikh Mula</label>
+          <input type="date" id="ef-date-start-${uid}" value="${e.multiDay ? (e.startDateKey || '') : ''}">
         </div>
         <div>
-          <label class="field-label">Tarikh tamat</label>
-          <input type="date" id="ef-date-end-${uid}" value="${endDateValue}">
+          <label class="field-label">Tarikh Tamat</label>
+          <input type="date" id="ef-date-end-${uid}" value="${e.multiDay ? (e.endDateKey || '') : ''}">
         </div>
       </div>
-      <p class="field-error" id="ef-date-range-error-${uid}" style="display:none;">Tarikh tamat tidak boleh sebelum tarikh mula.</p>
+      <p class="form-error" id="ef-date-range-error-${uid}" style="display:none;"></p>
 
       <label class="field-label">Lokasi</label>
       <input type="text" id="ef-location-${uid}" value="${(e.location||'').replace(/"/g,'&quot;')}">
@@ -5045,11 +5165,11 @@ async function saveEditedEvent(uid){
 
   const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
   const title = val(`ef-title-${uid}`).trim();
-  const isMultiDay = !!document.getElementById(`ef-multiday-${uid}`)?.checked;
+  const multiDay = !!document.getElementById(`ef-multiday-${uid}`)?.checked;
   const date = val(`ef-date-${uid}`);
   const time = val(`ef-time-${uid}`);
-  const dateStart = val(`ef-date-start-${uid}`);
-  const dateEnd = val(`ef-date-end-${uid}`);
+  const startDate = val(`ef-date-start-${uid}`);
+  const endDate = val(`ef-date-end-${uid}`);
   const category = val(`ef-category-${uid}`);
   const protocol = val(`ef-protocol-${uid}`);
   const location = val(`ef-location-${uid}`);
@@ -5057,15 +5177,13 @@ async function saveEditedEvent(uid){
   const urusSetia = val(`ef-urussetia-${uid}`);
   const pakaian = val(`ef-pakaian-${uid}`);
   const kehadiran = val(`ef-kehadiran-${uid}`);
+  const rangeErrorEl = document.getElementById(`ef-date-range-error-${uid}`);
+  if(rangeErrorEl) rangeErrorEl.style.display = 'none';
 
-  if(!title || (isMultiDay ? (!dateStart || !dateEnd) : !date)){
+  if(!title || (!multiDay && !date) || (multiDay && (!startDate || !endDate))){
     alert('Sila isi sekurang-kurangnya tajuk dan tarikh.');
     return;
   }
-  if(isMultiDay && !validateDateRange(uid)){
-    return;
-  }
-
   const categoryLabel = category === 'SESI' ? 'SESI LIBAT URUS' : category;
   const summary = `[${categoryLabel}] ${title}`;
   const description = buildEventDescription({
@@ -5074,23 +5192,22 @@ async function saveEditedEvent(uid){
     urusSetia, kehadiran, pakaian
   });
 
-  const isAllDay = isMultiDay || !time;
+  const dateBody = buildEventDateBody({ multiDay, startDate, endDate, singleDate: date, time });
+  if(dateBody.error){
+    if(rangeErrorEl){ rangeErrorEl.textContent = dateBody.error; rangeErrorEl.style.display = ''; }
+    return;
+  }
+  const clearedDateBody = clearOppositeDateShapeKeys(dateBody);
+
   const body = {
     summary,
     description: description || '',
-    location: location || ''
+    location: location || '',
+    start: clearedDateBody.start,
+    end: clearedDateBody.end
   };
-  if(isMultiDay){
-    body.start = { date: dateStart };
-    body.end = { date: exclusiveEndDateKey(dateEnd) };
-  } else if(isAllDay){
-    body.start = { date };
-    body.end = { date: exclusiveEndDateKey(date) };
-  } else {
-    const endHour = (parseInt(time.split(':')[0],10)+1) % 24;
-    body.start = { dateTime: `${date}T${time}:00`, timeZone: 'Asia/Kuala_Lumpur' };
-    body.end = { dateTime: `${date}T${String(endHour).padStart(2,'0')}:${time.split(':')[1]}:00`, timeZone: 'Asia/Kuala_Lumpur' };
-  }
+
+  console.log('[Edit Aktiviti] full PATCH body being sent:', JSON.stringify(body, null, 2));
 
   const saveBtn = document.getElementById(`ef-save-${uid}`);
   if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan...'; }
@@ -5106,9 +5223,12 @@ async function saveEditedEvent(uid){
     );
     if(!res.ok){
       const errData = await res.json().catch(()=>({}));
+      console.error('[Edit Aktiviti] Calendar API error response:', JSON.stringify(errData, null, 2));
       throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
     }
     await loadEventsFromGoogleCalendar();
+    if(currentView === 'month') renderMonthView();
+    if(currentView === 'day') renderRangeView();
   }catch(err){
     alert('Ralat menyimpan perubahan: ' + err.message);
     if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'Simpan perubahan'; }
@@ -5192,6 +5312,8 @@ async function deleteEventPrompt(eventId, uid){
         throw new Error(errData.error?.message || ('Gagal memadam (status ' + res.status + ')'));
       }
       await loadEventsFromGoogleCalendar();
+      if(currentView === 'month') renderMonthView();
+      if(currentView === 'day') renderRangeView();
     }catch(e){
       alert('Ralat memadam aktiviti: ' + e.message);
       if(eventEl) eventEl.style.display = ''; // restore on failure
