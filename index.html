@@ -2843,6 +2843,32 @@ function generateKehadiranPDF(){
       theme: 'grid'
     });
 
+    // Sign-off block — ~128pt tall (gap + label + signature space + 3 name lines).
+    // Start a new page if the table left insufficient room.
+    const pageH = doc.internal.pageSize.getHeight();
+    const marginPt = 40;
+    const signoffH = 128;
+    let sy = doc.lastAutoTable.finalY + 30;
+    if(sy + signoffH > pageH - marginPt){
+      doc.addPage();
+      sy = marginPt;
+    }
+
+    doc.setTextColor(31, 58, 46);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Disemak dan Disahkan oleh:', marginPt, sy);
+
+    sy += 55; // blank vertical space for handwritten signature
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('(NESTOR BIN JOANNES)', marginPt, sy);
+    sy += 13;
+    doc.setFont('helvetica', 'normal');
+    doc.text('Timbalan Pengurus Besar', marginPt, sy);
+    sy += 13;
+    doc.text('Lembaga Padi dan Beras Sabah', marginPt, sy);
+
     doc.save(`LPBS_Kehadiran_Staf_${fmtKey(new Date())}.pdf`);
     note.textContent = `PDF berjaya dijana (${recordsToPrint.length} rekod).`;
   }catch(err){
