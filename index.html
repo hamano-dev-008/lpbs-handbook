@@ -2019,6 +2019,7 @@
 
       <button class="save-btn" id="khSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
       <button class="save-btn" id="khBulkAddBtn" style="margin-top:8px;background:var(--paddy-light);">Tambah Semua Staf untuk Tarikh Ini</button>
+      <button class="delete-btn" id="khDeleteAllBtn" style="margin-top:8px;">Padam Semua Rekod</button>
       <p class="kh-note" id="khNote"></p>
     </div>
 
@@ -2771,6 +2772,34 @@ async function deleteKehadiranRow(rowIndex){
   }
 }
 
+async function deleteAllKehadiranRecords(){
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+  const confirmed = window.confirm('Adakah anda pasti mahu memadam SEMUA rekod kehadiran? Tindakan ini tidak boleh dibatalkan.');
+  if(!confirmed) return;
+
+  const btn = document.getElementById('khDeleteAllBtn');
+  const note = document.getElementById('khNote');
+  note.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Memadam...';
+
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}:clear`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if(!res.ok) throw new Error('status ' + res.status);
+    await loadKehadiranFromSheet();
+    note.textContent = 'Semua rekod kehadiran telah dipadam.';
+  }catch(e){
+    alert('Ralat memadam semua rekod: ' + e.message);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Padam Semua Rekod';
+  }
+}
+
 function generateKehadiranPDF(){
   const note = document.getElementById('khPrintNote');
   const btn = document.getElementById('khPrintBtn');
@@ -2836,6 +2865,7 @@ document.getElementById('kh-masuk').addEventListener('input', updateHoursPreview
 document.getElementById('kh-keluar').addEventListener('input', updateHoursPreview);
 document.getElementById('khSaveBtn').addEventListener('click', saveKehadiranRecord);
 document.getElementById('khBulkAddBtn').addEventListener('click', bulkAddAllStaff);
+document.getElementById('khDeleteAllBtn').addEventListener('click', deleteAllKehadiranRecords);
 document.getElementById('khPrintBtn').addEventListener('click', generateKehadiranPDF);
 
 // ============================================================
