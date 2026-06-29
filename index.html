@@ -3878,6 +3878,8 @@ const CATEGORY_MAP = {
 const DAY_NAMES = ["AHAD","ISNIN","SELASA","RABU","KHAMIS","JUMAAT","SABTU"];
 const MONTH_NAMES = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
 
+let currentDate = new Date();
+
 function fmtKey(d){
   const y = d.getFullYear();
   const m = String(d.getMonth()+1).padStart(2,'0');
