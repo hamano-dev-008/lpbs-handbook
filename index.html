@@ -894,6 +894,13 @@
     color:var(--sage);
     min-height:16px;
   }
+  .kh-self-info{ font-size:15px; font-weight:600; margin:0 0 4px; color:var(--ink); }
+  .kh-stamp-row{ display:flex; gap:8px; align-items:center; }
+  .kh-stamp-row input[type="time"]{ flex:1; min-width:0; }
+  .kh-stamp-btn{ margin:0 !important; padding:7px 10px; font-size:12px; white-space:nowrap; flex-shrink:0; }
+  .kh-self-status{ display:flex; gap:28px; margin-top:14px; padding:12px 14px; background:var(--bg); border:1px solid var(--line); border-radius:10px; }
+  .kh-self-label{ display:block; font-size:11px; color:var(--ink-soft); margin-bottom:3px; text-transform:uppercase; letter-spacing:.04em; }
+  .kh-self-val{ font-size:22px; font-weight:700; color:var(--paddy); font-family:'Space Grotesk',sans-serif; }
   .kh-table-wrap{
     margin-top:14px;
     overflow-x:auto;
@@ -1996,49 +2003,85 @@
       <h2 class="ana-title">Rekod Kehadiran</h2>
     </div>
 
-    <div class="kehadiran-form" id="kehadiranForm">
-      <label class="field-label">Tarikh</label>
-      <input type="date" id="kh-tarikh">
+    <!-- Self check-in card: shown to all signed-in staff who are NOT Kehadiran editors -->
+    <div id="khSelfCheckinCard" style="display:none;">
+      <div class="kehadiran-form">
+        <p class="kh-self-info" id="khSelfName"></p>
+        <p class="kh-self-info" style="font-weight:400; font-size:13px; color:var(--ink-soft);" id="khSelfDate"></p>
 
-      <label class="field-label">Nama Staf</label>
-      <input type="text" id="kh-nama" placeholder="Contoh: Ahmad bin Ali" autocomplete="off">
-      <div class="search-results" id="khNameSuggestions" style="display:none;"></div>
+        <div id="khSelfExisting" style="display:none;"></div>
 
-      <div class="field-row">
-        <div>
-          <label class="field-label">Masa Masuk</label>
-          <input type="time" id="kh-masuk">
+        <div id="khSelfForm">
+          <div class="field-row" style="margin-top:14px;">
+            <div>
+              <label class="field-label">Masa Masuk</label>
+              <div class="kh-stamp-row">
+                <input type="time" id="kh-self-masuk">
+                <button class="save-btn kh-stamp-btn" type="button" id="khSelfStampMasuk">Rekod Sekarang</button>
+              </div>
+            </div>
+            <div>
+              <label class="field-label">Masa Keluar</label>
+              <div class="kh-stamp-row">
+                <input type="time" id="kh-self-keluar">
+                <button class="save-btn kh-stamp-btn" type="button" id="khSelfStampKeluar">Rekod Sekarang</button>
+              </div>
+            </div>
+          </div>
+          <button class="save-btn" id="khSelfSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
         </div>
-        <div>
-          <label class="field-label">Masa Keluar</label>
-          <input type="time" id="kh-keluar">
+
+        <p class="kh-note" id="khSelfNote"></p>
+      </div>
+    </div>
+
+    <!-- Editor-only block: full admin form, full table, PDF export -->
+    <div id="kehadiranEditorBlock" style="display:none;">
+      <div class="kehadiran-form" id="kehadiranForm">
+        <label class="field-label">Tarikh</label>
+        <input type="date" id="kh-tarikh">
+
+        <label class="field-label">Nama Staf</label>
+        <input type="text" id="kh-nama" placeholder="Contoh: Ahmad bin Ali" autocomplete="off">
+        <div class="search-results" id="khNameSuggestions" style="display:none;"></div>
+
+        <div class="field-row">
+          <div>
+            <label class="field-label">Masa Masuk</label>
+            <input type="time" id="kh-masuk">
+          </div>
+          <div>
+            <label class="field-label">Masa Keluar</label>
+            <input type="time" id="kh-keluar">
+          </div>
         </div>
+
+        <p class="kh-hours-preview" id="khHoursPreview"></p>
+
+        <button class="save-btn" id="khSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
+        <button class="save-btn" id="khBulkAddBtn" style="margin-top:8px;background:var(--paddy-light);">Tambah Semua Staf untuk Tarikh Ini</button>
+        <button class="delete-btn" id="khDeleteAllBtn" style="margin-top:8px;">Padam Semua Rekod</button>
+        <p class="kh-note" id="khNote"></p>
       </div>
 
-      <p class="kh-hours-preview" id="khHoursPreview"></p>
-
-      <button class="save-btn" id="khSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
-      <button class="save-btn" id="khBulkAddBtn" style="margin-top:8px;background:var(--paddy-light);">Tambah Semua Staf untuk Tarikh Ini</button>
-      <button class="delete-btn" id="khDeleteAllBtn" style="margin-top:8px;">Padam Semua Rekod</button>
-      <p class="kh-note" id="khNote"></p>
-    </div>
-
-    <div class="section-heading-row" style="margin-top:32px;">
-      <h2 class="section-heading">Rekod Tersimpan</h2>
-    </div>
-
-    <div class="kh-table-wrap" id="khTableWrap">
-      <div class="empty-state"><div class="big">Memuatkan rekod...</div></div>
-    </div>
-
-    <div class="print-controls" style="margin-top:20px;">
-      <div class="kh-staff-filter-wrap">
-        <label class="range-label" for="khExcludeStaff">Kecualikan staf (PDF)</label>
-        <select id="khExcludeStaff" multiple size="4"></select>
+      <div class="section-heading-row" style="margin-top:32px;">
+        <h2 class="section-heading">Rekod Tersimpan</h2>
       </div>
-      <button class="print-btn" id="khPrintBtn">&#128190; Muat turun PDF</button>
+
+      <div class="kh-table-wrap" id="khTableWrap">
+        <div class="empty-state"><div class="big">Memuatkan rekod...</div></div>
+      </div>
+
+      <div class="print-controls" style="margin-top:20px;">
+        <div class="kh-staff-filter-wrap">
+          <label class="range-label" for="khExcludeStaff">Kecualikan staf (PDF)</label>
+          <select id="khExcludeStaff" multiple size="4"></select>
+        </div>
+        <button class="print-btn" id="khPrintBtn">&#128190; Muat turun PDF</button>
+      </div>
+      <p class="print-note" id="khPrintNote"></p>
     </div>
-    <p class="print-note" id="khPrintNote"></p>
+
   </section>
   </div>
 
@@ -2800,6 +2843,91 @@ async function deleteAllKehadiranRecords(){
   }
 }
 
+function getSelfCheckinName(){
+  if(!currentUser) return '';
+  const entry = STAFF_DIRECTORY.get(currentUser.email.toLowerCase());
+  return entry?.nama || currentUser.email;
+}
+
+function renderSelfCheckinCard(){
+  const todayKey = fmtKey(new Date());
+  const nama = getSelfCheckinName();
+
+  document.getElementById('khSelfName').textContent = nama;
+  document.getElementById('khSelfDate').textContent = todayKey;
+  document.getElementById('khSelfNote').textContent = '';
+
+  const existing = kehadiranRecords.find(
+    r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === todayKey
+  );
+
+  const existingDiv = document.getElementById('khSelfExisting');
+  const formDiv = document.getElementById('khSelfForm');
+
+  if(existing){
+    existingDiv.style.display = '';
+    formDiv.style.display = 'none';
+    existingDiv.innerHTML = `
+      <div class="kh-self-status">
+        <div><span class="kh-self-label">Masa Masuk</span><span class="kh-self-val">${existing.masuk || '—'}</span></div>
+        <div><span class="kh-self-label">Masa Keluar</span><span class="kh-self-val">${existing.keluar || '—'}</span></div>
+      </div>
+      <p style="margin-top:10px; font-size:12.5px; color:var(--ink-soft);">Rekod hari ini telah disimpan. Hubungi pentadbir untuk membuat pembetulan.</p>
+    `;
+  } else {
+    existingDiv.style.display = 'none';
+    formDiv.style.display = '';
+    document.getElementById('kh-self-masuk').value = '';
+    document.getElementById('kh-self-keluar').value = '';
+  }
+}
+
+async function saveSelfCheckin(){
+  const nama = getSelfCheckinName();
+  const tarikh = fmtKey(new Date());
+  const masuk = document.getElementById('kh-self-masuk').value;
+  const keluar = document.getElementById('kh-self-keluar').value;
+  const note = document.getElementById('khSelfNote');
+  const btn = document.getElementById('khSelfSaveBtn');
+
+  if(!masuk || !keluar){
+    note.textContent = 'Sila rekod masa masuk dan masa keluar terlebih dahulu.';
+    return;
+  }
+
+  const dup = kehadiranRecords.find(r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh);
+  if(dup){
+    note.textContent = 'Rekod kehadiran anda untuk hari ini sudah wujud.';
+    renderSelfCheckinCard();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  note.textContent = '';
+
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:D')}:append?valueInputOption=USER_ENTERED`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[tarikh, nama, masuk, keluar]] })
+    });
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+    }
+    await loadKehadiranFromSheet();
+    renderSelfCheckinCard();
+    note.textContent = 'Rekod kehadiran berjaya disimpan.';
+  }catch(e){
+    note.textContent = 'Ralat: ' + e.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Simpan Rekod';
+  }
+}
+
 function generateKehadiranPDF(){
   const note = document.getElementById('khPrintNote');
   const btn = document.getElementById('khPrintBtn');
@@ -2893,6 +3021,15 @@ document.getElementById('khSaveBtn').addEventListener('click', saveKehadiranReco
 document.getElementById('khBulkAddBtn').addEventListener('click', bulkAddAllStaff);
 document.getElementById('khDeleteAllBtn').addEventListener('click', deleteAllKehadiranRecords);
 document.getElementById('khPrintBtn').addEventListener('click', generateKehadiranPDF);
+
+function stampNow(inputId){
+  const now = new Date();
+  document.getElementById(inputId).value =
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+document.getElementById('khSelfStampMasuk').addEventListener('click', () => stampNow('kh-self-masuk'));
+document.getElementById('khSelfStampKeluar').addEventListener('click', () => stampNow('kh-self-keluar'));
+document.getElementById('khSelfSaveBtn').addEventListener('click', saveSelfCheckin);
 
 // ============================================================
 // MINIT MESYUARAT — jana dokumen .docx terus dalam pelayar
@@ -4085,7 +4222,9 @@ function switchSection(section){
     if(!document.getElementById('kh-tarikh').value){
       document.getElementById('kh-tarikh').value = fmtKey(new Date());
     }
-    loadKehadiranFromSheet();
+    loadKehadiranFromSheet().then(() => {
+      if(!isAllowedKehadiranEditor(currentUser?.email)) renderSelfCheckinCard();
+    });
   } else if(section === 'minit'){
     if(!document.getElementById('minit-tarikh').value){
       document.getElementById('minit-tarikh').value = fmtKey(new Date());
@@ -4497,8 +4636,9 @@ function syncSignInButtons(){
   document.getElementById('tabAddCenter').style.display = canEdit ? '' : 'none';
 
   const canEditKehadiran = isAllowedKehadiranEditor(currentUser.email);
-  document.getElementById('kehadiranForm').style.display = canEditKehadiran ? '' : 'none';
-  document.getElementById('lagiRowKehadiran').style.display = canEditKehadiran ? '' : 'none';
+  document.getElementById('kehadiranEditorBlock').style.display = canEditKehadiran ? '' : 'none';
+  document.getElementById('khSelfCheckinCard').style.display = canEditKehadiran ? 'none' : '';
+  document.getElementById('lagiRowKehadiran').style.display = '';  // Kehadiran visible to all signed-in users
 
   const canEditMinit = isAllowedMinitEditor(currentUser.email);
   document.getElementById('lagiRowMinit').style.display = canEditMinit ? '' : 'none';
@@ -4507,8 +4647,8 @@ function syncSignInButtons(){
   document.getElementById('tabTask').style.display = canEditTask ? '' : 'none';
   document.getElementById('taskAddBtn').style.display = canEditTask ? '' : 'none';
 
-  document.getElementById('tabLagi').style.display = (canEditKehadiran || canEditMinit) ? '' : 'none';
-  if(!canEditKehadiran && !canEditMinit) closeLagiMenu();
+  document.getElementById('tabLagi').style.display = '';  // Kehadiran tab (in Lagi) visible to all
+  if(!canEditMinit && appSection === 'minit') closeLagiMenu();
 
   const namePart = currentUser.email.split('@')[0];
   const initial = namePart.charAt(0).toUpperCase();
