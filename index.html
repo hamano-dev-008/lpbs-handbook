@@ -3592,7 +3592,7 @@ function renderKehadiranNameSuggestions(query){
   }
   box.innerHTML = matches.map(s => `
     <div class="search-result-item" onclick="selectKehadiranName('${s.email}')">
-      ${staffInfoBlockHtml(s)}
+      <div class="staff-info-name">${escapeHtml(hasStaffNama(s.email) ? s.nama : s.email)}</div>
     </div>
   `).join('');
   box.style.display = '';
