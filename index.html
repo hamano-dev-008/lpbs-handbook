@@ -4916,22 +4916,24 @@ function generatePrintPDF(){
       const dateStr = d.toLocaleDateString('en-GB');
       const dayName = DAY_NAMES[d.getDay()];
       const masa = e.allDay ? 'Sepanjang hari' : (e.time || '');
-      return [dateStr, dayName, masa, e.category || '', e.title || '', e.location || ''];
+      const cell = v => (v == null || String(v).trim() === '') ? '-' : String(v).toUpperCase();
+      return [cell(dateStr), cell(dayName), cell(masa), cell(e.category), cell(e.title), cell(e.vip), cell(e.location)];
     });
 
     doc.autoTable({
       startY: 72,
-      head: [['Tarikh','Hari','Masa','Kategori','Tajuk Aktiviti','Lokasi']],
+      head: [['TARIKH','HARI','MASA','KATEGORI','TAJUK AKTIVITI','VIP','LOKASI']],
       body: rows,
-      styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 4 },
+      styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 4, overflow: 'linebreak' },
       headStyles: { fillColor: [31,58,46], textColor: [255,255,255], fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: 60 },
-        1: { cellWidth: 50 },
-        2: { cellWidth: 65 },
-        3: { cellWidth: 70 },
-        4: { cellWidth: 280 },
-        5: { cellWidth: 140 }
+        0: { cellWidth: 58 },
+        1: { cellWidth: 48 },
+        2: { cellWidth: 62 },
+        3: { cellWidth: 68 },
+        4: { cellWidth: 220 },
+        5: { cellWidth: 150 },
+        6: { cellWidth: 130 }
       },
       theme: 'grid'
     });
