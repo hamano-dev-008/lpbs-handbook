@@ -294,6 +294,13 @@
     cursor:pointer;
   }
   .edit-btn:hover{background:var(--amber-bg); border-color:var(--amber); color:var(--amber-text);}
+  .icon-btn{
+    padding:6px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    line-height:0;
+  }
   .edit-form{
     margin-top:4px;
   }
@@ -4127,8 +4134,8 @@ function buildEventCard(e, uid, dateKey){
   let actionsHtml = '';
   if(canEdit && e.id){
     actionsHtml = `<div class="detail-actions-row">
-      <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode('${uid}')">Edit aktiviti</button>
-      <button class="delete-btn" onclick="event.stopPropagation(); deleteEventPrompt('${e.id}', '${uid}')">Padam aktiviti</button>
+      <button class="edit-btn icon-btn" title="Edit aktiviti" aria-label="Edit aktiviti" onclick="event.stopPropagation(); enterEditMode('${uid}')"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m14.36 4.079.927-.927a3.932 3.932 0 0 1 5.561 5.561l-.927.927m-5.561-5.561s.116 1.97 1.854 3.707c1.737 1.738 3.707 1.854 3.707 1.854m-5.561-5.561L6.526 11.913c-.53.53-.796.796-1.024 1.088a6.554 6.554 0 0 0-.75 1.211c-.16.335-.278.69-.514 1.4l-1.011 3.034m16.694-8.006-7.834 7.834c-.53.53-.796.796-1.089 1.024a6.552 6.552 0 0 1-1.21.75c-.335.16-.691.278-1.4.514l-3.035 1.011m0 0-.741.248a.98.98 0 0 1-1.24-1.24l.247-.742m1.734 1.734-1.734-1.734" stroke="currentColor" stroke-width="1.5"/></svg></button>
+      <button class="delete-btn icon-btn" title="Padam aktiviti" aria-label="Padam aktiviti" onclick="event.stopPropagation(); deleteEventPrompt('${e.id}', '${uid}')"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20.5 6h-17M9.5 11v6m5-6v6M18.833 8.5l-.311 4.667c-.222 3.325-.332 4.987-1.417 6-1.084 1.013-2.75 1.013-6.08 1.013h-.05c-3.33 0-4.996 0-6.08-1.013-1.085-1.013-1.196-2.675-1.417-6L3.167 8.5M9.5 5.5c0-1.414 0-2.121.44-2.56C10.378 2.5 11.085 2.5 12.5 2.5c1.414 0 2.121 0 2.56.44.44.439.44 1.146.44 2.56" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
     </div>`;
   }
 
