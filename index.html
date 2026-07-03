@@ -2075,7 +2075,7 @@
 
         <div id="khSelfAction"></div>
 
-        <p class="kh-cutoff-msg" id="khSelfCutoffMsg" style="display:none;">Waktu daftar masuk telah tamat. Sila hubungi admin untuk rekod kehadiran anda.</p>
+        <p class="kh-cutoff-msg" id="khSelfCutoffMsg" style="display:none;"></p>
         <p class="kh-loc-checking" id="khSelfLocChecking" style="display:none;">Mengesahkan lokasi...</p>
         <p class="kh-cutoff-msg" id="khSelfLocMsg" style="display:none;"></p>
         <p class="kh-note" id="khSelfNote"></p>
@@ -2908,6 +2908,21 @@ function isPastSelfCheckinCutoff(){
   return now.getHours() * 60 + now.getMinutes() > KH_SELF_CUTOFF_HOUR * 60 + KH_SELF_CUTOFF_MINUTE;
 }
 
+// Had waktu daftar sendiri (terpakai kepada semua pengguna kad, termasuk editor dalam Mod Peribadi):
+// Daftar Masuk hanya dari 7:30 pagi; Daftar Keluar hanya sehingga 9:00 malam.
+let KH_MASUK_START_HOUR = 7, KH_MASUK_START_MINUTE = 30;
+let KH_KELUAR_END_HOUR = 21, KH_KELUAR_END_MINUTE = 0;
+
+function isBeforeSelfMasukStart(){
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes() < KH_MASUK_START_HOUR * 60 + KH_MASUK_START_MINUTE;
+}
+
+function isPastSelfKeluarEnd(){
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes() >= KH_KELUAR_END_HOUR * 60 + KH_KELUAR_END_MINUTE;
+}
+
 // Semakan lokasi GPS untuk daftar masuk sendiri (staf biasa sahaja; editor Kehadiran dikecualikan)
 const KH_OFFICE_LAT = 5.95726;
 const KH_OFFICE_LNG = 116.079867;
@@ -2961,28 +2976,38 @@ function applySelfCheckinLock(){
   // Waktu tamat hanya menyekat Daftar Masuk; Daftar Keluar tidak terjejas.
   const masukPhase = !!document.getElementById('khSelfMasukBtn');
 
+  const keluarPhase = !!document.getElementById('khSelfKeluarBtn');
+
   const checking = hasAction && khLocationState === 'pending';
-  const cutoffLocked = masukPhase && !isSelfCheckinCutoffExempt() && isPastSelfCheckinCutoff();
+  let timeMsg = '';
+  if(masukPhase && isBeforeSelfMasukStart()){
+    timeMsg = 'Waktu daftar masuk bermula pada 7:30 pagi.';
+  } else if(masukPhase && !isSelfCheckinCutoffExempt() && isPastSelfCheckinCutoff()){
+    timeMsg = 'Waktu daftar masuk telah tamat. Sila hubungi admin untuk rekod kehadiran anda.';
+  } else if(keluarPhase && isPastSelfKeluarEnd()){
+    timeMsg = 'Waktu daftar keluar telah tamat. Sila hubungi admin.';
+  }
   let locMsg = '';
   if(hasAction && khLocationState === 'outside'){
     locMsg = 'Anda perlu berada di lokasi pejabat untuk mendaftar masuk. Sila hubungi admin jika anda mempunyai masalah.';
   } else if(hasAction && khLocationState === 'unavailable'){
     locMsg = 'Kebenaran lokasi diperlukan untuk mendaftar masuk. Sila benarkan akses lokasi dalam tetapan pelayar anda.';
   }
-  const locked = cutoffLocked || !!locMsg;
+  const locked = !!timeMsg || !!locMsg;
 
   card.querySelector('.kehadiran-form').classList.toggle('kh-locked', locked);
   buttons.forEach(b => { b.disabled = locked || checking; });
-  document.getElementById('khSelfCutoffMsg').style.display = cutoffLocked ? '' : 'none';
+  const timeEl = document.getElementById('khSelfCutoffMsg');
+  timeEl.textContent = timeMsg;
+  timeEl.style.display = timeMsg ? '' : 'none';
   const locEl = document.getElementById('khSelfLocMsg');
   locEl.textContent = locMsg;
   locEl.style.display = locMsg ? '' : 'none';
   document.getElementById('khSelfLocChecking').style.display = checking ? '' : 'none';
 }
 
-setInterval(applySelfCheckinLock, 60000);
-
 let khSelfClockTimer = null;
+let khSelfLastMinute = null;
 
 function updateSelfClock(){
   const el = document.getElementById('khSelfClock');
@@ -2990,6 +3015,11 @@ function updateSelfClock(){
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
   el.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  // Nilai semula had waktu setiap kali minit bertukar, supaya butang aktif/lumpuh tanpa muat semula.
+  if(now.getMinutes() !== khSelfLastMinute){
+    khSelfLastMinute = now.getMinutes();
+    applySelfCheckinLock();
+  }
 }
 
 function startSelfClock(){
@@ -3039,7 +3069,7 @@ function renderSelfCheckinCard(){
 }
 
 async function selfDaftarMasuk(){
-  if((!isSelfCheckinCutoffExempt() && isPastSelfCheckinCutoff()) || khLocationState !== 'ok'){
+  if(isBeforeSelfMasukStart() || (!isSelfCheckinCutoffExempt() && isPastSelfCheckinCutoff()) || khLocationState !== 'ok'){
     applySelfCheckinLock();
     return;
   }
@@ -3080,7 +3110,7 @@ async function selfDaftarMasuk(){
 }
 
 async function selfDaftarKeluar(){
-  if(khLocationState !== 'ok'){
+  if(isPastSelfKeluarEnd() || khLocationState !== 'ok'){
     applySelfCheckinLock();
     return;
   }
