@@ -2868,8 +2868,10 @@ function getSelfCheckinName(){
 // Waktu tamat daftar masuk sendiri (staf biasa sahaja; editor Kehadiran dikecualikan)
 const KH_SELF_CUTOFF_HOUR = 9;
 const KH_SELF_CUTOFF_MINUTE = 15;
+const KH_SELF_CUTOFF_ENABLED = false; // dimatikan sementara untuk ujian
 
 function isPastSelfCheckinCutoff(){
+  if(!KH_SELF_CUTOFF_ENABLED) return false;
   const now = new Date();
   return now.getHours() * 60 + now.getMinutes() > KH_SELF_CUTOFF_HOUR * 60 + KH_SELF_CUTOFF_MINUTE;
 }
