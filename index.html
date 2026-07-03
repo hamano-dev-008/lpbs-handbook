@@ -901,7 +901,48 @@
     color:var(--sage);
     min-height:16px;
   }
-  .kh-self-info{ font-size:15px; font-weight:600; margin:0 0 4px; color:var(--ink); }
+  .kh-self-card{
+    max-width:420px;
+    margin:18px auto 0;
+    padding:26px 20px;
+    text-align:center;
+    box-shadow:0 12px 30px -18px rgba(27,58,92,.35);
+  }
+  .kh-self-name{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:23px;
+    font-weight:700;
+    margin:0;
+    color:var(--ink);
+  }
+  .kh-self-date{ font-size:13.5px; color:var(--ink-soft); margin:4px 0 0; }
+  .kh-self-clock{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:52px;
+    font-weight:600;
+    color:var(--paddy);
+    margin:16px 0 18px;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:.02em;
+    line-height:1;
+  }
+  .kh-self-action-btn{
+    width:100%;
+    padding:15px;
+    font-size:16px;
+    font-weight:700;
+    font-family:'Inter',sans-serif;
+    background:var(--paddy);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+  }
+  .kh-self-action-btn:hover{ background:var(--paddy-light); }
+  .kh-self-action-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .kh-self-confirm{ font-size:15px; color:var(--ink); margin:0 0 12px; }
+  .kh-self-confirm b{ font-family:'Space Grotesk',sans-serif; color:var(--paddy); }
+  .kh-self-done{ font-size:12.5px; color:var(--ink-soft); margin:6px 0 0; }
   .kehadiran-form.kh-locked{
     border:2px solid #c0392b;
     background-image:repeating-linear-gradient(-45deg, rgba(192,57,43,.08) 0 14px, rgba(192,57,43,.16) 14px 28px);
@@ -909,19 +950,13 @@
   .kehadiran-form.kh-locked input:disabled,
   .kehadiran-form.kh-locked button:disabled{ opacity:.45; cursor:not-allowed; }
   .kh-cutoff-msg{ margin:12px 0 0; font-size:14px; font-weight:700; color:#c0392b; }
-  .kh-loc-checking{ margin:12px 0 0; font-size:14px; color:var(--ink-soft); display:flex; align-items:center; gap:8px; }
+  .kh-loc-checking{ margin:12px 0 0; font-size:14px; color:var(--ink-soft); display:flex; align-items:center; justify-content:center; gap:8px; }
   .kh-loc-checking::before{
     content:''; width:14px; height:14px; flex:none; border-radius:50%;
     border:2px solid var(--ink-soft); border-top-color:transparent;
     animation:khLocSpin .8s linear infinite;
   }
   @keyframes khLocSpin{ to{ transform:rotate(360deg); } }
-  .kh-stamp-row{ display:flex; gap:8px; align-items:center; }
-  .kh-stamp-row input[type="time"]{ flex:1; min-width:0; }
-  .kh-stamp-btn{ margin:0 !important; padding:7px 10px; font-size:12px; white-space:nowrap; flex-shrink:0; }
-  .kh-self-status{ display:flex; gap:28px; margin-top:14px; padding:12px 14px; background:var(--bg); border:1px solid var(--line); border-radius:10px; }
-  .kh-self-label{ display:block; font-size:11px; color:var(--ink-soft); margin-bottom:3px; text-transform:uppercase; letter-spacing:.04em; }
-  .kh-self-val{ font-size:22px; font-weight:700; color:var(--paddy); font-family:'Space Grotesk',sans-serif; }
   .kh-table-wrap{
     margin-top:14px;
     overflow-x:auto;
@@ -2026,35 +2061,17 @@
 
     <!-- Self check-in card: shown to all signed-in staff who are NOT Kehadiran editors -->
     <div id="khSelfCheckinCard" style="display:none;">
-      <div class="kehadiran-form">
-        <p class="kh-self-info" id="khSelfName"></p>
-        <p class="kh-self-info" style="font-weight:400; font-size:13px; color:var(--ink-soft);" id="khSelfDate"></p>
+      <div class="kehadiran-form kh-self-card">
+        <p class="kh-self-name" id="khSelfName"></p>
+        <p class="kh-self-date" id="khSelfDate"></p>
 
-        <div id="khSelfExisting" style="display:none;"></div>
+        <div class="kh-self-clock" id="khSelfClock">--:--:--</div>
 
-        <div id="khSelfForm">
-          <div class="field-row" style="margin-top:14px;">
-            <div>
-              <label class="field-label">Masa Masuk</label>
-              <div class="kh-stamp-row">
-                <input type="time" id="kh-self-masuk">
-                <button class="save-btn kh-stamp-btn" type="button" id="khSelfStampMasuk">Rekod Sekarang</button>
-              </div>
-            </div>
-            <div>
-              <label class="field-label">Masa Keluar</label>
-              <div class="kh-stamp-row">
-                <input type="time" id="kh-self-keluar">
-                <button class="save-btn kh-stamp-btn" type="button" id="khSelfStampKeluar">Rekod Sekarang</button>
-              </div>
-            </div>
-          </div>
-          <button class="save-btn" id="khSelfSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
-          <p class="kh-cutoff-msg" id="khSelfCutoffMsg" style="display:none;">Waktu daftar masuk telah tamat. Sila hubungi admin untuk rekod kehadiran anda.</p>
-          <p class="kh-loc-checking" id="khSelfLocChecking" style="display:none;">Mengesahkan lokasi...</p>
-          <p class="kh-cutoff-msg" id="khSelfLocMsg" style="display:none;"></p>
-        </div>
+        <div id="khSelfAction"></div>
 
+        <p class="kh-cutoff-msg" id="khSelfCutoffMsg" style="display:none;">Waktu daftar masuk telah tamat. Sila hubungi admin untuk rekod kehadiran anda.</p>
+        <p class="kh-loc-checking" id="khSelfLocChecking" style="display:none;">Mengesahkan lokasi...</p>
+        <p class="kh-cutoff-msg" id="khSelfLocMsg" style="display:none;"></p>
         <p class="kh-note" id="khSelfNote"></p>
       </div>
     </div>
@@ -2927,21 +2944,23 @@ function verifySelfCheckinLocation(){
 function applySelfCheckinLock(){
   const card = document.getElementById('khSelfCheckinCard');
   if(!card || card.style.display === 'none') return;
-  const formVisible = document.getElementById('khSelfForm').style.display !== 'none';
+  const buttons = card.querySelectorAll('#khSelfAction button');
+  const hasAction = buttons.length > 0;
+  // Waktu tamat hanya menyekat Daftar Masuk; Daftar Keluar tidak terjejas.
+  const masukPhase = !!document.getElementById('khSelfMasukBtn');
 
-  const checking = formVisible && khLocationState === 'pending';
-  const cutoffLocked = formVisible && isPastSelfCheckinCutoff();
+  const checking = hasAction && khLocationState === 'pending';
+  const cutoffLocked = masukPhase && isPastSelfCheckinCutoff();
   let locMsg = '';
-  if(formVisible && khLocationState === 'outside'){
+  if(hasAction && khLocationState === 'outside'){
     locMsg = 'Anda perlu berada di lokasi pejabat untuk mendaftar masuk. Sila hubungi admin jika anda mempunyai masalah.';
-  } else if(formVisible && khLocationState === 'unavailable'){
+  } else if(hasAction && khLocationState === 'unavailable'){
     locMsg = 'Kebenaran lokasi diperlukan untuk mendaftar masuk. Sila benarkan akses lokasi dalam tetapan pelayar anda.';
   }
   const locked = cutoffLocked || !!locMsg;
 
   card.querySelector('.kehadiran-form').classList.toggle('kh-locked', locked);
-  ['kh-self-masuk','kh-self-keluar','khSelfStampMasuk','khSelfStampKeluar','khSelfSaveBtn']
-    .forEach(id => { document.getElementById(id).disabled = locked || checking; });
+  buttons.forEach(b => { b.disabled = locked || checking; });
   document.getElementById('khSelfCutoffMsg').style.display = cutoffLocked ? '' : 'none';
   const locEl = document.getElementById('khSelfLocMsg');
   locEl.textContent = locMsg;
@@ -2951,67 +2970,80 @@ function applySelfCheckinLock(){
 
 setInterval(applySelfCheckinLock, 60000);
 
+let khSelfClockTimer = null;
+
+function updateSelfClock(){
+  const el = document.getElementById('khSelfClock');
+  if(!el) return;
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  el.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+
+function startSelfClock(){
+  updateSelfClock();
+  if(!khSelfClockTimer) khSelfClockTimer = setInterval(updateSelfClock, 1000);
+}
+
+function fmtTarikhMelayu(d){
+  const dayName = DAY_NAMES[d.getDay()];
+  return `${dayName.charAt(0)}${dayName.slice(1).toLowerCase()}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function nowHHMM(){
+  const now = new Date();
+  return String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+
 function renderSelfCheckinCard(){
   const todayKey = fmtKey(new Date());
   const nama = getSelfCheckinName();
 
   document.getElementById('khSelfName').textContent = nama;
-  document.getElementById('khSelfDate').textContent = todayKey;
+  document.getElementById('khSelfDate').textContent = fmtTarikhMelayu(new Date());
   document.getElementById('khSelfNote').textContent = '';
+  startSelfClock();
 
-  const existing = kehadiranRecords.find(
+  const rec = kehadiranRecords.find(
     r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === todayKey
   );
+  const action = document.getElementById('khSelfAction');
 
-  const existingDiv = document.getElementById('khSelfExisting');
-  const formDiv = document.getElementById('khSelfForm');
-
-  if(existing){
-    existingDiv.style.display = '';
-    formDiv.style.display = 'none';
-    existingDiv.innerHTML = `
-      <div class="kh-self-status">
-        <div><span class="kh-self-label">Masa Masuk</span><span class="kh-self-val">${existing.masuk || '—'}</span></div>
-        <div><span class="kh-self-label">Masa Keluar</span><span class="kh-self-val">${existing.keluar || '—'}</span></div>
-      </div>
-      <p style="margin-top:10px; font-size:12.5px; color:var(--ink-soft);">Rekod hari ini telah disimpan. Hubungi pentadbir untuk membuat pembetulan.</p>
+  if(!rec){
+    action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Daftar Masuk</button>`;
+  } else if(!rec.keluar){
+    action.innerHTML = `
+      <p class="kh-self-confirm">&#10003; Masuk direkod: <b>${rec.masuk}</b></p>
+      <button class="kh-self-action-btn" id="khSelfKeluarBtn" onclick="selfDaftarKeluar()">Daftar Keluar</button>
     `;
   } else {
-    existingDiv.style.display = 'none';
-    formDiv.style.display = '';
-    document.getElementById('kh-self-masuk').value = '';
-    document.getElementById('kh-self-keluar').value = '';
+    action.innerHTML = `
+      <p class="kh-self-confirm">&#10003; Masuk: <b>${rec.masuk}</b> &nbsp;&middot;&nbsp; Keluar: <b>${rec.keluar}</b></p>
+      <p class="kh-self-done">Selesai — rekod hari ini lengkap. Hubungi pentadbir untuk pembetulan.</p>
+    `;
   }
 
   applySelfCheckinLock();
 }
 
-async function saveSelfCheckin(){
+async function selfDaftarMasuk(){
   if(isPastSelfCheckinCutoff() || khLocationState !== 'ok'){
     applySelfCheckinLock();
     return;
   }
   const nama = getSelfCheckinName();
   const tarikh = fmtKey(new Date());
-  const masuk = document.getElementById('kh-self-masuk').value;
-  const keluar = document.getElementById('kh-self-keluar').value;
   const note = document.getElementById('khSelfNote');
-  const btn = document.getElementById('khSelfSaveBtn');
-
-  if(!masuk || !keluar){
-    note.textContent = 'Sila rekod masa masuk dan masa keluar terlebih dahulu.';
-    return;
-  }
+  const btn = document.getElementById('khSelfMasukBtn');
 
   const dup = kehadiranRecords.find(r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh);
   if(dup){
-    note.textContent = 'Rekod kehadiran anda untuk hari ini sudah wujud.';
     renderSelfCheckinCard();
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = 'Menyimpan...';
+  btn.textContent = 'Merekod...';
   note.textContent = '';
 
   try{
@@ -3019,7 +3051,7 @@ async function saveSelfCheckin(){
     const res = await fetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ values: [[tarikh, nama, masuk, keluar]] })
+      body: JSON.stringify({ values: [[tarikh, nama, nowHHMM(), '']] })
     });
     if(!res.ok){
       const errData = await res.json().catch(()=>({}));
@@ -3027,12 +3059,52 @@ async function saveSelfCheckin(){
     }
     await loadKehadiranFromSheet();
     renderSelfCheckinCard();
-    note.textContent = 'Rekod kehadiran berjaya disimpan.';
+    document.getElementById('khSelfNote').textContent = 'Masa masuk berjaya direkodkan.';
   }catch(e){
     note.textContent = 'Ralat: ' + e.message;
-  }finally{
     btn.disabled = false;
-    btn.textContent = 'Simpan Rekod';
+    btn.textContent = 'Daftar Masuk';
+  }
+}
+
+async function selfDaftarKeluar(){
+  if(khLocationState !== 'ok'){
+    applySelfCheckinLock();
+    return;
+  }
+  const nama = getSelfCheckinName();
+  const tarikh = fmtKey(new Date());
+  const note = document.getElementById('khSelfNote');
+  const btn = document.getElementById('khSelfKeluarBtn');
+
+  const rec = kehadiranRecords.find(r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh);
+  if(!rec || rec.keluar){
+    renderSelfCheckinCard();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Merekod...';
+  note.textContent = '';
+
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!D' + rec.rowIndex)}?valueInputOption=USER_ENTERED`;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[nowHHMM()]] })
+    });
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+    }
+    await loadKehadiranFromSheet();
+    renderSelfCheckinCard();
+    document.getElementById('khSelfNote').textContent = 'Masa keluar berjaya direkodkan.';
+  }catch(e){
+    note.textContent = 'Ralat: ' + e.message;
+    btn.disabled = false;
+    btn.textContent = 'Daftar Keluar';
   }
 }
 
@@ -3130,14 +3202,6 @@ document.getElementById('khBulkAddBtn').addEventListener('click', bulkAddAllStaf
 document.getElementById('khDeleteAllBtn').addEventListener('click', deleteAllKehadiranRecords);
 document.getElementById('khPrintBtn').addEventListener('click', generateKehadiranPDF);
 
-function stampNow(inputId){
-  const now = new Date();
-  document.getElementById(inputId).value =
-    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-}
-document.getElementById('khSelfStampMasuk').addEventListener('click', () => stampNow('kh-self-masuk'));
-document.getElementById('khSelfStampKeluar').addEventListener('click', () => stampNow('kh-self-keluar'));
-document.getElementById('khSelfSaveBtn').addEventListener('click', saveSelfCheckin);
 
 // ============================================================
 // MINIT MESYUARAT — jana dokumen .docx terus dalam pelayar
