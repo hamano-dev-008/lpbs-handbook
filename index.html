@@ -902,6 +902,13 @@
     min-height:16px;
   }
   .kh-self-info{ font-size:15px; font-weight:600; margin:0 0 4px; color:var(--ink); }
+  .kehadiran-form.kh-locked{
+    border:2px solid #c0392b;
+    background-image:repeating-linear-gradient(-45deg, rgba(192,57,43,.08) 0 14px, rgba(192,57,43,.16) 14px 28px);
+  }
+  .kehadiran-form.kh-locked input:disabled,
+  .kehadiran-form.kh-locked button:disabled{ opacity:.45; cursor:not-allowed; }
+  .kh-cutoff-msg{ margin:12px 0 0; font-size:14px; font-weight:700; color:#c0392b; }
   .kh-stamp-row{ display:flex; gap:8px; align-items:center; }
   .kh-stamp-row input[type="time"]{ flex:1; min-width:0; }
   .kh-stamp-btn{ margin:0 !important; padding:7px 10px; font-size:12px; white-space:nowrap; flex-shrink:0; }
@@ -2036,6 +2043,7 @@
             </div>
           </div>
           <button class="save-btn" id="khSelfSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
+          <p class="kh-cutoff-msg" id="khSelfCutoffMsg" style="display:none;">Waktu daftar masuk telah tamat. Sila hubungi admin untuk rekod kehadiran anda.</p>
         </div>
 
         <p class="kh-note" id="khSelfNote"></p>
@@ -2418,7 +2426,7 @@ const FALLBACK_EDITOR_ALLOWLIST = [
   "carlvinds@gmail.com",
   "dzulkifliewilyawaty@gmail.com",
   "dzunisajaldin@gmail.com",
-  "jeffreyavie@gmail.com",
+  "jeffreyjames2503@gmail.com",
   "jenna.kulai@gmail.com",
   "jhuzaika@gmail.com",
   "juanapoyong@gmail.com",
@@ -2857,6 +2865,29 @@ function getSelfCheckinName(){
   return entry?.nama || currentUser.email;
 }
 
+// Waktu tamat daftar masuk sendiri (staf biasa sahaja; editor Kehadiran dikecualikan)
+const KH_SELF_CUTOFF_HOUR = 9;
+const KH_SELF_CUTOFF_MINUTE = 15;
+
+function isPastSelfCheckinCutoff(){
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes() > KH_SELF_CUTOFF_HOUR * 60 + KH_SELF_CUTOFF_MINUTE;
+}
+
+function applySelfCheckinCutoff(){
+  const card = document.getElementById('khSelfCheckinCard');
+  if(!card || card.style.display === 'none') return;
+  const formDiv = document.getElementById('khSelfForm');
+  const locked = isPastSelfCheckinCutoff() && formDiv.style.display !== 'none';
+
+  card.querySelector('.kehadiran-form').classList.toggle('kh-locked', locked);
+  ['kh-self-masuk','kh-self-keluar','khSelfStampMasuk','khSelfStampKeluar','khSelfSaveBtn']
+    .forEach(id => { document.getElementById(id).disabled = locked; });
+  document.getElementById('khSelfCutoffMsg').style.display = locked ? '' : 'none';
+}
+
+setInterval(applySelfCheckinCutoff, 60000);
+
 function renderSelfCheckinCard(){
   const todayKey = fmtKey(new Date());
   const nama = getSelfCheckinName();
@@ -2888,9 +2919,15 @@ function renderSelfCheckinCard(){
     document.getElementById('kh-self-masuk').value = '';
     document.getElementById('kh-self-keluar').value = '';
   }
+
+  applySelfCheckinCutoff();
 }
 
 async function saveSelfCheckin(){
+  if(isPastSelfCheckinCutoff()){
+    applySelfCheckinCutoff();
+    return;
+  }
   const nama = getSelfCheckinName();
   const tarikh = fmtKey(new Date());
   const masuk = document.getElementById('kh-self-masuk').value;
