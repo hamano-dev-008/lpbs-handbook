@@ -2054,6 +2054,12 @@
   <div id="sectionKehadiran" style="display:none;">
 
   <section class="analytics no-border-top">
+    <!-- Mode toggle: Kehadiran editors only; regular staff never see it -->
+    <div class="period-toggle" id="khModeToggle" style="display:none; width:max-content; margin-bottom:16px;">
+      <button class="period-btn" data-khmode="pentadbir" onclick="setKehadiranMode('pentadbir')">Mod Pentadbir</button>
+      <button class="period-btn" data-khmode="peribadi" onclick="setKehadiranMode('peribadi')">Mod Peribadi</button>
+    </div>
+
     <div class="print-head">
       <p class="eyebrow">Kehadiran Staf</p>
       <h2 class="ana-title">Rekod Kehadiran</h2>
@@ -2941,20 +2947,30 @@ function verifySelfCheckinLocation(){
   );
 }
 
+// Editor Kehadiran dikecualikan daripada semakan lokasi dan waktu tamat, walaupun dalam Mod Peribadi.
+function isSelfCheckinExempt(){
+  return !!(currentUser && isAllowedKehadiranEditor(currentUser.email));
+}
+
+function selfCheckinLocationOk(){
+  return isSelfCheckinExempt() || khLocationState === 'ok';
+}
+
 function applySelfCheckinLock(){
   const card = document.getElementById('khSelfCheckinCard');
   if(!card || card.style.display === 'none') return;
   const buttons = card.querySelectorAll('#khSelfAction button');
   const hasAction = buttons.length > 0;
+  const exempt = isSelfCheckinExempt();
   // Waktu tamat hanya menyekat Daftar Masuk; Daftar Keluar tidak terjejas.
   const masukPhase = !!document.getElementById('khSelfMasukBtn');
 
-  const checking = hasAction && khLocationState === 'pending';
-  const cutoffLocked = masukPhase && isPastSelfCheckinCutoff();
+  const checking = hasAction && !exempt && khLocationState === 'pending';
+  const cutoffLocked = masukPhase && !exempt && isPastSelfCheckinCutoff();
   let locMsg = '';
-  if(hasAction && khLocationState === 'outside'){
+  if(hasAction && !exempt && khLocationState === 'outside'){
     locMsg = 'Anda perlu berada di lokasi pejabat untuk mendaftar masuk. Sila hubungi admin jika anda mempunyai masalah.';
-  } else if(hasAction && khLocationState === 'unavailable'){
+  } else if(hasAction && !exempt && khLocationState === 'unavailable'){
     locMsg = 'Kebenaran lokasi diperlukan untuk mendaftar masuk. Sila benarkan akses lokasi dalam tetapan pelayar anda.';
   }
   const locked = cutoffLocked || !!locMsg;
@@ -3027,7 +3043,7 @@ function renderSelfCheckinCard(){
 }
 
 async function selfDaftarMasuk(){
-  if(isPastSelfCheckinCutoff() || khLocationState !== 'ok'){
+  if((!isSelfCheckinExempt() && isPastSelfCheckinCutoff()) || !selfCheckinLocationOk()){
     applySelfCheckinLock();
     return;
   }
@@ -3068,7 +3084,7 @@ async function selfDaftarMasuk(){
 }
 
 async function selfDaftarKeluar(){
-  if(khLocationState !== 'ok'){
+  if(!selfCheckinLocationOk()){
     applySelfCheckinLock();
     return;
   }
@@ -3106,6 +3122,32 @@ async function selfDaftarKeluar(){
     btn.disabled = false;
     btn.textContent = 'Daftar Keluar';
   }
+}
+
+// Mod paparan Kehadiran untuk editor: 'pentadbir' (paparan penuh) | 'peribadi' (kad daftar sendiri)
+function getKehadiranMode(){
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return 'peribadi';
+  return localStorage.getItem('kehadiran_mode_' + currentUser.email) === 'peribadi' ? 'peribadi' : 'pentadbir';
+}
+
+function setKehadiranMode(mode){
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+  localStorage.setItem('kehadiran_mode_' + currentUser.email, mode);
+  applyKehadiranMode();
+}
+
+function applyKehadiranMode(){
+  const isEditor = !!(currentUser && isAllowedKehadiranEditor(currentUser.email));
+  const mode = getKehadiranMode();
+
+  const toggle = document.getElementById('khModeToggle');
+  toggle.style.display = isEditor ? '' : 'none';
+  toggle.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.khmode === mode));
+
+  document.getElementById('kehadiranEditorBlock').style.display = (isEditor && mode === 'pentadbir') ? '' : 'none';
+  const showSelf = !isEditor || mode === 'peribadi';
+  document.getElementById('khSelfCheckinCard').style.display = showSelf ? '' : 'none';
+  if(showSelf && kehadiranLoaded) renderSelfCheckinCard();
 }
 
 function generateKehadiranPDF(){
@@ -4394,9 +4436,10 @@ function switchSection(section){
     if(!document.getElementById('kh-tarikh').value){
       document.getElementById('kh-tarikh').value = fmtKey(new Date());
     }
+    applyKehadiranMode();
     if(!isAllowedKehadiranEditor(currentUser?.email)) verifySelfCheckinLocation();
     loadKehadiranFromSheet().then(() => {
-      if(!isAllowedKehadiranEditor(currentUser?.email)) renderSelfCheckinCard();
+      if(document.getElementById('khSelfCheckinCard').style.display !== 'none') renderSelfCheckinCard();
     });
   } else if(section === 'minit'){
     if(!document.getElementById('minit-tarikh').value){
@@ -4808,9 +4851,7 @@ function syncSignInButtons(){
   document.getElementById('cetakInAnalitik').style.display = canEdit ? '' : 'none';
   document.getElementById('tabAddCenter').style.display = canEdit ? '' : 'none';
 
-  const canEditKehadiran = isAllowedKehadiranEditor(currentUser.email);
-  document.getElementById('kehadiranEditorBlock').style.display = canEditKehadiran ? '' : 'none';
-  document.getElementById('khSelfCheckinCard').style.display = canEditKehadiran ? 'none' : '';
+  applyKehadiranMode();
   document.getElementById('lagiRowKehadiran').style.display = '';  // Kehadiran visible to all signed-in users
 
   const canEditMinit = isAllowedMinitEditor(currentUser.email);
