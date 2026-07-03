@@ -2395,8 +2395,8 @@ const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.google
 // Hanya 3 akaun ini boleh mengedit Kehadiran Staf (berasingan daripada senarai editor umum).
 const KEHADIRAN_EDITOR_ALLOWLIST = [
   "leyshaaf@gmail.com",
-  "carlvinds@gmail.com"
-  // "neel.jay98@gmail.com" — dikeluarkan sementara untuk menguji semakan lokasi GPS; pulihkan selepas ujian
+  "carlvinds@gmail.com",
+  "neel.jay98@gmail.com"
 ];
 function isAllowedKehadiranEditor(email){
   return KEHADIRAN_EDITOR_ALLOWLIST.map(e=>e.toLowerCase()).includes((email||'').toLowerCase());
