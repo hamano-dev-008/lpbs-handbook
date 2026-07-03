@@ -909,6 +909,13 @@
   .kehadiran-form.kh-locked input:disabled,
   .kehadiran-form.kh-locked button:disabled{ opacity:.45; cursor:not-allowed; }
   .kh-cutoff-msg{ margin:12px 0 0; font-size:14px; font-weight:700; color:#c0392b; }
+  .kh-loc-checking{ margin:12px 0 0; font-size:14px; color:var(--ink-soft); display:flex; align-items:center; gap:8px; }
+  .kh-loc-checking::before{
+    content:''; width:14px; height:14px; flex:none; border-radius:50%;
+    border:2px solid var(--ink-soft); border-top-color:transparent;
+    animation:khLocSpin .8s linear infinite;
+  }
+  @keyframes khLocSpin{ to{ transform:rotate(360deg); } }
   .kh-stamp-row{ display:flex; gap:8px; align-items:center; }
   .kh-stamp-row input[type="time"]{ flex:1; min-width:0; }
   .kh-stamp-btn{ margin:0 !important; padding:7px 10px; font-size:12px; white-space:nowrap; flex-shrink:0; }
@@ -2044,6 +2051,8 @@
           </div>
           <button class="save-btn" id="khSelfSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
           <p class="kh-cutoff-msg" id="khSelfCutoffMsg" style="display:none;">Waktu daftar masuk telah tamat. Sila hubungi admin untuk rekod kehadiran anda.</p>
+          <p class="kh-loc-checking" id="khSelfLocChecking" style="display:none;">Mengesahkan lokasi...</p>
+          <p class="kh-cutoff-msg" id="khSelfLocMsg" style="display:none;"></p>
         </div>
 
         <p class="kh-note" id="khSelfNote"></p>
@@ -2876,19 +2885,71 @@ function isPastSelfCheckinCutoff(){
   return now.getHours() * 60 + now.getMinutes() > KH_SELF_CUTOFF_HOUR * 60 + KH_SELF_CUTOFF_MINUTE;
 }
 
-function applySelfCheckinCutoff(){
+// Semakan lokasi GPS untuk daftar masuk sendiri (staf biasa sahaja; editor Kehadiran dikecualikan)
+const KH_OFFICE_LAT = 5.95726;
+const KH_OFFICE_LNG = 116.079867;
+const KH_LOC_RADIUS_METERS = 500;
+
+let khLocationState = 'pending'; // 'pending' | 'ok' | 'outside' | 'unavailable'
+
+function haversineMeters(lat1, lng1, lat2, lng2){
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function verifySelfCheckinLocation(){
+  khLocationState = 'pending';
+  applySelfCheckinLock();
+  if(!navigator.geolocation){
+    khLocationState = 'unavailable';
+    applySelfCheckinLock();
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const dist = haversineMeters(pos.coords.latitude, pos.coords.longitude, KH_OFFICE_LAT, KH_OFFICE_LNG);
+      khLocationState = dist <= KH_LOC_RADIUS_METERS ? 'ok' : 'outside';
+      applySelfCheckinLock();
+    },
+    () => {
+      khLocationState = 'unavailable';
+      applySelfCheckinLock();
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+function applySelfCheckinLock(){
   const card = document.getElementById('khSelfCheckinCard');
   if(!card || card.style.display === 'none') return;
-  const formDiv = document.getElementById('khSelfForm');
-  const locked = isPastSelfCheckinCutoff() && formDiv.style.display !== 'none';
+  const formVisible = document.getElementById('khSelfForm').style.display !== 'none';
+
+  const checking = formVisible && khLocationState === 'pending';
+  const cutoffLocked = formVisible && isPastSelfCheckinCutoff();
+  let locMsg = '';
+  if(formVisible && khLocationState === 'outside'){
+    locMsg = 'Anda perlu berada di lokasi pejabat untuk mendaftar masuk. Sila hubungi admin jika anda mempunyai masalah.';
+  } else if(formVisible && khLocationState === 'unavailable'){
+    locMsg = 'Kebenaran lokasi diperlukan untuk mendaftar masuk. Sila benarkan akses lokasi dalam tetapan pelayar anda.';
+  }
+  const locked = cutoffLocked || !!locMsg;
 
   card.querySelector('.kehadiran-form').classList.toggle('kh-locked', locked);
   ['kh-self-masuk','kh-self-keluar','khSelfStampMasuk','khSelfStampKeluar','khSelfSaveBtn']
-    .forEach(id => { document.getElementById(id).disabled = locked; });
-  document.getElementById('khSelfCutoffMsg').style.display = locked ? '' : 'none';
+    .forEach(id => { document.getElementById(id).disabled = locked || checking; });
+  document.getElementById('khSelfCutoffMsg').style.display = cutoffLocked ? '' : 'none';
+  const locEl = document.getElementById('khSelfLocMsg');
+  locEl.textContent = locMsg;
+  locEl.style.display = locMsg ? '' : 'none';
+  document.getElementById('khSelfLocChecking').style.display = checking ? '' : 'none';
 }
 
-setInterval(applySelfCheckinCutoff, 60000);
+setInterval(applySelfCheckinLock, 60000);
 
 function renderSelfCheckinCard(){
   const todayKey = fmtKey(new Date());
@@ -2922,12 +2983,12 @@ function renderSelfCheckinCard(){
     document.getElementById('kh-self-keluar').value = '';
   }
 
-  applySelfCheckinCutoff();
+  applySelfCheckinLock();
 }
 
 async function saveSelfCheckin(){
-  if(isPastSelfCheckinCutoff()){
-    applySelfCheckinCutoff();
+  if(isPastSelfCheckinCutoff() || khLocationState !== 'ok'){
+    applySelfCheckinLock();
     return;
   }
   const nama = getSelfCheckinName();
@@ -4269,6 +4330,7 @@ function switchSection(section){
     if(!document.getElementById('kh-tarikh').value){
       document.getElementById('kh-tarikh').value = fmtKey(new Date());
     }
+    if(!isAllowedKehadiranEditor(currentUser?.email)) verifySelfCheckinLocation();
     loadKehadiranFromSheet().then(() => {
       if(!isAllowedKehadiranEditor(currentUser?.email)) renderSelfCheckinCard();
     });
