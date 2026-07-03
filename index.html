@@ -2947,13 +2947,10 @@ function verifySelfCheckinLocation(){
   );
 }
 
-// Editor Kehadiran dikecualikan daripada semakan lokasi dan waktu tamat, walaupun dalam Mod Peribadi.
-function isSelfCheckinExempt(){
+// Editor Kehadiran dikecualikan daripada waktu tamat sahaja; semakan lokasi
+// terpakai kepada semua yang menggunakan kad daftar sendiri (termasuk editor dalam Mod Peribadi).
+function isSelfCheckinCutoffExempt(){
   return !!(currentUser && isAllowedKehadiranEditor(currentUser.email));
-}
-
-function selfCheckinLocationOk(){
-  return isSelfCheckinExempt() || khLocationState === 'ok';
 }
 
 function applySelfCheckinLock(){
@@ -2961,16 +2958,15 @@ function applySelfCheckinLock(){
   if(!card || card.style.display === 'none') return;
   const buttons = card.querySelectorAll('#khSelfAction button');
   const hasAction = buttons.length > 0;
-  const exempt = isSelfCheckinExempt();
   // Waktu tamat hanya menyekat Daftar Masuk; Daftar Keluar tidak terjejas.
   const masukPhase = !!document.getElementById('khSelfMasukBtn');
 
-  const checking = hasAction && !exempt && khLocationState === 'pending';
-  const cutoffLocked = masukPhase && !exempt && isPastSelfCheckinCutoff();
+  const checking = hasAction && khLocationState === 'pending';
+  const cutoffLocked = masukPhase && !isSelfCheckinCutoffExempt() && isPastSelfCheckinCutoff();
   let locMsg = '';
-  if(hasAction && !exempt && khLocationState === 'outside'){
+  if(hasAction && khLocationState === 'outside'){
     locMsg = 'Anda perlu berada di lokasi pejabat untuk mendaftar masuk. Sila hubungi admin jika anda mempunyai masalah.';
-  } else if(hasAction && !exempt && khLocationState === 'unavailable'){
+  } else if(hasAction && khLocationState === 'unavailable'){
     locMsg = 'Kebenaran lokasi diperlukan untuk mendaftar masuk. Sila benarkan akses lokasi dalam tetapan pelayar anda.';
   }
   const locked = cutoffLocked || !!locMsg;
@@ -3043,7 +3039,7 @@ function renderSelfCheckinCard(){
 }
 
 async function selfDaftarMasuk(){
-  if((!isSelfCheckinExempt() && isPastSelfCheckinCutoff()) || !selfCheckinLocationOk()){
+  if((!isSelfCheckinCutoffExempt() && isPastSelfCheckinCutoff()) || khLocationState !== 'ok'){
     applySelfCheckinLock();
     return;
   }
@@ -3084,7 +3080,7 @@ async function selfDaftarMasuk(){
 }
 
 async function selfDaftarKeluar(){
-  if(!selfCheckinLocationOk()){
+  if(khLocationState !== 'ok'){
     applySelfCheckinLock();
     return;
   }
@@ -3148,6 +3144,9 @@ function applyKehadiranMode(){
   const showSelf = !isEditor || mode === 'peribadi';
   document.getElementById('khSelfCheckinCard').style.display = showSelf ? '' : 'none';
   if(showSelf && kehadiranLoaded) renderSelfCheckinCard();
+  // Semakan lokasi terpakai kepada sesiapa sahaja yang melihat kad daftar sendiri —
+  // tetapi hanya minta lokasi apabila seksyen Kehadiran sebenarnya dibuka.
+  if(showSelf && appSection === 'kehadiran') verifySelfCheckinLocation();
 }
 
 function generateKehadiranPDF(){
@@ -4437,7 +4436,6 @@ function switchSection(section){
       document.getElementById('kh-tarikh').value = fmtKey(new Date());
     }
     applyKehadiranMode();
-    if(!isAllowedKehadiranEditor(currentUser?.email)) verifySelfCheckinLocation();
     loadKehadiranFromSheet().then(() => {
       if(document.getElementById('khSelfCheckinCard').style.display !== 'none') renderSelfCheckinCard();
     });
