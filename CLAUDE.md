@@ -1,6 +1,6 @@
-# LPBS Aktiviti Harian
+# PadiApp
 
-A Malay-language progressive web app for Lembaga Padi dan Beras Sabah (LPBS), a Sabah state
+PadiApp is a Malay-language progressive web app for Lembaga Padi dan Beras Sabah (LPBS), a Sabah state
 government agency. It displays official activities/events and manages staff attendance, tasks,
 and meeting minutes for the organization. There is no build system — this is a static site you
 can open or deploy as-is.
@@ -15,7 +15,7 @@ can open or deploy as-is.
   `<script>` block. This is the file to edit for almost any change.
 - `update.html` — an older/parallel copy of the app (~2,850 lines). Treat `index.html` as the
   source of truth unless told otherwise.
-- `manifest.json` — PWA manifest (app name "LPBS Aktiviti Viewer", blue theme `#1B3A6B`).
+- `manifest.json` — PWA manifest (app name "PadiApp — LPBS", short name "PadiApp", blue theme `#1B3A6B`).
 - `sw.js` — minimal network-first service worker.
 - `icons/` — PWA icons and the animated paddy header video.
 

@@ -1,6 +1,6 @@
 {
-  "name": "LPBS Aktiviti Viewer",
-  "short_name": "LPBS",
+  "name": "PadiApp — LPBS",
+  "short_name": "PadiApp",
   "description": "Papar dan urus aktiviti rasmi Lembaga Padi dan Beras Sabah",
   "start_url": "./index.html",
   "scope": "./",
