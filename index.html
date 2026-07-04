@@ -2089,7 +2089,7 @@
         <div id="khSelfAction"></div>
 
         <p class="kh-cutoff-msg" id="khSelfCutoffMsg" style="display:none;"></p>
-        <p class="kh-loc-checking" id="khSelfLocChecking" style="display:none;">Mengesahkan lokasi...</p>
+        <p class="kh-loc-checking" id="khSelfLocChecking" style="display:none;">Verifying location...</p>
         <p class="kh-cutoff-msg" id="khSelfLocMsg" style="display:none;"></p>
         <p class="kh-note" id="khSelfNote"></p>
       </div>
@@ -2994,17 +2994,17 @@ function applySelfCheckinLock(){
   const checking = hasAction && khLocationState === 'pending';
   let timeMsg = '';
   if(masukPhase && isBeforeSelfMasukStart()){
-    timeMsg = 'Waktu daftar masuk bermula pada 7:30 pagi.';
+    timeMsg = 'Clock in is available from 7:30 AM.';
   } else if(masukPhase && !isSelfCheckinCutoffExempt() && isPastSelfCheckinCutoff()){
     timeMsg = 'Waktu daftar masuk telah tamat. Sila hubungi admin untuk rekod kehadiran anda.';
   } else if(keluarPhase && isPastSelfKeluarEnd()){
-    timeMsg = 'Waktu daftar keluar telah tamat. Sila hubungi admin.';
+    timeMsg = 'Clock out is no longer available. Please contact your admin.';
   }
   let locMsg = '';
   if(hasAction && khLocationState === 'outside'){
-    locMsg = 'Anda perlu berada di lokasi pejabat untuk mendaftar masuk. Sila hubungi admin jika anda mempunyai masalah.';
+    locMsg = 'You must be at the office to clock in. Please contact your admin.';
   } else if(hasAction && khLocationState === 'unavailable'){
-    locMsg = 'Kebenaran lokasi diperlukan untuk mendaftar masuk. Sila benarkan akses lokasi dalam tetapan pelayar anda.';
+    locMsg = 'Location access is required to clock in. Please enable location permission in your browser settings.';
   }
   const locked = !!timeMsg || !!locMsg;
 
@@ -3065,15 +3065,15 @@ function renderSelfCheckinCard(){
   const action = document.getElementById('khSelfAction');
 
   if(!rec){
-    action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Daftar Masuk</button>`;
+    action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Clock In</button>`;
   } else if(!rec.keluar){
     action.innerHTML = `
-      <p class="kh-self-confirm">&#10003; Masuk direkod: <b>${rec.masuk}</b></p>
-      <button class="kh-self-action-btn" id="khSelfKeluarBtn" onclick="selfDaftarKeluar()">Daftar Keluar</button>
+      <p class="kh-self-confirm">&#10003; Clocked in at <b>${rec.masuk}</b></p>
+      <button class="kh-self-action-btn" id="khSelfKeluarBtn" onclick="selfDaftarKeluar()">Clock Out</button>
     `;
   } else {
     action.innerHTML = `
-      <p class="kh-self-confirm">&#10003; Masuk: <b>${rec.masuk}</b> &nbsp;&middot;&nbsp; Keluar: <b>${rec.keluar}</b></p>
+      <p class="kh-self-confirm">&#10003; Clocked in: <b>${rec.masuk}</b> &nbsp;&middot;&nbsp; Clocked out: <b>${rec.keluar}</b></p>
       <p class="kh-self-done">Selesai — rekod hari ini lengkap. Hubungi pentadbir untuk pembetulan.</p>
     `;
   }
@@ -3118,7 +3118,7 @@ async function selfDaftarMasuk(){
   }catch(e){
     note.textContent = 'Ralat: ' + e.message;
     btn.disabled = false;
-    btn.textContent = 'Daftar Masuk';
+    btn.textContent = 'Clock In';
   }
 }
 
@@ -3159,7 +3159,7 @@ async function selfDaftarKeluar(){
   }catch(e){
     note.textContent = 'Ralat: ' + e.message;
     btn.disabled = false;
-    btn.textContent = 'Daftar Keluar';
+    btn.textContent = 'Clock Out';
   }
 }
 
