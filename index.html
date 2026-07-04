@@ -904,12 +904,14 @@
   .kh-mode-btn{
     display:inline-flex;
     align-items:center;
-    gap:5px;
-    white-space:nowrap;
+    justify-content:center;
+    width:40px;
+    height:40px;
+    padding:0;
   }
   .kh-mode-btn svg{
-    width:15px;
-    height:15px;
+    width:18px;
+    height:18px;
     flex:none;
   }
   .kh-self-card{
@@ -2067,8 +2069,8 @@
   <section class="analytics no-border-top">
     <!-- Mode toggle: Kehadiran editors only; regular staff never see it -->
     <div class="period-toggle" id="khModeToggle" style="display:none; width:max-content; margin-bottom:16px;">
-      <button class="period-btn kh-mode-btn" data-khmode="pentadbir" onclick="setKehadiranMode('pentadbir')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.353 13.863c.136-.432.136-.896 0-1.328l-1.562-.717c-.21-.537-.501-1.04-.862-1.49l.318-1.65a6.7 6.7 0 0 0-1.149-1.149l-1.65.318a6.6 6.6 0 0 0-1.49-.862l-.717-1.562a6.7 6.7 0 0 0-1.328 0l-.717 1.562c-.537.21-1.04.501-1.49.862l-1.65-.318a6.7 6.7 0 0 0-1.149 1.149l.318 1.65a6.6 6.6 0 0 0-.862 1.49l-1.562.717a6.7 6.7 0 0 0 0 1.328l1.562.717c.21.537.501 1.04.862 1.49l-.318 1.65c.336.432.71.813 1.149 1.149l1.65-.318c.45.361.953.652 1.49.862l.717 1.562a6.7 6.7 0 0 0 1.328 0l.717-1.562c.537-.21 1.04-.501 1.49-.862l1.65.318a6.7 6.7 0 0 0 1.149-1.149l-.318-1.65c.361-.45.652-.953.862-1.49z"/><circle cx="12" cy="13" r="3"/></svg>Mod Pentadbir</button>
-      <button class="period-btn kh-mode-btn" data-khmode="peribadi" onclick="setKehadiranMode('peribadi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Mod Peribadi</button>
+      <button class="period-btn kh-mode-btn" data-khmode="pentadbir" title="Mod Pentadbir" onclick="setKehadiranMode('pentadbir')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.353 13.863c.136-.432.136-.896 0-1.328l-1.562-.717c-.21-.537-.501-1.04-.862-1.49l.318-1.65a6.7 6.7 0 0 0-1.149-1.149l-1.65.318a6.6 6.6 0 0 0-1.49-.862l-.717-1.562a6.7 6.7 0 0 0-1.328 0l-.717 1.562c-.537.21-1.04.501-1.49.862l-1.65-.318a6.7 6.7 0 0 0-1.149 1.149l.318 1.65a6.6 6.6 0 0 0-.862 1.49l-1.562.717a6.7 6.7 0 0 0 0 1.328l1.562.717c.21.537.501 1.04.862 1.49l-.318 1.65c.336.432.71.813 1.149 1.149l1.65-.318c.45.361.953.652 1.49.862l.717 1.562a6.7 6.7 0 0 0 1.328 0l.717-1.562c.537-.21 1.04-.501 1.49-.862l1.65.318a6.7 6.7 0 0 0 1.149-1.149l-.318-1.65c.361-.45.652-.953.862-1.49z"/><circle cx="12" cy="13" r="3"/></svg></button>
+      <button class="period-btn kh-mode-btn" data-khmode="peribadi" title="Mod Peribadi" onclick="setKehadiranMode('peribadi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
 
     <div class="print-head">
