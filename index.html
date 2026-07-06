@@ -2960,10 +2960,10 @@ function getSelfCheckinName(){
   return entry?.nama || currentUser.email;
 }
 
-// Waktu tamat daftar masuk sendiri (staf biasa sahaja; editor Kehadiran dikecualikan)
+// Waktu tamat daftar masuk sendiri (semua pengguna kad, termasuk editor dalam Mod Peribadi)
 const KH_SELF_CUTOFF_HOUR = 9;
 const KH_SELF_CUTOFF_MINUTE = 15;
-const KH_SELF_CUTOFF_ENABLED = false; // dimatikan sementara untuk ujian
+const KH_SELF_CUTOFF_ENABLED = true;
 
 function isPastSelfCheckinCutoff(){
   if(!KH_SELF_CUTOFF_ENABLED) return false;
@@ -3076,12 +3076,6 @@ function verifySelfCheckinLocation(){
   );
 }
 
-// Editor Kehadiran dikecualikan daripada waktu tamat sahaja; semakan lokasi
-// terpakai kepada semua yang menggunakan kad daftar sendiri (termasuk editor dalam Mod Peribadi).
-function isSelfCheckinCutoffExempt(){
-  return !!(currentUser && isAllowedKehadiranEditor(currentUser.email));
-}
-
 function applySelfCheckinLock(){
   const card = document.getElementById('khSelfCheckinCard');
   if(!card || card.style.display === 'none') return;
@@ -3097,8 +3091,8 @@ function applySelfCheckinLock(){
   let timeMsg = '';
   if(masukPhase && isBeforeSelfMasukStart()){
     timeMsg = 'Clock in is available from 7:30 AM.';
-  } else if(masukPhase && !isSelfCheckinCutoffExempt() && isPastSelfCheckinCutoff()){
-    timeMsg = 'Waktu daftar masuk telah tamat. Sila hubungi admin untuk rekod kehadiran anda.';
+  } else if(masukPhase && isPastSelfCheckinCutoff()){
+    timeMsg = 'Clock in is no longer available after 9:15 AM. Please contact your admin.';
   } else if(keluarPhase && isPastSelfKeluarEnd()){
     timeMsg = 'Clock out is no longer available. Please contact your admin.';
   }
@@ -3211,7 +3205,7 @@ function renderSelfCheckinCard(){
 }
 
 async function selfDaftarMasuk(){
-  if(isBeforeSelfMasukStart() || (!isSelfCheckinCutoffExempt() && isPastSelfCheckinCutoff()) || khLocationState !== 'ok'){
+  if(isBeforeSelfMasukStart() || isPastSelfCheckinCutoff() || khLocationState !== 'ok'){
     applySelfCheckinLock();
     return;
   }
