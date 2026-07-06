@@ -970,10 +970,11 @@
     animation:khLocSpin .8s linear infinite;
   }
   @keyframes khLocSpin{ to{ transform:rotate(360deg); } }
-  .kh-status-pills{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:14px; }
+  .kh-status-pills{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:16px 0; }
   .kh-pill{ padding:7px 16px; border-radius:999px; border:1px solid var(--line); background:var(--bg); color:var(--ink-soft); font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; }
   .kh-pill.active{ background:var(--paddy); border-color:var(--paddy); color:#fff; }
-  .kh-self-remark input{ width:100%; margin-top:12px; }
+  .kh-self-remark input{ width:100%; margin-top:12px; margin-bottom:16px; }
+  .kh-self-alt-link{ display:block; margin:12px auto 0; background:none; border:none; padding:4px; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; cursor:pointer; }
   .kh-table-wrap{
     margin-top:14px;
     overflow-x:auto;
@@ -2090,8 +2091,7 @@
 
         <div class="kh-self-clock" id="khSelfClock">--:--:--</div>
 
-        <div class="kh-status-pills" id="khSelfStatusPills">
-          <button type="button" class="kh-pill active" data-status="Hadir">Hadir</button>
+        <div class="kh-status-pills" id="khSelfStatusPills" style="display:none;">
           <button type="button" class="kh-pill" data-status="MC">MC</button>
           <button type="button" class="kh-pill" data-status="Cuti">Cuti</button>
           <button type="button" class="kh-pill" data-status="Outstation">Outstation</button>
@@ -2101,6 +2101,7 @@
         </div>
 
         <div id="khSelfAction"></div>
+        <button type="button" class="kh-self-alt-link" id="khSelfAltLink" style="display:none;">Not coming in today?</button>
 
         <p class="kh-cutoff-msg" id="khSelfCutoffMsg" style="display:none;"></p>
         <p class="kh-loc-checking" id="khSelfLocChecking" style="display:none;">Verifying location...</p>
@@ -2976,12 +2977,17 @@ let KH_KELUAR_END_HOUR = 21, KH_KELUAR_END_MINUTE = 0;
 // Status daftar sendiri yang dipilih (Hadir | MC | Cuti | Outstation).
 // MC/Cuti/Outstation tidak tertakluk kepada semakan lokasi atau had waktu.
 let khSelfStatus = 'Hadir';
+let khSelfPickerOpen = false; // pemilih status tersembunyi secara lalai; "Not coming in today?" mendedahkannya
 
 function setSelfCheckinStatus(status){
-  khSelfStatus = status;
-  document.querySelectorAll('#khSelfStatusPills .kh-pill').forEach(b =>
-    b.classList.toggle('active', b.dataset.status === status));
-  document.getElementById('khSelfRemarkWrap').style.display = status === 'Hadir' ? 'none' : '';
+  // Ketik pil yang sama sekali lagi untuk nyahpilih dan kembali kepada Clock In biasa.
+  khSelfStatus = khSelfStatus === status ? 'Hadir' : status;
+  renderSelfCheckinCard();
+}
+
+function toggleSelfStatusPicker(){
+  khSelfPickerOpen = !khSelfPickerOpen;
+  if(!khSelfPickerOpen) khSelfStatus = 'Hadir';
   renderSelfCheckinCard();
 }
 
@@ -3126,11 +3132,13 @@ function renderSelfCheckinCard(){
 
   const pills = document.getElementById('khSelfStatusPills');
   const remarkWrap = document.getElementById('khSelfRemarkWrap');
+  const altLink = document.getElementById('khSelfAltLink');
 
   if(!rec){
-    pills.style.display = '';
+    pills.style.display = khSelfPickerOpen ? '' : 'none';
     pills.querySelectorAll('.kh-pill').forEach(b => b.classList.toggle('active', b.dataset.status === khSelfStatus));
     remarkWrap.style.display = khSelfStatus === 'Hadir' ? 'none' : '';
+    altLink.style.display = '';
     if(khSelfStatus === 'Hadir'){
       action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Clock In</button>`;
     } else {
@@ -3139,6 +3147,7 @@ function renderSelfCheckinCard(){
   } else if((rec.status || 'Hadir') !== 'Hadir'){
     pills.style.display = 'none';
     remarkWrap.style.display = 'none';
+    altLink.style.display = 'none';
     action.innerHTML = `
       <p class="kh-self-confirm">&#10003; Status recorded: <b>${rec.status}</b>${rec.remark ? ' &mdash; ' + escapeHtml(rec.remark) : ''}</p>
       <p class="kh-self-done">Selesai — rekod hari ini lengkap. Hubungi pentadbir untuk pembetulan.</p>
@@ -3146,6 +3155,7 @@ function renderSelfCheckinCard(){
   } else if(!rec.keluar){
     pills.style.display = 'none';
     remarkWrap.style.display = 'none';
+    altLink.style.display = 'none';
     action.innerHTML = `
       <p class="kh-self-confirm">&#10003; Clocked in at <b>${rec.masuk}</b></p>
       <button class="kh-self-action-btn" id="khSelfKeluarBtn" onclick="selfDaftarKeluar()">Clock Out</button>
@@ -3153,6 +3163,7 @@ function renderSelfCheckinCard(){
   } else {
     pills.style.display = 'none';
     remarkWrap.style.display = 'none';
+    altLink.style.display = 'none';
     action.innerHTML = `
       <p class="kh-self-confirm">&#10003; Clocked in: <b>${rec.masuk}</b> &nbsp;&middot;&nbsp; Clocked out: <b>${rec.keluar}</b></p>
       <p class="kh-self-done">Selesai — rekod hari ini lengkap. Hubungi pentadbir untuk pembetulan.</p>
@@ -3235,6 +3246,7 @@ async function selfSubmitStatus(){
     }
     const savedStatus = khSelfStatus;
     khSelfStatus = 'Hadir';
+    khSelfPickerOpen = false;
     await loadKehadiranFromSheet();
     renderSelfCheckinCard();
     document.getElementById('khSelfNote').textContent =
@@ -3421,6 +3433,7 @@ document.getElementById('khPrintBtn').addEventListener('click', generateKehadira
 
 document.querySelectorAll('#khSelfStatusPills .kh-pill').forEach(b =>
   b.addEventListener('click', () => setSelfCheckinStatus(b.dataset.status)));
+document.getElementById('khSelfAltLink').addEventListener('click', toggleSelfStatusPicker);
 
 // ============================================================
 // MINIT MESYUARAT — jana dokumen .docx terus dalam pelayar
