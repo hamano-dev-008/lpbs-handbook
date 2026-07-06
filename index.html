@@ -974,6 +974,7 @@
   .kh-pill{ padding:7px 16px; border-radius:999px; border:1px solid var(--line); background:var(--bg); color:var(--ink-soft); font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; }
   .kh-pill.active{ background:var(--paddy); border-color:var(--paddy); color:#fff; }
   .kh-self-remark input{ width:100%; margin-top:12px; margin-bottom:16px; }
+  .kh-self-office{ margin:2px 0 0; font-size:12px; color:var(--ink-soft); }
   .kh-self-alt-link{ display:block; margin:12px auto 0; background:none; border:none; padding:4px; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; cursor:pointer; }
   .kh-table-wrap{
     margin-top:14px;
@@ -2088,6 +2089,7 @@
       <div class="kehadiran-form kh-self-card">
         <p class="kh-self-name" id="khSelfName"></p>
         <p class="kh-self-date" id="khSelfDate"></p>
+        <p class="kh-self-office" id="khSelfOffice"></p>
 
         <div class="kh-self-clock" id="khSelfClock">--:--:--</div>
 
@@ -3001,10 +3003,43 @@ function isPastSelfKeluarEnd(){
   return now.getHours() * 60 + now.getMinutes() >= KH_KELUAR_END_HOUR * 60 + KH_KELUAR_END_MINUTE;
 }
 
-// Semakan lokasi GPS untuk daftar masuk sendiri (staf biasa sahaja; editor Kehadiran dikecualikan)
-const KH_OFFICE_LAT = 5.95726;
-const KH_OFFICE_LNG = 116.079867;
+// Semakan lokasi GPS untuk daftar masuk sendiri — setiap staf disemak terhadap
+// pejabat daerah masing-masing; staf yang tidak tersenarai menggunakan DEFAULT (HQ KK).
+const STAFF_OFFICE_LOCATIONS = {
+  // Kota Kinabalu HQ (default for all staff not listed below)
+  DEFAULT: { name: "HQ Kota Kinabalu", lat: 5.95726, lng: 116.079867 },
+
+  // Papar
+  "dzulkifliewilyawaty@gmail.com": { name: "Papar", lat: 5.733026, lng: 115.931015 },
+  "eryyyzck1906@gmail.com":        { name: "Papar", lat: 5.733026, lng: 115.931015 },
+
+  // Tuaran
+  "ignesiaroze@gmail.com":         { name: "Tuaran", lat: 6.162521, lng: 116.233285 },
+  "petrecilla@gmail.com":          { name: "Tuaran", lat: 6.162521, lng: 116.233285 },
+
+  // Kota Marudu
+  "khairiyyahrazanah.work@gmail.com": { name: "Kota Marudu", lat: 6.494924, lng: 116.761329 },
+  "jeffryj222@gmail.com":             { name: "Kota Marudu", lat: 6.494924, lng: 116.761329 },
+
+  // Keningau
+  "jeffreyjames2503@gmail.com":    { name: "Keningau", lat: 5.343043, lng: 116.161423 },
+
+  // Kota Belud
+  "shymatahat@gmail.com":          { name: "Kota Belud", lat: 6.356601, lng: 116.4292 },
+  "dzunisajaldin@gmail.com":       { name: "Kota Belud", lat: 6.356601, lng: 116.4292 },
+
+  // Tambunan
+  "debracalley97@gmail.com":       { name: "Tambunan", lat: 5.665361, lng: 116.370559 },
+  "apriljohnny95@gmail.com":       { name: "Tambunan", lat: 5.665361, lng: 116.370559 },
+};
 const KH_LOC_RADIUS_METERS = 500;
+
+function getStaffOfficeLocation(){
+  if(currentUser && STAFF_OFFICE_LOCATIONS[currentUser.email.toLowerCase()]){
+    return STAFF_OFFICE_LOCATIONS[currentUser.email.toLowerCase()];
+  }
+  return STAFF_OFFICE_LOCATIONS.DEFAULT;
+}
 
 let khLocationState = 'pending'; // 'pending' | 'ok' | 'outside' | 'unavailable'
 
@@ -3028,7 +3063,8 @@ function verifySelfCheckinLocation(){
   }
   navigator.geolocation.getCurrentPosition(
     pos => {
-      const dist = haversineMeters(pos.coords.latitude, pos.coords.longitude, KH_OFFICE_LAT, KH_OFFICE_LNG);
+      const office = getStaffOfficeLocation();
+      const dist = haversineMeters(pos.coords.latitude, pos.coords.longitude, office.lat, office.lng);
       khLocationState = dist <= KH_LOC_RADIUS_METERS ? 'ok' : 'outside';
       applySelfCheckinLock();
     },
@@ -3068,7 +3104,7 @@ function applySelfCheckinLock(){
   }
   let locMsg = '';
   if(clockPhase && khLocationState === 'outside'){
-    locMsg = 'You must be at the office to clock in. Please contact your admin.';
+    locMsg = `You must be at the ${getStaffOfficeLocation().name} office to clock in. Please contact your admin.`;
   } else if(clockPhase && khLocationState === 'unavailable'){
     locMsg = 'Location access is required to clock in. Please enable location permission in your browser settings.';
   }
@@ -3122,6 +3158,7 @@ function renderSelfCheckinCard(){
 
   document.getElementById('khSelfName').textContent = nama;
   document.getElementById('khSelfDate').textContent = fmtTarikhMelayu(new Date());
+  document.getElementById('khSelfOffice').textContent = `\u{1F4CD} Pejabat: ${getStaffOfficeLocation().name}`;
   document.getElementById('khSelfNote').textContent = '';
   startSelfClock();
 
