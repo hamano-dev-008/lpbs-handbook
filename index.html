@@ -2592,13 +2592,14 @@ async function loadAllowlistFromSheet(){
 // username portion, else the raw email. Never returns "undefined"/blank.
 function getStaffDisplayName(email){
   const lower = (email || '').toLowerCase();
-  const entry = STAFF_DIRECTORY.get(lower);
+  const entry = STAFF_DIRECTORY.get(lower) || STAFF_DIRECTORY.get(email || '');
   if(entry && entry.nama) return entry.nama;
-  return lower ? lower.split('@')[0] : (email || '');
+  const username = lower.split('@')[0];
+  return username ? username.charAt(0).toUpperCase() + username.slice(1) : (email || '');
 }
 
 function getStaffJawatan(email){
-  const entry = STAFF_DIRECTORY.get((email || '').toLowerCase());
+  const entry = STAFF_DIRECTORY.get((email || '').toLowerCase()) || STAFF_DIRECTORY.get(email || '');
   return (entry && entry.jawatan) || '';
 }
 
@@ -2606,7 +2607,7 @@ function getStaffJawatan(email){
 // that getStaffDisplayName() returns). Callers that need to choose between
 // filling in a real name vs. falling back to the raw email use this.
 function hasStaffNama(email){
-  const entry = STAFF_DIRECTORY.get((email || '').toLowerCase());
+  const entry = STAFF_DIRECTORY.get((email || '').toLowerCase()) || STAFF_DIRECTORY.get(email || '');
   return !!(entry && entry.nama);
 }
 
@@ -2862,7 +2863,7 @@ async function bulkAddAllStaff(){
   // Build rows for staff not already recorded on this date.
   const rowsToAdd = [];
   for(const [email, info] of STAFF_DIRECTORY){
-    const nama = (info && info.nama) ? info.nama : email;
+    const nama = (info && info.nama) ? info.nama : getStaffDisplayName(email);
     if(!existingOnDate.has(nama.toLowerCase())){
       rowsToAdd.push([tarikh, nama, '', '', 'Hadir', '']);
     }
@@ -2956,8 +2957,7 @@ async function deleteAllKehadiranRecords(){
 
 function getSelfCheckinName(){
   if(!currentUser) return '';
-  const entry = STAFF_DIRECTORY.get(currentUser.email.toLowerCase());
-  return entry?.nama || currentUser.email;
+  return getStaffDisplayName(currentUser.email);
 }
 
 // Waktu tamat daftar masuk sendiri (semua pengguna kad, termasuk editor dalam Mod Peribadi)
@@ -5084,10 +5084,9 @@ function syncSignInButtons(){
   document.getElementById('tabLagi').style.display = '';  // Kehadiran tab (in Lagi) visible to all
   if(!canEditMinit && appSection === 'minit') closeLagiMenu();
 
-  const namePart = currentUser.email.split('@')[0];
-  const initial = namePart.charAt(0).toUpperCase();
-  document.getElementById('heroAvatar').textContent = initial;
-  document.getElementById('heroUserName').textContent = namePart;
+  const displayName = getStaffDisplayName(currentUser.email);
+  document.getElementById('heroAvatar').textContent = displayName.charAt(0).toUpperCase();
+  document.getElementById('heroUserName').textContent = displayName;
 }
 document.getElementById('addBtnMonth').onclick = openModal;
 
