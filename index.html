@@ -2093,6 +2093,11 @@
 
         <div class="kh-self-clock" id="khSelfClock">--:--:--</div>
 
+        <div class="kh-self-remark" id="khSelfLateReasonWrap" style="display:none; text-align:left; margin-top:12px;">
+          <label class="field-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:12px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:0.03em;">Sebab Lewat</label>
+          <input type="text" id="kh-self-late-reason" placeholder="Sila nyatakan sebab lewat..." oninput="applySelfCheckinLock()">
+        </div>
+
         <div class="kh-status-pills" id="khSelfStatusPills" style="display:none;">
           <button type="button" class="kh-pill" data-status="MC">MC</button>
           <button type="button" class="kh-pill" data-status="Cuti">Cuti</button>
@@ -3092,8 +3097,6 @@ function applySelfCheckinLock(){
   let timeMsg = '';
   if(masukPhase && isBeforeSelfMasukStart()){
     timeMsg = 'Clock in is available from 7:30 AM.';
-  } else if(masukPhase && isPastSelfCheckinCutoff()){
-    timeMsg = 'Clock in is no longer available after 9:15 AM. Please contact your admin.';
   } else if(keluarPhase && isPastSelfKeluarEnd()){
     timeMsg = 'Clock out is no longer available. Please contact your admin.';
   }
@@ -3106,7 +3109,16 @@ function applySelfCheckinLock(){
   const locked = !!timeMsg || !!locMsg;
 
   card.querySelector('.kehadiran-form').classList.toggle('kh-locked', locked);
-  buttons.forEach(b => { b.disabled = locked || checking; });
+  buttons.forEach(b => {
+    let disabled = locked || checking;
+    if(b.id === 'khSelfMasukBtn' && isPastSelfCheckinCutoff()){
+      const reasonVal = document.getElementById('kh-self-late-reason')?.value.trim();
+      if(!reasonVal){
+        disabled = true;
+      }
+    }
+    b.disabled = disabled;
+  });
   const timeEl = document.getElementById('khSelfCutoffMsg');
   timeEl.textContent = timeMsg;
   timeEl.style.display = timeMsg ? '' : 'none';
@@ -3165,48 +3177,65 @@ function renderSelfCheckinCard(){
   const pills = document.getElementById('khSelfStatusPills');
   const remarkWrap = document.getElementById('khSelfRemarkWrap');
   const altLink = document.getElementById('khSelfAltLink');
+  const lateReasonWrap = document.getElementById('khSelfLateReasonWrap');
 
   if(!rec){
     pills.style.display = khSelfPickerOpen ? '' : 'none';
     pills.querySelectorAll('.kh-pill').forEach(b => b.classList.toggle('active', b.dataset.status === khSelfStatus));
     remarkWrap.style.display = khSelfStatus === 'Hadir' ? 'none' : '';
     altLink.style.display = '';
+
+    const isLate = isPastSelfCheckinCutoff();
     if(khSelfStatus === 'Hadir'){
-      action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Clock In</button>`;
+      if(isLate){
+        lateReasonWrap.style.display = '';
+        action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Late Clock-In</button>`;
+      } else {
+        lateReasonWrap.style.display = 'none';
+        action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Clock In</button>`;
+      }
     } else {
+      lateReasonWrap.style.display = 'none';
       action.innerHTML = `<button class="kh-self-action-btn" id="khSelfSubmitBtn" onclick="selfSubmitStatus()">Submit</button>`;
     }
-  } else if((rec.status || 'Hadir') !== 'Hadir'){
-    pills.style.display = 'none';
-    remarkWrap.style.display = 'none';
-    altLink.style.display = 'none';
-    action.innerHTML = `
-      <p class="kh-self-confirm">&#10003; Status recorded: <b>${rec.status}</b>${rec.remark ? ' &mdash; ' + escapeHtml(rec.remark) : ''}</p>
-      <p class="kh-self-done">Selesai — rekod hari ini lengkap. Hubungi pentadbir untuk pembetulan.</p>
-    `;
-  } else if(!rec.keluar){
-    pills.style.display = 'none';
-    remarkWrap.style.display = 'none';
-    altLink.style.display = 'none';
-    action.innerHTML = `
-      <p class="kh-self-confirm">&#10003; Clocked in at <b>${rec.masuk}</b></p>
-      <button class="kh-self-action-btn" id="khSelfKeluarBtn" onclick="selfDaftarKeluar()">Clock Out</button>
-    `;
   } else {
-    pills.style.display = 'none';
-    remarkWrap.style.display = 'none';
-    altLink.style.display = 'none';
-    action.innerHTML = `
-      <p class="kh-self-confirm">&#10003; Clocked in: <b>${rec.masuk}</b> &nbsp;&middot;&nbsp; Clocked out: <b>${rec.keluar}</b></p>
-      <p class="kh-self-done">Selesai — rekod hari ini lengkap. Hubungi pentadbir untuk pembetulan.</p>
-    `;
+    lateReasonWrap.style.display = 'none';
+    if((rec.status || 'Hadir') !== 'Hadir'){
+      pills.style.display = 'none';
+      remarkWrap.style.display = 'none';
+      altLink.style.display = 'none';
+      action.innerHTML = `
+        <p class="kh-self-confirm">&#10003; Status recorded: <b>${rec.status}</b>${rec.remark ? ' &mdash; ' + escapeHtml(rec.remark) : ''}</p>
+        <p class="kh-self-done">Selesai — rekod hari ini lengkap. Hubungi pentadbir untuk pembetulan.</p>
+      `;
+    } else if(!rec.keluar){
+      pills.style.display = 'none';
+      remarkWrap.style.display = 'none';
+      altLink.style.display = 'none';
+      action.innerHTML = `
+        <p class="kh-self-confirm">&#10003; Clocked in at <b>${rec.masuk}</b></p>
+        <button class="kh-self-action-btn" id="khSelfKeluarBtn" onclick="selfDaftarKeluar()">Clock Out</button>
+      `;
+    } else {
+      pills.style.display = 'none';
+      remarkWrap.style.display = 'none';
+      altLink.style.display = 'none';
+      action.innerHTML = `
+        <p class="kh-self-confirm">&#10003; Clocked in: <b>${rec.masuk}</b> &nbsp;&middot;&nbsp; Clocked out: <b>${rec.keluar}</b></p>
+        <p class="kh-self-done">Selesai — rekod hari ini lengkap. Hubungi pentadbir untuk pembetulan.</p>
+      `;
+    }
   }
 
   applySelfCheckinLock();
 }
 
 async function selfDaftarMasuk(){
-  if(isBeforeSelfMasukStart() || isPastSelfCheckinCutoff() || khLocationState !== 'ok'){
+  const isLate = isPastSelfCheckinCutoff();
+  const reasonInput = document.getElementById('kh-self-late-reason');
+  const reasonVal = isLate ? (reasonInput?.value.trim() || '') : '';
+
+  if(isBeforeSelfMasukStart() || (isLate && !reasonVal) || khLocationState !== 'ok'){
     applySelfCheckinLock();
     return;
   }
@@ -3230,19 +3259,20 @@ async function selfDaftarMasuk(){
     const res = await fetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ values: [[tarikh, nama, nowHHMM(), '', 'Hadir', '']] })
+      body: JSON.stringify({ values: [[tarikh, nama, nowHHMM(), '', 'Hadir', reasonVal]] })
     });
     if(!res.ok){
       const errData = await res.json().catch(()=>({}));
       throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
     }
+    if(reasonInput) reasonInput.value = '';
     await loadKehadiranFromSheet();
     renderSelfCheckinCard();
     document.getElementById('khSelfNote').textContent = 'Masa masuk berjaya direkodkan.';
   }catch(e){
     note.textContent = 'Ralat: ' + e.message;
     btn.disabled = false;
-    btn.textContent = 'Clock In';
+    btn.textContent = isLate ? 'Late Clock-In' : 'Clock In';
   }
 }
 
