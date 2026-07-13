@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -2246,9 +2246,9 @@
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c0-3.771 0-5.657 1.172-6.828S6.229 4 10 4h4c3.771 0 5.657 0 6.828 1.172S22 8.229 22 12v2c0 3.771 0 5.657-1.172 6.828S17.771 22 14 22h-4c-3.771 0-5.657 0-6.828-1.172S2 17.771 2 14z"/><path stroke-linecap="round" d="M7 4V2.5M17 4V2.5M2.5 9h19"/><path fill="currentColor" stroke="none" d="M18 17a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-5 4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-5 4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></g></svg></span>
       <span class="tab-label">Aktiviti</span>
     </button>
-    <button class="tab-btn" id="tabAnalitik" onclick="switchSection('analitik')">
-      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2s7.071 0 8.535 1.464C22 4.93 22 7.286 22 12s0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z"/><path stroke-linecap="round" d="M7 18V9m5 9V6m5 12v-5"/></g></svg></span>
-      <span class="tab-label">Analitik</span>
+    <button class="tab-btn" id="tabKehadiran" onclick="switchSection('kehadiran')">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="6" r="4"/><path stroke-linecap="round" d="M15 9a3 3 0 1 0 0-6"/><ellipse cx="9" cy="17" rx="7" ry="4"/><path stroke-linecap="round" d="M18 14c1.754.385 3 1.359 3 2.5c0 1.03-1.014 1.923-2.5 2.37"/></g></svg></span>
+      <span class="tab-label">Kehadiran Staf</span>
     </button>
     <button class="tab-add-center" id="tabAddCenter" style="display:none;" onclick="openModal()" aria-label="Tambah aktiviti">
       <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 13H6q-.425 0-.712-.288T5 12t.288-.712T6 11h5V6q0-.425.288-.712T12 5t.713.288T13 6v5h5q.425 0 .713.288T19 12t-.288.713T18 13h-5v5q0 .425-.288.713T12 19t-.712-.288T11 18z"/></svg>
@@ -2266,9 +2266,9 @@
   <div class="lagi-overlay" id="lagiOverlay" onclick="closeLagiMenu()"></div>
   <div class="lagi-sheet" id="lagiSheet">
     <div class="lagi-sheet-handle"></div>
-    <button class="lagi-row" id="lagiRowKehadiran" onclick="openLagiSection('kehadiran')" style="display:none;">
-      <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="6" r="4"/><path stroke-linecap="round" d="M15 9a3 3 0 1 0 0-6"/><ellipse cx="9" cy="17" rx="7" ry="4"/><path stroke-linecap="round" d="M18 14c1.754.385 3 1.359 3 2.5c0 1.03-1.014 1.923-2.5 2.37"/></g></svg></span>
-      <span class="lagi-row-label">Kehadiran Staf</span>
+    <button class="lagi-row" id="lagiRowAnalitik" onclick="openLagiSection('analitik')" style="display:none;">
+      <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2s7.071 0 8.535 1.464C22 4.93 22 7.286 22 12s0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z"/><path stroke-linecap="round" d="M7 18V9m5 9V6m5 12v-5"/></g></svg></span>
+      <span class="lagi-row-label">Analitik</span>
     </button>
     <button class="lagi-row" id="lagiRowMinit" onclick="openLagiSection('minit')" style="display:none;">
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L16 18.5l-2 2-2-2-2 2-2-2-2.5 2V5A1.5 1.5 0 0 1 7 3.5Z"/><path stroke-linecap="round" d="M9 8h6M9 11.5h6M9 15h3"/></g></svg></span>
@@ -2531,6 +2531,7 @@ const FALLBACK_VIEW_ONLY_ALLOWLIST = [
   "petrecilla@gmail.com",
   "jeffryj222@gmail.com",
   "imranhamdan36@gmail.com"
+  "ajumanjatiah0@gmail.com"
 ];
 
 // Live state — populated by loadAllowlistFromSheet() at sign-in time.
@@ -4637,12 +4638,12 @@ function switchSection(section){
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
-  ['tabAktiviti','tabAnalitik','tabTask'].forEach(id=>{
+  ['tabAktiviti','tabKehadiran','tabTask'].forEach(id=>{
     const tab = document.getElementById(id);
     if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
   });
   const tabLagi = document.getElementById('tabLagi');
-  if(tabLagi) tabLagi.classList.toggle('active', section === 'kehadiran' || section === 'minit');
+  if(tabLagi) tabLagi.classList.toggle('active', section === 'analitik' || section === 'minit');
 
   const titles = SECTION_TITLES[section] || SECTION_TITLES.aktiviti;
 
@@ -5072,7 +5073,7 @@ function syncSignInButtons(){
   document.getElementById('tabAddCenter').style.display = canEdit ? '' : 'none';
 
   applyKehadiranMode();
-  document.getElementById('lagiRowKehadiran').style.display = '';  // Kehadiran visible to all signed-in users
+  document.getElementById('lagiRowAnalitik').style.display = '';  // Analitik visible to all signed-in users
 
   const canEditMinit = isAllowedMinitEditor(currentUser.email);
   document.getElementById('lagiRowMinit').style.display = canEditMinit ? '' : 'none';
@@ -5081,7 +5082,7 @@ function syncSignInButtons(){
   document.getElementById('tabTask').style.display = canEditTask ? '' : 'none';
   document.getElementById('taskAddBtn').style.display = canEditTask ? '' : 'none';
 
-  document.getElementById('tabLagi').style.display = '';  // Kehadiran tab (in Lagi) visible to all
+  document.getElementById('tabLagi').style.display = '';  // Lagi tab visible to all
   if(!canEditMinit && appSection === 'minit') closeLagiMenu();
 
   const displayName = getStaffDisplayName(currentUser.email);
