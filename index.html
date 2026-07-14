@@ -2276,8 +2276,12 @@
       <span class="lagi-row-label">Analitik</span>
     </button>
     <button class="lagi-row" id="lagiRowMinit" onclick="openLagiSection('minit')" style="display:none;">
-      <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L16 18.5l-2 2-2-2-2 2-2-2-2.5 2V5A1.5 1.5 0 0 1 7 3.5Z"/><path stroke-linecap="round" d="M9 8h6M9 11.5h6M9 15h3"/></g></svg></span>
+      <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L16 18.5l-2 2-2-2-2-2-2 2-2-2-2.5 2V5A1.5 1.5 0 0 1 7 3.5Z"/><path stroke-linecap="round" d="M9 8h6M9 11.5h6M9 15h3"/></g></svg></span>
       <span class="lagi-row-label">Minit Mesyuarat</span>
+    </button>
+    <button class="lagi-row" id="lagiRowLogout" onclick="logout()" style="display:none; color:var(--red);">
+      <span class="lagi-row-icon" style="color:var(--red); background:var(--red-bg);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+      <span class="lagi-row-label">Log Keluar</span>
     </button>
   </div>
 </div>
@@ -5112,6 +5116,7 @@ function syncSignInButtons(){
   document.getElementById('tabTask').style.display = canEditTask ? '' : 'none';
   document.getElementById('taskAddBtn').style.display = canEditTask ? '' : 'none';
 
+  document.getElementById('lagiRowLogout').style.display = '';
   document.getElementById('tabLagi').style.display = '';  // Lagi tab visible to all
   if(!canEditMinit && appSection === 'minit') closeLagiMenu();
 
@@ -5492,6 +5497,12 @@ async function fetchUserInfoAndProceed(){
 function attemptSignIn(email){
   if(isAllowedViewer(email)){
     currentUser = { email };
+    try {
+      localStorage.setItem('padi_app_user', JSON.stringify(currentUser));
+      localStorage.setItem('padi_app_token', accessToken);
+    } catch(e) {
+      console.warn('Failed to save session to localStorage:', e);
+    }
     document.getElementById('gateScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = '';
     syncSignInButtons();
@@ -5503,10 +5514,59 @@ function attemptSignIn(email){
   } else {
     showGateError(`Akaun "${email}" tidak dibenarkan mengakses sistem ini. Sila hubungi pentadbir LPBS.`);
     accessToken = null;
+    try {
+      localStorage.removeItem('padi_app_user');
+      localStorage.removeItem('padi_app_token');
+    } catch(e) {}
   }
 }
 
+function logout(){
+  try {
+    localStorage.removeItem('padi_app_user');
+    localStorage.removeItem('padi_app_token');
+  } catch(e) {
+    console.warn('Failed to clear session from localStorage:', e);
+  }
+  currentUser = null;
+  accessToken = null;
+  document.getElementById('gateScreen').style.display = '';
+  document.getElementById('mainApp').style.display = 'none';
+  showGateError("");
+  closeLagiMenu();
+}
+
 window.addEventListener('load', () => {
+  // Restore persistent login from localStorage if present
+  try {
+    const savedUser = localStorage.getItem('padi_app_user');
+    const savedToken = localStorage.getItem('padi_app_token');
+    if(savedUser && savedToken){
+      currentUser = JSON.parse(savedUser);
+      accessToken = savedToken;
+      showGateError("Menyambung semula sesi...", true);
+      
+      loadAllowlistFromSheet().then(() => {
+        if(currentUser && currentUser.email){
+          attemptSignIn(currentUser.email);
+        } else {
+          showGateError("");
+        }
+      }).catch(err => {
+        console.error('Session restore failed:', err);
+        showGateError("Sesi telah tamat. Sila log masuk semula.");
+        try {
+          localStorage.removeItem('padi_app_user');
+          localStorage.removeItem('padi_app_token');
+        } catch(e) {}
+        currentUser = null;
+        accessToken = null;
+      });
+    }
+  } catch(e) {
+    console.error('Error reading/parsing saved session:', e);
+  }
+
   // Google Identity Services script loads async; wait for it.
   const waitForGoogle = setInterval(() => {
     if(window.google && window.google.accounts){
