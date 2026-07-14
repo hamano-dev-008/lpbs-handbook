@@ -2978,8 +2978,8 @@ function isPastSelfCheckinCutoff(){
 }
 
 // Had waktu daftar sendiri (terpakai kepada semua pengguna kad, termasuk editor dalam Mod Peribadi):
-// Daftar Masuk hanya dari 7:30 pagi; Daftar Keluar hanya sehingga 9:00 malam.
-let KH_MASUK_START_HOUR = 7, KH_MASUK_START_MINUTE = 30;
+// Daftar Masuk hanya dari 7:00 pagi; Daftar Keluar hanya sehingga 9:00 malam.
+let KH_MASUK_START_HOUR = 7, KH_MASUK_START_MINUTE = 0;
 let KH_KELUAR_END_HOUR = 21, KH_KELUAR_END_MINUTE = 0;
 
 // Status daftar sendiri yang dipilih (Hadir | MC | Cuti | Outstation).
@@ -3096,7 +3096,7 @@ function applySelfCheckinLock(){
   const checking = clockPhase && khLocationState === 'pending';
   let timeMsg = '';
   if(masukPhase && isBeforeSelfMasukStart()){
-    timeMsg = 'Clock in is available from 7:30 AM.';
+    timeMsg = 'Clock in is available from 7:00 AM.';
   } else if(keluarPhase && isPastSelfKeluarEnd()){
     timeMsg = 'Clock out is no longer available. Please contact your admin.';
   }
@@ -3461,10 +3461,10 @@ function generateKehadiranPDF(){
     sy += 55; // blank vertical space for handwritten signature
 
     doc.setFont('helvetica', 'bold');
-    doc.text('(NESTOR BIN JOANNES)', marginPt, sy);
+    doc.text('(DATUK DR TS RAMLE HJ KASIN)', marginPt, sy);
     sy += 13;
     doc.setFont('helvetica', 'normal');
-    doc.text('Timbalan Pengurus Besar', marginPt, sy);
+    doc.text('Pengurus Besar', marginPt, sy);
     sy += 13;
     doc.text('Lembaga Padi dan Beras Sabah', marginPt, sy);
 
