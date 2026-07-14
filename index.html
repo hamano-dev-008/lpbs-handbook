@@ -1925,6 +1925,25 @@
       display:inline;
     }
   }
+
+  /* Sistem Fail Styles */
+  .attachment-inspector select,
+  .attachment-inspector input {
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--sage-line);
+    background:var(--bg-card);
+    color:var(--ink);
+    padding:8px 10px;
+    border-radius:6px;
+    font-size:13px;
+    width:100%;
+    margin-top:2px;
+  }
+  .attachment-inspector select:focus,
+  .attachment-inspector input:focus {
+    border-color:var(--paddy);
+    outline:none;
+  }
 </style>
 </head>
 <body>
@@ -2243,6 +2262,48 @@
   </section>
   </div>
 
+  <div id="sectionFail" style="display:none;">
+  <section class="analytics no-border-top">
+    <div class="print-head">
+      <p class="eyebrow">Sistem Fail &amp; Log</p>
+      <h2 class="ana-title">Sistem Fail</h2>
+    </div>
+
+    <div class="kehadiran-form" style="margin-bottom: 24px; padding: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h3 style="margin: 0 0 4px; font-size: 16px; color: var(--paddy);">Rekod Fail Rasmi</h3>
+          <p style="margin: 0; font-size: 12px; color: var(--ink-soft);">Senarai fail lampiran aktiviti yang telah didokumenkan.</p>
+        </div>
+        <button type="button" class="save-btn" style="margin: 0; padding: 8px 16px; font-size: 13px;" onclick="loadFailsFromSheet()">
+          <svg style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; display: inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Segarkan
+        </button>
+      </div>
+    </div>
+
+    <div class="kh-table-wrap">
+      <table class="kh-table" id="failTable">
+        <thead>
+          <tr>
+            <th style="width: 50px; text-align: center;">No</th>
+            <th>Perkara (Tajuk Dokumen)</th>
+            <th style="width: 160px;">No. Rujukan</th>
+            <th style="width: 140px;">Tarikh Dibuka</th>
+            <th style="width: 120px;">Pautan Drive</th>
+            <th style="width: 160px;">Logged By</th>
+          </tr>
+        </thead>
+        <tbody id="failTableBody">
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 24px; color: var(--ink-soft);">Memuatkan log fail...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
   <footer>Data disegerakkan terus daripada Kalendar Rasmi LPBS &middot; Google Calendar<br>PadiApp &middot; Dibangunkan oleh neel_jay</footer>
   </div>
 
@@ -2264,7 +2325,7 @@
     </button>
     <button class="tab-btn" id="tabLagi" onclick="toggleLagiMenu()" style="display:none;">
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></g></svg></span>
-      <span class="tab-label">Lagi</span>
+      <span class="tab-label">More</span>
     </button>
   </nav>
 
@@ -2278,6 +2339,10 @@
     <button class="lagi-row" id="lagiRowMinit" onclick="openLagiSection('minit')" style="display:none;">
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L16 18.5l-2 2-2-2-2-2-2 2-2-2-2.5 2V5A1.5 1.5 0 0 1 7 3.5Z"/><path stroke-linecap="round" d="M9 8h6M9 11.5h6M9 15h3"/></g></svg></span>
       <span class="lagi-row-label">Minit Mesyuarat</span>
+    </button>
+    <button class="lagi-row" id="lagiRowFail" onclick="openLagiSection('fail')" style="display:none;">
+      <span class="lagi-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7v10a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3H9.828a2 2 0 0 1-1.414-.586l-1.586-1.586A2 2 0 0 0 5.414 3H5a2 2 0 0 0-2 2z"/><path d="M8 12h8m-8 3h5"/></svg></span>
+      <span class="lagi-row-label">Sistem Fail</span>
     </button>
     <button class="lagi-row" id="lagiRowLogout" onclick="logout()" style="display:none; color:var(--red);">
       <span class="lagi-row-icon" style="color:var(--red); background:var(--red-bg);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
@@ -2469,7 +2534,19 @@ const TASK_SHEET_ID = "1o7S2umTuo9Njjt8AAqsK5F9cXafmkz_NzKlE7UQKjo4";
 const TASK_SHEET_RANGE = "Tugasan!A2:G1000";
 const NOTIF_READ_SHEET_ID = "1hKBAZXg-ueqWgHDOLGRfP3EkulRcmbLzq6FvMpOhKTA";
 const NOTIF_READ_SHEET_RANGE = "Dibaca!A2:B1000";
-const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets";
+const FAIL_SHEET_ID = "1o7S2umTuo9Njjt8AAqsK5F9cXafmkz_NzKlE7UQKjo4";
+const FAIL_SHEET_RANGE = "SistemFail!A2:F1000";
+
+const LPBS_CLASSIFICATION_FOLDERS = {
+  "100": { code: "100", name: "Pentadbiran", folderId: "placeholder-100" },
+  "200": { code: "200", name: "Tanah, Bangunan & Infrastruktur", folderId: "placeholder-200" },
+  "300": { code: "300", name: "Pengurusan Kewangan", folderId: "placeholder-300" },
+  "400": { code: "400", name: "Pengurusan Perolehan & Bekalan", folderId: "placeholder-400" },
+  "500": { code: "500", name: "Personel / Sumber Manusia", folderId: "placeholder-500" },
+  "600": { code: "600", name: "Perkhidmatan Teras", folderId: "placeholder-600" }
+};
+
+const OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive";
 
 // Hanya 3 akaun ini boleh mengedit Kehadiran Staf (berasingan daripada senarai editor umum).
 const KEHADIRAN_EDITOR_ALLOWLIST = [
@@ -4421,7 +4498,12 @@ function googleEventToInternal(gEvent){
     }
   }
 
-  const attachments = (gEvent.attachments || []).map(a => ({ title: a.title || a.fileUrl, url: a.fileUrl }));
+  const attachments = (gEvent.attachments || []).map(a => ({
+    title: a.title || a.fileUrl,
+    url: a.fileUrl,
+    fileId: a.fileId || null,
+    mimeType: a.mimeType || null
+  }));
 
   return {
     id: gEvent.id,
@@ -4601,7 +4683,71 @@ function buildEventCard(e, uid, dateKey){
     </div>`;
   }
 
-  const hasDetail = detailRows || attachHtml || actionsHtml;
+  let inspectorHtml = '';
+  if(currentUser && e.attachments && e.attachments.length){
+    const attachmentOptions = e.attachments.map((a, idx) => {
+      const fileId = a.fileId || extractFileIdFromUrl(a.url) || '';
+      return `<option value="${idx}" data-fileid="${fileId}" data-url="${a.url || ''}">${escapeHtml(a.title)}</option>`;
+    }).join('');
+
+    inspectorHtml = `
+      <div class="attachment-inspector" onclick="event.stopPropagation()" style="margin-top: 14px; padding: 14px; background: var(--bg); border: 1px solid var(--sage-line); border-radius: 10px; text-align: left;">
+        <p style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: var(--paddy); display: flex; align-items: center; gap: 6px;">
+          <svg style="width:16px; height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+          Sistem Pengarsipan Fail (LPBS Registry)
+        </p>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          ${e.attachments.length > 1 ? `
+            <div>
+              <label class="field-label" style="margin: 0 0 4px; font-size: 11px;">Pilih Lampiran Untuk Difailkan</label>
+              <select class="inspector-file-select" id="ins-file-${uid}" onchange="onInspectorFileChange('${uid}')" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--sage-line); background: var(--bg-card); font-size: 13px; color: var(--ink);">
+                ${attachmentOptions}
+              </select>
+            </div>
+          ` : `
+            <input type="hidden" id="ins-file-${uid}" value="0">
+          `}
+          
+          <div>
+            <label class="field-label" style="margin: 0 0 4px; font-size: 11px;">Kod Klasifikasi LPBS</label>
+            <select class="inspector-code-select" id="ins-code-${uid}" onchange="onInspectorCodeChange('${uid}')" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--sage-line); background: var(--bg-card); font-size: 13px; color: var(--ink);">
+              <option value="">-- Pilih Kod Klasifikasi --</option>
+              <option value="100">Code 100 Pentadbiran (Administration)</option>
+              <option value="200">Code 200 Tanah, Bangunan & Infrastruktur</option>
+              <option value="300">Code 300 Pengurusan Kewangan (Finance)</option>
+              <option value="400">Code 400 Pengurusan Perolehan & Bekalan</option>
+              <option value="500">Code 500 Personel / Sumber Manusia</option>
+              <option value="600">Code 600 Perkhidmatan Teras (Core Services)</option>
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <label class="field-label" style="margin: 0 0 4px; font-size: 11px;">No. Rujukan Fail</label>
+              <input type="text" id="ins-ref-${uid}" placeholder="Auto atau LPBS/..." style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--sage-line); background: var(--bg-card); font-size: 13px; color: var(--ink);">
+            </div>
+            <div>
+              <label class="field-label" style="margin: 0 0 4px; font-size: 11px;">Tarikh Fail Dibuka</label>
+              <input type="text" id="ins-date-${uid}" value="${new Date().toLocaleDateString('ms-MY')}" readonly style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--sage-line); background: var(--bg-card); font-size: 13px; opacity: 0.7; color: var(--ink);">
+            </div>
+          </div>
+
+          <div>
+            <label class="field-label" style="margin: 0 0 4px; font-size: 11px;">Perkara (Tajuk Dokumen)</label>
+            <input type="text" id="ins-title-${uid}" value="${escapeHtml(e.attachments[0].title)}" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--sage-line); background: var(--bg-card); font-size: 13px; color: var(--ink);">
+          </div>
+
+          <div style="margin-top: 6px; display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span id="ins-status-${uid}" style="font-size: 12px; color: var(--sage); flex: 1; text-align: left;"></span>
+            <button type="button" class="save-btn" id="ins-btn-${uid}" onclick="saveFileToRegistry('${uid}')" style="margin: 0; padding: 6px 14px; font-size: 13px;">Simpan Fail</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const hasDetail = detailRows || attachHtml || inspectorHtml || actionsHtml;
 
   return `
     <div class="event ${levelClass}" data-uid="${uid}">
@@ -4618,7 +4764,7 @@ function buildEventCard(e, uid, dateKey){
           </div>
           ${hasDetail ? '<span class="chevron">&#10095;</span>' : ''}
         </div>
-        ${hasDetail ? `<div class="detail" id="detail-${uid}">${detailRows}${attachHtml}${actionsHtml}</div>` : ''}
+        ${hasDetail ? `<div class="detail" id="detail-${uid}">${detailRows}${attachHtml}${inspectorHtml}${actionsHtml}</div>` : ''}
       </div>
     </div>
   `;
@@ -4658,17 +4804,18 @@ function toggleEvent(uid){
   if(el) el.classList.toggle('open');
 }
 
-let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'kehadiran' | 'minit' | 'task'
+let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'kehadiran' | 'minit' | 'task' | 'fail'
 
 const SECTION_TITLES = {
   aktiviti: { title: 'Papar Aktiviti' },
   analitik: { title: 'Analitik' },
-  task: { title: 'Tugasan' }
+  task: { title: 'Tugasan' },
+  fail: { title: 'Sistem Fail' }
 };
 
 function switchSection(section){
   appSection = section;
-  ['Aktiviti','Analitik','Kehadiran','Minit','Task'].forEach(name=>{
+  ['Aktiviti','Analitik','Kehadiran','Minit','Task','Fail'].forEach(name=>{
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
@@ -4677,7 +4824,7 @@ function switchSection(section){
     if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
   });
   const tabLagi = document.getElementById('tabLagi');
-  if(tabLagi) tabLagi.classList.toggle('active', section === 'analitik' || section === 'minit');
+  if(tabLagi) tabLagi.classList.toggle('active', section === 'analitik' || section === 'minit' || section === 'fail');
 
   const titles = SECTION_TITLES[section] || SECTION_TITLES.aktiviti;
 
@@ -4706,6 +4853,8 @@ function switchSection(section){
     renderMinitAgendaItems();
   } else if(section === 'task'){
     loadTaskFromSheet();
+  } else if(section === 'fail'){
+    loadFailsFromSheet();
   }
 
   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -5108,6 +5257,7 @@ function syncSignInButtons(){
 
   applyKehadiranMode();
   document.getElementById('lagiRowAnalitik').style.display = '';  // Analitik visible to all signed-in users
+  document.getElementById('lagiRowFail').style.display = '';      // Sistem Fail visible to all signed-in users
 
   const canEditMinit = isAllowedMinitEditor(currentUser.email);
   document.getElementById('lagiRowMinit').style.display = canEditMinit ? '' : 'none';
@@ -6046,6 +6196,401 @@ async function deleteEventPrompt(eventId, uid){
 
   const timeoutId = showUndoToast(uid, eventTitle, onExpire);
   pendingDeletes[uid] = { timeoutId, eventId, onUndo };
+}
+
+// ============================================================
+// SISTEM FAIL & LOG — Pengarsipan Fail Lampiran
+// ============================================================
+let failLogs = [];
+let failSheetTabExists = true;
+
+function showToast(msg) {
+  const container = document.getElementById('toastContainer');
+  if(!container) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `
+    <span class="toast-msg">${escapeHtml(msg)}</span>
+    <div class="toast-timer-bar" style="width:100%;"></div>
+  `;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+  }, 4000);
+}
+
+function extractFileIdFromUrl(url) {
+  if (!url) return null;
+  let m = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  if (m && m[1]) return m[1];
+  m = url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+  if (m && m[1]) return m[1];
+  return null;
+}
+
+function onInspectorFileChange(uid) {
+  const fileSelect = document.getElementById(`ins-file-${uid}`);
+  const titleInput = document.getElementById(`ins-title-${uid}`);
+  if (!fileSelect || !titleInput) return;
+  
+  const idx = parseInt(fileSelect.value, 10);
+  const eventData = eventDataByUid[uid];
+  if (eventData && eventData.attachments && eventData.attachments[idx]) {
+    titleInput.value = eventData.attachments[idx].title;
+  }
+}
+
+function onInspectorCodeChange(uid) {
+  const codeSelect = document.getElementById(`ins-code-${uid}`);
+  const refInput = document.getElementById(`ins-ref-${uid}`);
+  if (!codeSelect || !refInput) return;
+  
+  const code = codeSelect.value;
+  if (code) {
+    refInput.value = generateRefNo(code);
+  } else {
+    refInput.value = '';
+  }
+}
+
+function generateRefNo(code) {
+  if (!code) return '';
+  const currentYear = new Date().getFullYear();
+  const prefix = `LPBS/${code}/`;
+  let maxSeq = 0;
+  
+  failLogs.forEach(log => {
+    if (log.rujukan && log.rujukan.startsWith(prefix)) {
+      const parts = log.rujukan.split('/');
+      if (parts.length >= 4) {
+        const seqStr = parts[parts.length - 1];
+        const seq = parseInt(seqStr, 10);
+        if (!isNaN(seq) && seq > maxSeq) {
+          maxSeq = seq;
+        }
+      }
+    }
+  });
+  
+  const nextSeq = maxSeq + 1;
+  const seqPad = String(nextSeq).padStart(3, '0');
+  return `LPBS/${code}/${currentYear}/${seqPad}`;
+}
+
+async function resolveDriveFolder(code) {
+  const folderMeta = LPBS_CLASSIFICATION_FOLDERS[code];
+  if (!folderMeta) throw new Error("Kod klasifikasi tidak sah.");
+  
+  let cachedId = localStorage.getItem(`lpbs_folder_${code}`);
+  if (cachedId) return cachedId;
+  
+  if (folderMeta.folderId && !folderMeta.folderId.includes("placeholder")) {
+    return folderMeta.folderId;
+  }
+  
+  let rootFolderId = localStorage.getItem('lpbs_root_folder_id');
+  if (!rootFolderId) {
+    const q = `mimeType='application/vnd.google-apps.folder' and name='Sistem Fail LPBS' and trashed=false`;
+    const listUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`;
+    const listRes = await fetch(listUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!listRes.ok) throw new Error("Gagal mencari folder induk LPBS.");
+    const listData = await listRes.json();
+    
+    if (listData.files && listData.files.length > 0) {
+      rootFolderId = listData.files[0].id;
+    } else {
+      const createUrl = `https://www.googleapis.com/drive/v3/files`;
+      const createRes = await fetch(createUrl, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Sistem Fail LPBS',
+          mimeType: 'application/vnd.google-apps.folder'
+        })
+      });
+      if (!createRes.ok) throw new Error("Gagal mencipta folder induk LPBS.");
+      const createData = await createRes.json();
+      rootFolderId = createData.id;
+    }
+    localStorage.setItem('lpbs_root_folder_id', rootFolderId);
+  }
+  
+  const subFolderName = `${code} ${folderMeta.name}`;
+  const qSub = `mimeType='application/vnd.google-apps.folder' and name='${subFolderName}' and '${rootFolderId}' in parents and trashed=false`;
+  const subListUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qSub)}&fields=files(id)`;
+  const subListRes = await fetch(subListUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!subListRes.ok) throw new Error(`Gagal mencari folder sub ${subFolderName}.`);
+  const subListData = await subListRes.json();
+  
+  let subFolderId = null;
+  if (subListData.files && subListData.files.length > 0) {
+    subFolderId = subListData.files[0].id;
+  } else {
+    const subCreateUrl = `https://www.googleapis.com/drive/v3/files`;
+    const subCreateRes = await fetch(subCreateUrl, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: subFolderName,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [rootFolderId]
+      })
+    });
+    if (!subCreateRes.ok) throw new Error(`Gagal mencipta folder sub ${subFolderName}.`);
+    const subCreateData = await subCreateRes.json();
+    subFolderId = subCreateData.id;
+  }
+  
+  localStorage.setItem(`lpbs_folder_${code}`, subFolderId);
+  return subFolderId;
+}
+
+async function saveFileToRegistry(uid) {
+  const fileSelect = document.getElementById(`ins-file-${uid}`);
+  const codeSelect = document.getElementById(`ins-code-${uid}`);
+  const refInput = document.getElementById(`ins-ref-${uid}`);
+  const titleInput = document.getElementById(`ins-title-${uid}`);
+  const statusEl = document.getElementById(`ins-status-${uid}`);
+  const btn = document.getElementById(`ins-btn-${uid}`);
+  
+  if (!codeSelect || !codeSelect.value) {
+    statusEl.innerHTML = `<span style="color:var(--red-text)">Sila pilih Kod Klasifikasi.</span>`;
+    return;
+  }
+  if (!refInput || !refInput.value.trim()) {
+    statusEl.innerHTML = `<span style="color:var(--red-text)">No. Rujukan diperlukan.</span>`;
+    return;
+  }
+  if (!titleInput || !titleInput.value.trim()) {
+    statusEl.innerHTML = `<span style="color:var(--red-text)">Perkara diperlukan.</span>`;
+    return;
+  }
+  
+  const eventData = eventDataByUid[uid];
+  if (!eventData || !eventData.attachments) return;
+  
+  const fileIdx = fileSelect ? parseInt(fileSelect.value, 10) : 0;
+  const attachment = eventData.attachments[fileIdx];
+  if (!attachment) return;
+  
+  const fileId = attachment.fileId || extractFileIdFromUrl(attachment.url);
+  if (!fileId) {
+    statusEl.innerHTML = `<span style="color:var(--red-text)">ID fail lampiran tidak ditemui.</span>`;
+    return;
+  }
+  
+  btn.disabled = true;
+  const originalBtnText = btn.textContent;
+  btn.textContent = 'Menyimpan...';
+  statusEl.innerHTML = `<span style="color:var(--paddy)">Menghubungi Google Drive...</span>`;
+  
+  try {
+    const code = codeSelect.value;
+    const refNo = refInput.value.trim();
+    const fileTitle = titleInput.value.trim();
+    
+    statusEl.innerHTML = `<span style="color:var(--paddy)">Menyediakan folder Drive...</span>`;
+    const targetFolderId = await resolveDriveFolder(code);
+    
+    statusEl.innerHTML = `<span style="color:var(--paddy)">Menyalin fail ke Drive LPBS...</span>`;
+    const copyUrl = `https://www.googleapis.com/drive/v3/files/${fileId}/copy?fields=id,name,webViewLink&supportsAllDrives=true`;
+    const copyRes = await fetch(copyUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: fileTitle,
+        parents: [targetFolderId]
+      })
+    });
+    
+    if (!copyRes.ok) {
+      const err = await copyRes.json().catch(()=>({}));
+      throw new Error(err.error?.message || `Gagal menyalin fail (Status ${copyRes.status})`);
+    }
+    
+    const copyData = await copyRes.json();
+    const newFileLink = copyData.webViewLink || `https://drive.google.com/file/d/${copyData.id}/view?usp=drivesdk`;
+    
+    statusEl.innerHTML = `<span style="color:var(--paddy)">Merekodkan log fail ke Sheet...</span>`;
+    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/${encodeURIComponent('SistemFail!A:F')}:append?valueInputOption=USER_ENTERED`;
+    
+    const appendRes = await fetch(sheetUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        values: [[
+          "=ROW()-1",
+          fileTitle,
+          refNo,
+          new Date().toISOString().slice(0, 10),
+          newFileLink,
+          currentUser.email
+        ]]
+      })
+    });
+    
+    if (!appendRes.ok) {
+      const err = await appendRes.json().catch(()=>({}));
+      throw new Error(err.error?.message || `Gagal menulis log ke Sheet.`);
+    }
+    
+    statusEl.innerHTML = `<span style="color:var(--sage); font-weight:600;">Berjaya failkan!</span>`;
+    showToast(`Fail berjaya direkodkan di bawah rujukan ${refNo}`);
+    
+    loadFailsFromSheet();
+    
+    codeSelect.value = '';
+    refInput.value = '';
+    
+  } catch (e) {
+    console.error("saveFileToRegistry failed:", e);
+    statusEl.innerHTML = `<span style="color:var(--red-text)">Ralat: ${e.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalBtnText;
+  }
+}
+
+async function setupFailSheetTab() {
+  const btn = event ? event.target : null;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Menyediakan...';
+  }
+  
+  try {
+    const addUrl = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}:batchUpdate`;
+    const addRes = await fetch(addUrl, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title: 'SistemFail'
+              }
+            }
+          }
+        ]
+      })
+    });
+    if (!addRes.ok) {
+      const err = await addRes.json().catch(()=>({}));
+      throw new Error(err.error?.message || 'Gagal mencipta tab.');
+    }
+    
+    const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/SistemFail!A1:F1?valueInputOption=USER_ENTERED`;
+    const headerRes = await fetch(headerUrl, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        values: [["No", "Perkara", "No. Rujukan", "Tarikh Fail Dibuka", "Google Drive Link", "Logged By"]]
+      })
+    });
+    if (!headerRes.ok) throw new Error("Gagal menulis baris pengepala.");
+    
+    showToast("Tab SistemFail berjaya disediakan.");
+    await loadFailsFromSheet();
+  } catch (e) {
+    alert("Ralat menyediakan sheet: " + e.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Sediakan Tab SistemFail';
+    }
+  }
+}
+
+async function loadFailsFromSheet() {
+  const tableBody = document.getElementById('failTableBody');
+  if (tableBody) {
+    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--ink-soft);">Memuatkan log fail...</td></tr>`;
+  }
+  
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/SistemFail!A2:F1000`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (res.status === 400) {
+      failSheetTabExists = false;
+      renderFailTable();
+      return;
+    }
+    if (!res.ok) throw new Error("Gagal mengambil log fail.");
+    
+    failSheetTabExists = true;
+    const data = await res.json();
+    const rows = data.values || [];
+    
+    failLogs = rows.map((r, idx) => ({
+      no: r[0] || (idx + 1),
+      perkara: r[1] || '',
+      rujukan: r[2] || '',
+      tarikh: r[3] || '',
+      link: r[4] || '',
+      loggedBy: r[5] || ''
+    }));
+    
+    renderFailTable();
+  } catch (e) {
+    console.error("loadFailsFromSheet failed:", e);
+    if (tableBody) {
+      tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--red-text);">Ralat: ${e.message}</td></tr>`;
+    }
+  }
+}
+
+function renderFailTable() {
+  const tableBody = document.getElementById('failTableBody');
+  if (!tableBody) return;
+  
+  if (!failSheetTabExists) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 36px; color: var(--ink-soft);">
+          <p style="margin: 0 0 12px; font-weight: 500;">Jadual log "SistemFail" tidak dijumpai dalam Google Sheets.</p>
+          <button type="button" class="save-btn" style="margin: 0 auto; display: block;" onclick="setupFailSheetTab()">Sediakan Tab SistemFail</button>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  if (failLogs.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 36px; color: var(--ink-soft);">
+          Tiada fail yang telah direkodkan. Sila failkan lampiran dari mana-mana Aktiviti.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  tableBody.innerHTML = failLogs.map((log, idx) => {
+    const cleanLink = log.link ? `<a href="${log.link}" target="_blank" class="attachment" style="display:inline-flex; align-items:center; gap:4px; font-weight:600;">&#128279; Pautan</a>` : '-';
+    let displayNo = log.no;
+    if (typeof displayNo === 'string' && displayNo.startsWith('=')) {
+      displayNo = String(idx + 1);
+    }
+    return `
+      <tr>
+        <td style="text-align: center; font-weight: 600; color: var(--ink-soft);">${escapeHtml(String(displayNo))}</td>
+        <td style="white-space: normal; max-width: 300px; font-weight: 500;">${escapeHtml(log.perkara)}</td>
+        <td style="font-family: 'Space Grotesk', sans-serif; font-weight: 500;">${escapeHtml(log.rujukan)}</td>
+        <td>${escapeHtml(log.tarikh)}</td>
+        <td>${cleanLink}</td>
+        <td style="font-size: 12px; color: var(--ink-soft);">${escapeHtml(log.loggedBy)}</td>
+      </tr>
+    `;
+  }).join('');
+}
 }
 </script>
 </body>
