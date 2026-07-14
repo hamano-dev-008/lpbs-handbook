@@ -2275,10 +2275,15 @@
           <h3 style="margin: 0 0 4px; font-size: 16px; color: var(--paddy);">Rekod Fail Rasmi</h3>
           <p style="margin: 0; font-size: 12px; color: var(--ink-soft);">Senarai fail lampiran aktiviti yang telah didokumenkan.</p>
         </div>
-        <button type="button" class="save-btn" style="margin: 0; padding: 8px 16px; font-size: 13px;" onclick="loadFailsFromSheet()">
-          <svg style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; display: inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-          Segarkan
-        </button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="save-btn" style="margin: 0; padding: 8px 16px; font-size: 13px; background-color: var(--paddy-light);" onclick="openAddFailModal()">
+            + Tambah Fail
+          </button>
+          <button type="button" class="save-btn" style="margin: 0; padding: 8px 16px; font-size: 13px;" onclick="loadFailsFromSheet()">
+            <svg style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; display: inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Segarkan
+          </button>
+        </div>
       </div>
     </div>
 
@@ -2514,6 +2519,50 @@
     <div class="modal-foot">
       <button class="cancel-btn" id="bulkTagModalCancel">Batal</button>
       <button class="save-btn" id="bulkTagModalConfirm">Tambah Staf Dipilih</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="failModalOverlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Tambah Fail Baru ke Rekod Rasmi</h3>
+      <button class="modal-close" id="failModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Tajuk Dokumen / Perkara</label>
+      <input type="text" id="f-fail-title" placeholder="Contoh: Laporan Kewangan Suku Pertama 2026">
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">No. Rujukan (Klasifikasi)</label>
+          <select id="f-fail-code" onchange="onModalCodeChange()" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--sage-line); background: var(--bg); color: var(--ink); font-size: 14px;">
+            <option value="">-- Pilih Kod Klasifikasi --</option>
+            <option value="100">LPBS.100 (Pentadbiran)</option>
+            <option value="200">LPBS.200 (Tanah, Bangunan & Infrastruktur)</option>
+            <option value="300">LPBS.300 (Pengurusan Kewangan)</option>
+            <option value="400">LPBS.400 (Pengurusan Perolehan & Bekalan)</option>
+            <option value="500">LPBS.500 (Personel / Sumber Manusia)</option>
+            <option value="600">LPBS.600 (Perkhidmatan Teras)</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">No. Rujukan Penuh</label>
+          <input type="text" id="f-fail-ref" placeholder="Auto atau LPBS/...">
+        </div>
+      </div>
+
+      <label class="field-label">Tarikh Fail Dibuka</label>
+      <input type="date" id="f-fail-date" style="width:100%; font-family:'Inter',sans-serif; border:1px solid var(--sage-line); background:var(--bg); color:var(--ink); padding:9px 12px; border-radius:8px; font-size:14px;">
+
+      <label class="field-label">Lampiran Fail</label>
+      <input type="file" id="f-fail-file" style="background:var(--bg-card); padding:8px; border:1px solid var(--sage-line); border-radius:8px; width:100%;">
+
+      <p class="kh-note" id="failModalNote" style="min-height: 18px; margin-top: 14px; font-weight: 500;"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="cancel-btn" id="failModalCancel">Batal</button>
+      <button class="save-btn" id="failModalSaveBtn" onclick="saveNewFileFromModal()">Simpan</button>
     </div>
   </div>
 </div>
@@ -6591,6 +6640,184 @@ function renderFailTable() {
     `;
   }).join('');
 }
+
+function openAddFailModal() {
+  document.getElementById('f-fail-title').value = '';
+  document.getElementById('f-fail-code').value = '';
+  document.getElementById('f-fail-ref').value = '';
+  document.getElementById('f-fail-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('f-fail-file').value = '';
+  document.getElementById('failModalNote').innerHTML = '';
+  
+  document.getElementById('failModalOverlay').classList.add('open');
+}
+
+function closeAddFailModal() {
+  document.getElementById('failModalOverlay').classList.remove('open');
+}
+
+function onModalCodeChange() {
+  const codeSelect = document.getElementById('f-fail-code');
+  const refInput = document.getElementById('f-fail-ref');
+  if (!codeSelect || !refInput) return;
+  
+  const code = codeSelect.value;
+  if (code) {
+    refInput.value = generateRefNo(code);
+  } else {
+    refInput.value = '';
+  }
+}
+
+async function saveNewFileFromModal() {
+  const title = document.getElementById('f-fail-title').value.trim();
+  const code = document.getElementById('f-fail-code').value;
+  const refNo = document.getElementById('f-fail-ref').value.trim();
+  const tarikh = document.getElementById('f-fail-date').value;
+  const fileInput = document.getElementById('f-fail-file');
+  const note = document.getElementById('failModalNote');
+  const saveBtn = document.getElementById('failModalSaveBtn');
+
+  if (!title) {
+    note.innerHTML = `<span style="color:var(--red-text)">Tajuk Dokumen / Perkara diperlukan.</span>`;
+    return;
+  }
+  if (!code) {
+    note.innerHTML = `<span style="color:var(--red-text)">Sila pilih Kod Klasifikasi.</span>`;
+    return;
+  }
+  if (!refNo) {
+    note.innerHTML = `<span style="color:var(--red-text)">No. Rujukan diperlukan.</span>`;
+    return;
+  }
+  if (!tarikh) {
+    note.innerHTML = `<span style="color:var(--red-text)">Sila pilih Tarikh Fail Dibuka.</span>`;
+    return;
+  }
+  if (!fileInput.files || fileInput.files.length === 0) {
+    note.innerHTML = `<span style="color:var(--red-text)">Sila pilih lampiran fail untuk dimuat naik.</span>`;
+    return;
+  }
+
+  const file = fileInput.files[0];
+  saveBtn.disabled = true;
+  const originalText = saveBtn.textContent;
+  saveBtn.textContent = 'Menyimpan...';
+  note.innerHTML = `<span style="color:var(--paddy)">Menyediakan folder Drive...</span>`;
+
+  try {
+    // 1. Resolve folder Target
+    const targetFolderId = await resolveDriveFolder(code);
+
+    // 2. Upload file to Drive
+    note.innerHTML = `<span style="color:var(--paddy)">Memuat naik fail ke Google Drive...</span>`;
+    
+    // Construct metadata
+    const metadata = {
+      name: file.name,
+      mimeType: file.type,
+      parents: [targetFolderId]
+    };
+
+    // Construct body using text encoder + binary array
+    const boundary = '314159265358979323846';
+    const delimiter = "\r\n--" + boundary + "\r\n";
+    const close_delim = "\r\n--" + boundary + "--";
+
+    const reader = new FileReader();
+    const fileData = await new Promise((resolve, reject) => {
+      reader.onload = (e) => resolve(new Uint8Array(e.target.result));
+      reader.onerror = (e) => reject(e);
+      reader.readAsArrayBuffer(file);
+    });
+
+    const encoder = new TextEncoder();
+    const header = delimiter + 
+                   'Content-Type: application/json; charset=UTF-8\r\n\r\n' + 
+                   JSON.stringify(metadata) + 
+                   delimiter + 
+                   'Content-Type: ' + (file.type || 'application/octet-stream') + '\r\n\r\n';
+    
+    const headerBytes = encoder.encode(header);
+    const footerBytes = encoder.encode(close_delim);
+
+    const bodyBytes = new Uint8Array(headerBytes.length + fileData.length + footerBytes.length);
+    bodyBytes.set(headerBytes, 0);
+    bodyBytes.set(fileData, headerBytes.length);
+    bodyBytes.set(footerBytes, headerBytes.length + fileData.length);
+
+    const uploadUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink';
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'multipart/related; boundary=' + boundary
+      },
+      body: bodyBytes
+    });
+
+    if (!uploadRes.ok) {
+      const err = await uploadRes.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Gagal memuat naik fail ke Drive.`);
+    }
+
+    const uploadData = await uploadRes.json();
+    const fileLink = uploadData.webViewLink || `https://drive.google.com/file/d/${uploadData.id}/view?usp=drivesdk`;
+
+    // 3. Log to Google Sheet
+    note.innerHTML = `<span style="color:var(--paddy)">Merekodkan fail ke Google Sheets...</span>`;
+    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/${encodeURIComponent('SistemFail!A:F')}:append?valueInputOption=USER_ENTERED`;
+    
+    const appendRes = await fetch(sheetUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        values: [[
+          "=ROW()-1",
+          title,
+          refNo,
+          tarikh,
+          fileLink,
+          currentUser.email
+        ]]
+      })
+    });
+
+    if (!appendRes.ok) {
+      const err = await appendRes.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Gagal menulis log ke Sheet.`);
+    }
+
+    note.innerHTML = `<span style="color:var(--sage); font-weight:600;">Berjaya disimpan!</span>`;
+    showToast(`Fail "${title}" berjaya direkodkan.`);
+    
+    // Refresh table and close modal
+    await loadFailsFromSheet();
+    setTimeout(() => {
+      closeAddFailModal();
+    }, 800);
+
+  } catch (e) {
+    console.error("saveNewFileFromModal failed:", e);
+    note.innerHTML = `<span style="color:var(--red-text)">Ralat: ${e.message}</span>`;
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = originalText;
+  }
+}
+
+// Bind failModal events
+const failModalOverlay = document.getElementById('failModalOverlay');
+if (failModalOverlay) {
+  failModalOverlay.onclick = (e) => { if(e.target === failModalOverlay) closeAddFailModal(); };
+}
+const failModalClose = document.getElementById('failModalClose');
+if (failModalClose) failModalClose.onclick = closeAddFailModal;
+const failModalCancel = document.getElementById('failModalCancel');
+if (failModalCancel) failModalCancel.onclick = closeAddFailModal;
 </script>
 </body>
 </html>
