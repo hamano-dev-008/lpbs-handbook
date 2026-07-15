@@ -2692,6 +2692,7 @@ function buildFallbackSets(){
 
 async function loadAllowlistFromSheet(){
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${ALLOWLIST_SHEET_ID}/values/${encodeURIComponent(ALLOWLIST_SHEET_RANGE)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(!res.ok) throw new Error('Sheet fetch failed: ' + res.status);
@@ -2772,6 +2773,7 @@ function fmtHours(h){
 async function loadKehadiranFromSheet(){
   const wrap = document.getElementById('khTableWrap');
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(!res.ok) throw new Error('status ' + res.status);
@@ -2896,6 +2898,7 @@ async function saveEditKehadiranRow(rowIndex){
   }
 
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A'+rowIndex+':F'+rowIndex)}?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'PUT',
@@ -2947,6 +2950,7 @@ async function saveKehadiranRecord(){
   note.textContent = '';
 
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'POST',
@@ -3023,6 +3027,7 @@ async function bulkAddAllStaff(){
   note.textContent = '';
 
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'POST',
@@ -3050,6 +3055,7 @@ async function deleteKehadiranRow(rowIndex){
   if(!confirmed) return;
 
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     // Clear the row's values (keeps row structure stable) via a batch update.
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A'+rowIndex+':F'+rowIndex)}:clear`;
     const res = await fetch(url, {
@@ -3075,6 +3081,7 @@ async function deleteAllKehadiranRecords(){
   btn.textContent = 'Memadam...';
 
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}:clear`;
     const res = await fetch(url, {
       method: 'POST',
@@ -3093,7 +3100,7 @@ async function deleteAllKehadiranRecords(){
 
 function getSelfCheckinName(){
   if(!currentUser) return '';
-  return getStaffDisplayName(currentUser.email);
+  return currentUser.name || getStaffDisplayName(currentUser.email);
 }
 
 // Waktu tamat daftar masuk sendiri (semua pengguna kad, termasuk editor dalam Mod Peribadi)
@@ -3385,6 +3392,7 @@ async function selfDaftarMasuk(){
   note.textContent = '';
 
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'POST',
@@ -3426,6 +3434,7 @@ async function selfSubmitStatus(){
   note.textContent = '';
 
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'POST',
@@ -3471,6 +3480,7 @@ async function selfDaftarKeluar(){
   note.textContent = '';
 
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!D' + rec.rowIndex)}?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'PUT',
@@ -4601,6 +4611,7 @@ function dateKeysSpannedByGoogleEvent(gEvent){
 }
 
 async function loadEventsFromGoogleCalendar(){
+  accessToken = localStorage.getItem('padi_app_token') || accessToken;
   if(!accessToken) return;
   calendarLoadError = null;
   try{
@@ -5686,16 +5697,16 @@ async function fetchUserInfoAndProceed(){
     await loadAllowlistFromSheet();
     showGateError("");
 
-    attemptSignIn(info.email);
+    attemptSignIn(info.email, info.name);
   }catch(e){
     console.error('fetchUserInfoAndProceed error:', e);
     showGateError("Tidak dapat mengesahkan akaun Google (" + e.message + "). Sila cuba semula.");
   }
 }
 
-function attemptSignIn(email){
+function attemptSignIn(email, name){
   if(isAllowedViewer(email)){
-    currentUser = { email };
+    currentUser = { email, name: name || (currentUser && currentUser.name) || '' };
     try {
       localStorage.setItem('padi_app_user', JSON.stringify(currentUser));
       localStorage.setItem('padi_app_token', accessToken);
@@ -5747,7 +5758,7 @@ window.addEventListener('load', () => {
       
       loadAllowlistFromSheet().then(() => {
         if(currentUser && currentUser.email){
-          attemptSignIn(currentUser.email);
+          attemptSignIn(currentUser.email, currentUser.name);
         } else {
           showGateError("");
         }
@@ -5869,6 +5880,7 @@ function toggleMultiDayFields(uid){
 }
 
 async function saveNewEventToGoogleCalendar(){
+  accessToken = localStorage.getItem('padi_app_token') || accessToken;
   const saveBtn = document.getElementById('modalSave');
   const title = document.getElementById('f-title').value.trim();
   const multiDay = document.getElementById('f-multiday').checked;
@@ -6083,6 +6095,7 @@ function cancelEdit(uid){
 }
 
 async function saveEditedEvent(uid){
+  accessToken = localStorage.getItem('padi_app_token') || accessToken;
   const e = eventDataByUid[uid];
   if(!e || !e.id) return;
 
@@ -6207,6 +6220,7 @@ function showUndoToast(uid, eventTitle, onExpire){
 }
 
 async function deleteEventPrompt(eventId, uid){
+  accessToken = localStorage.getItem('padi_app_token') || accessToken;
   if(!currentUser || !isAllowedEditor(currentUser.email)){
     return; // safety net; button shouldn't render for non-editors anyway
   }

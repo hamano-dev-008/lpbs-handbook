@@ -2434,16 +2434,16 @@ async function fetchUserInfoAndProceed(){
     await loadAllowlistFromSheet();
     showGateError("");
 
-    attemptSignIn(info.email);
+    attemptSignIn(info.email, info.name);
   }catch(e){
     console.error('fetchUserInfoAndProceed error:', e);
     showGateError("Tidak dapat mengesahkan akaun Google (" + e.message + "). Sila cuba semula.");
   }
 }
 
-function attemptSignIn(email){
+function attemptSignIn(email, name){
   if(isAllowedViewer(email)){
-    currentUser = { email };
+    currentUser = { email, name: name || (currentUser && currentUser.name) || '' };
     document.getElementById('gateScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = '';
     syncSignInButtons();
