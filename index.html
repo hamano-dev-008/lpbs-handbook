@@ -2695,6 +2695,10 @@ async function loadAllowlistFromSheet(){
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${ALLOWLIST_SHEET_ID}/values/${encodeURIComponent(ALLOWLIST_SHEET_RANGE)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if(res.status === 401){
+      handleAuthExpired();
+      throw new Error('UNAUTHORIZED');
+    }
     if(!res.ok) throw new Error('Sheet fetch failed: ' + res.status);
     const data = await res.json();
     const rows = data.values || [];
@@ -2776,6 +2780,10 @@ async function loadKehadiranFromSheet(){
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if(res.status === 401){
+      handleAuthExpired();
+      throw new Error('UNAUTHORIZED');
+    }
     if(!res.ok) throw new Error('status ' + res.status);
     const data = await res.json();
     const rows = data.values || [];
@@ -3949,8 +3957,13 @@ function taskPrioritySlug(priority){
 async function loadTaskFromSheet(){
   const wrap = document.getElementById('taskListWrap');
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent(TASK_SHEET_RANGE)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if(res.status === 401){
+      handleAuthExpired();
+      throw new Error('UNAUTHORIZED');
+    }
     if(!res.ok) throw new Error('status ' + res.status);
     const data = await res.json();
     const rows = data.values || [];
@@ -4346,8 +4359,13 @@ let currentUserReadIds = new Set(); // Set<string> of task rowIndex values alrea
 
 async function loadNotifReadFromSheet(){
   try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${NOTIF_READ_SHEET_ID}/values/${encodeURIComponent(NOTIF_READ_SHEET_RANGE)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if(res.status === 401){
+      handleAuthExpired();
+      throw new Error('UNAUTHORIZED');
+    }
     if(!res.ok) throw new Error('status ' + res.status);
     const data = await res.json();
     const rows = data.values || [];
@@ -4632,7 +4650,11 @@ async function loadEventsFromGoogleCalendar(){
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       if(!res.ok){
-        if(res.status === 401 || res.status === 403){
+        if(res.status === 401){
+          handleAuthExpired();
+          throw new Error('UNAUTHORIZED');
+        }
+        if(res.status === 403){
           throw new Error('PERMISSION');
         }
         throw new Error('FETCH_FAILED');
@@ -5640,12 +5662,26 @@ render();
 // ============================================================
 let accessToken = null;
 let tokenClient = null;
+let isRefreshingToken = false;
+
+function handleAuthExpired(){
+  if(isRefreshingToken) return;
+  isRefreshingToken = true;
+  console.warn('Access token expired or unauthorized (401). Triggering OAuth token refresh/re-authentication...');
+  if(tokenClient){
+    tokenClient.requestAccessToken();
+  }else{
+    logout();
+    showGateError("Sesi anda telah tamat. Sila log masuk semula.");
+  }
+}
 
 function initGoogleAuth(){
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CLIENT_ID,
     scope: OAUTH_SCOPE,
     callback: (tokenResponse) => {
+      isRefreshingToken = false;
       if(tokenResponse.error){
         showGateError("Log masuk gagal. Sila cuba semula.");
         return;
@@ -5654,6 +5690,7 @@ function initGoogleAuth(){
       fetchUserInfoAndProceed();
     },
     error_callback: (err) => {
+      isRefreshingToken = false;
       showGateError("Log masuk dibatalkan atau gagal.");
     }
   });
@@ -5706,7 +5743,20 @@ async function fetchUserInfoAndProceed(){
 
 function attemptSignIn(email, name){
   if(isAllowedViewer(email)){
-    currentUser = { email, name: name || (currentUser && currentUser.name) || '' };
+    // Prioritize the name from the staff roster (STAFF_DIRECTORY) if it exists,
+    // then fall back to the passed name (from Google UserInfo), and finally
+    // fallback to the existing currentUser.name or an empty string.
+    let displayName = '';
+    if(STAFF_DIRECTORY){
+      const entry = STAFF_DIRECTORY.get(email.toLowerCase());
+      if(entry && entry.nama){
+        displayName = entry.nama;
+      }
+    }
+    if(!displayName){
+      displayName = name || (currentUser && currentUser.name) || '';
+    }
+    currentUser = { email, name: displayName };
     try {
       localStorage.setItem('padi_app_user', JSON.stringify(currentUser));
       localStorage.setItem('padi_app_token', accessToken);
@@ -6578,8 +6628,13 @@ async function loadFailsFromSheet() {
   }
   
   try {
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/SistemFail!A2:F1000`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (res.status === 401) {
+      handleAuthExpired();
+      throw new Error("UNAUTHORIZED");
+    }
     if (res.status === 400) {
       failSheetTabExists = false;
       renderFailTable();
