@@ -1246,6 +1246,89 @@
     overflow-y:auto;
     flex:1;
   }
+  /* FAQ Accordion Styling */
+  .faq-accordion-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .faq-accordion-item{
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--bg-card);
+    transition:border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .faq-accordion-item.active{
+    border-color:var(--paddy-light);
+    box-shadow:0 2px 8px rgba(27,58,107,0.08);
+  }
+  .faq-accordion-header{
+    width:100%;
+    padding:14px 16px;
+    background:none;
+    border:none;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    text-align:left;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink);
+    cursor:pointer;
+    gap:12px;
+    transition:background 0.15s ease;
+  }
+  .faq-accordion-header:hover{
+    background:rgba(27,58,107,0.03);
+  }
+  .faq-accordion-icon{
+    width:20px;
+    height:20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--sage);
+    transition:transform 0.25s ease, color 0.25s ease;
+    flex-shrink:0;
+  }
+  .faq-accordion-item.active .faq-accordion-icon{
+    transform:rotate(180deg);
+    color:var(--paddy);
+  }
+  .faq-accordion-content{
+    display:none;
+    padding:0 16px 16px 16px;
+    background:var(--bg-card);
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--ink-soft);
+    border-top:1px solid var(--line);
+  }
+  .faq-accordion-item.active .faq-accordion-content{
+    display:block;
+  }
+  .faq-accordion-content ul, .faq-accordion-content ol{
+    margin:8px 0 0 18px;
+    padding:0;
+  }
+  .faq-accordion-content li{
+    margin-bottom:6px;
+  }
+  .faq-accordion-content p{
+    margin:0 0 8px 0;
+  }
+  .faq-accordion-badge{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:6px;
+    font-size:11px;
+    font-weight:600;
+    background:rgba(27,58,107,0.08);
+    color:var(--paddy);
+    margin-right:8px;
+  }
   .field-label{
     display:block;
     font-size:12px;
@@ -1971,10 +2054,15 @@
           <h1 class="hero-v2-name" id="heroUserName">Staf LPBS</h1>
         </div>
       </div>
-      <button class="hero-v2-bell" aria-label="Notifikasi" onclick="toggleNotifPanel()">
-        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.75 9v.704c0 .845.24 1.671.692 2.374l1.108 1.723c1.011 1.574.239 3.713-1.52 4.21a25.8 25.8 0 0 1-14.06 0c-1.759-.497-2.531-2.636-1.52-4.21l1.108-1.723a4.4 4.4 0 0 0 .693-2.374V9c0-3.866 3.022-7 6.749-7s6.75 3.134 6.75 7" opacity=".5"/><path fill="currentColor" d="M12.75 6a.75.75 0 0 0-1.5 0v4a.75.75 0 0 0 1.5 0zM7.243 18.545a5.002 5.002 0 0 0 9.513 0c-3.145.59-6.367.59-9.513 0"/></svg>
-        <span class="hero-v2-bell-dot" id="heroBellDot" style="display:none;"></span>
-      </button>
+      <div class="hero-v2-actions" style="display:flex; align-items:center; gap:8px;">
+        <button class="hero-v2-bell" id="faqBtn" aria-label="Soalan Lazim & Bantuan" title="Soalan Lazim & Bantuan (FAQ)" onclick="openFaqModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </button>
+        <button class="hero-v2-bell" id="notifBellBtn" aria-label="Notifikasi" onclick="toggleNotifPanel()">
+          <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.75 9v.704c0 .845.24 1.671.692 2.374l1.108 1.723c1.011 1.574.239 3.713-1.52 4.21a25.8 25.8 0 0 1-14.06 0c-1.759-.497-2.531-2.636-1.52-4.21l1.108-1.723a4.4 4.4 0 0 0 .693-2.374V9c0-3.866 3.022-7 6.749-7s6.75 3.134 6.75 7" opacity=".5"/><path fill="currentColor" d="M12.75 6a.75.75 0 0 0-1.5 0v4a.75.75 0 0 0 1.5 0zM7.243 18.545a5.002 5.002 0 0 0 9.513 0c-3.145.59-6.367.59-9.513 0"/></svg>
+          <span class="hero-v2-bell-dot" id="heroBellDot" style="display:none;"></span>
+        </button>
+      </div>
     </div>
     <div class="search-bar-wrap hero-search">
       <div class="search-input-row">
@@ -2349,6 +2437,10 @@
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7v10a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3H9.828a2 2 0 0 1-1.414-.586l-1.586-1.586A2 2 0 0 0 5.414 3H5a2 2 0 0 0-2 2z"/><path d="M8 12h8m-8 3h5"/></svg></span>
       <span class="lagi-row-label">Sistem Fail</span>
     </button>
+    <button class="lagi-row" id="lagiRowFaq" onclick="closeLagiMenu(); openFaqModal();">
+      <span class="lagi-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      <span class="lagi-row-label">Soalan Lazim & Bantuan</span>
+    </button>
     <button class="lagi-row" id="lagiRowLogout" onclick="logout()" style="display:none; color:var(--red);">
       <span class="lagi-row-icon" style="color:var(--red); background:var(--red-bg);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
       <span class="lagi-row-label">Log Keluar</span>
@@ -2357,6 +2449,114 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
+
+<!-- FAQ Modal Overlay -->
+<div class="modal-overlay" id="faqModalOverlay">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-head">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; background:rgba(27,58,107,0.1); color:var(--paddy); flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </span>
+        <h3 style="margin:0; font-size:18px; font-weight:600; color:var(--paddy);">Soalan Lazim & Bantuan (FAQ)</h3>
+      </div>
+      <button class="modal-close" onclick="closeFaqModal()">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      <p style="margin:0 0 16px; font-size:13px; color:var(--ink-soft); line-height:1.5;">
+        Panduan ringkas dan jawapan kepada soalan lazim mengenai penggunaan PadiApp LPBS. Klik pada tajuk untuk melihat butiran.
+      </p>
+
+      <div class="faq-accordion-list">
+        <!-- Accordion 1 -->
+        <div class="faq-accordion-item">
+          <button class="faq-accordion-header" onclick="toggleFaqAccordion(this)">
+            <span><span class="faq-accordion-badge">Kehadiran</span>Cara Rekod Kehadiran Biasa (Sebelum 9:15 Pagi)</span>
+            <span class="faq-accordion-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </button>
+          <div class="faq-accordion-content">
+            <p style="margin-top:10px;">Bagi pendaftaran masuk waktu bekerja biasa (sebelum 9:15 pagi):</p>
+            <ol>
+              <li>Buka bahagian <strong>Kehadiran</strong> di bar navigasi bawah.</li>
+              <li>Sahkan maklumat diri dan waktu imbasan semasa pada skrin.</li>
+              <li>Tekan butang <strong>"Daftar Masuk (Check-In)"</strong>.</li>
+              <li>Sistem akan terus merekodkan waktu masuk anda ke dalam Google Sheet Kehadiran LPBS dengan status <strong>Hadir</strong>.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Accordion 2 -->
+        <div class="faq-accordion-item">
+          <button class="faq-accordion-header" onclick="toggleFaqAccordion(this)">
+            <span><span class="faq-accordion-badge">Kehadiran</span>Cara Rekod Kehadiran Lewat (Selepas 9:15 Pagi)</span>
+            <span class="faq-accordion-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </button>
+          <div class="faq-accordion-content">
+            <p style="margin-top:10px;">Sekiranya anda mendaftar masuk selepas jam 9:15 pagi:</p>
+            <ol>
+              <li>Sistem akan secara automatik menetapkan status kepada <strong>"Hadir Lewat"</strong>.</li>
+              <li>Ruang <strong>Catatan / Sebab Lewat</strong> akan dipaparkan pada borang.</li>
+              <li>Isikan alasan ringkas (contoh: <em>Tugas Luar, Urusan Rasmi, Kesesakan Lalu Lintas, atau Masalah Kesihatan</em>).</li>
+              <li>Tekan <strong>"Daftar Masuk (Check-In)"</strong> untuk menyimpan rekod dan catatan anda.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Accordion 3 -->
+        <div class="faq-accordion-item">
+          <button class="faq-accordion-header" onclick="toggleFaqAccordion(this)">
+            <span><span class="faq-accordion-badge" style="background:rgba(220,53,69,0.1); color:var(--red);">Akaun / 401</span>Masalah Nama Singkat / E-mel Tertera (Ralat 401)</span>
+            <span class="faq-accordion-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </button>
+          <div class="faq-accordion-content">
+            <p style="margin-top:10px;">Jika sistem memaparkan nama singkat/emel sahaja atau mengalami ralat 401 (Tidak Dibenarkan):</p>
+            <ul>
+              <li><strong>Punca:</strong> Token sesi Google OAuth telah tamat tempoh (cth: selepas midnight 12:00 AM) atau akaun anda memerlukan pengesahan semula.</li>
+              <li><strong>Penyelesaian Automatik:</strong> Sistem PadiApp akan cuba memperbaharui token secara senyap (<em>silent re-authentication</em>) tanpa melog keluar anda.</li>
+              <li><strong>Penyelesaian Manual (jika masih tersekat):</strong>
+                <ol style="margin-top:4px;">
+                  <li>Buka menu <strong>Lagi (•••)</strong> di bahagian bawah skrin dan tekan <strong>Log Keluar</strong>.</li>
+                  <li>Tekan semula <strong>Log Masuk dengan Google</strong> untuk mendapatkan token kebenaran baharu.</li>
+                  <li>Pastikan anda menggunakan e-mel rasmi yang telah didaftarkan dalam senarai staf LPBS.</li>
+                </ol>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Accordion 4 -->
+        <div class="faq-accordion-item">
+          <button class="faq-accordion-header" onclick="toggleFaqAccordion(this)">
+            <span><span class="faq-accordion-badge" style="background:rgba(193,127,46,0.12); color:var(--amber-text);">iOS / Safari</span>Masalah Sekatan Pop-up di iPhone (Safari)</span>
+            <span class="faq-accordion-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </button>
+          <div class="faq-accordion-content">
+            <p style="margin-top:10px;">Jika tingkap log masuk Google tidak muncul pada peranti iPhone / iPad (Safari):</p>
+            <ol>
+              <li>Buka aplikasi <strong>Settings (Tetapan)</strong> pada iPhone anda.</li>
+              <li>Skrol ke bawah dan tekan <strong>Safari</strong>.</li>
+              <li>Cari pilihan <strong>Block Pop-ups (Sekat Pop-up)</strong> dan matikan (<em>Toggle OFF</em>).</li>
+              <li>Matikan juga pilihan <strong>Prevent Cross-Site Tracking</strong> sekiranya sesi terputus berulang kali.</li>
+              <li>Kembali ke PadiApp dalam penyemak imbas Safari dan tekan semula <strong>Log Masuk dengan Google</strong>.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot" style="padding:14px 24px; border-top:1px solid var(--line); background:var(--bg-main); display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:12px; color:var(--ink-soft);">Perlukan bantuan lanjut? Sila hubungi Pentadbir LPBS.</span>
+      <button class="btn-sec" onclick="closeFaqModal()" style="padding:6px 16px; font-size:13px; cursor:pointer;">Tutup</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
@@ -5194,7 +5394,7 @@ document.addEventListener('click', (e) => {
     document.getElementById('searchResults').style.display = 'none';
   }
 
-  const bell = document.querySelector('.hero-v2-bell');
+  const bell = document.getElementById('notifBellBtn');
   const notifPanel = document.getElementById('notifPanel');
   const clickedInsideNotif = (bell && bell.contains(e.target)) || (notifPanel && notifPanel.contains(e.target));
   if(!clickedInsideNotif && notifPanel){
@@ -5927,6 +6127,31 @@ document.getElementById('gateSigninBtn').addEventListener('click', () => {
   showGateError("");
   tokenClient.requestAccessToken();
 });
+
+// FAQ Modal Handlers
+const faqModalOverlay = document.getElementById('faqModalOverlay');
+function openFaqModal(){
+  if(faqModalOverlay) faqModalOverlay.classList.add('open');
+}
+function closeFaqModal(){
+  if(faqModalOverlay) faqModalOverlay.classList.remove('open');
+}
+if(faqModalOverlay){
+  faqModalOverlay.onclick = (e) => { if(e.target === faqModalOverlay) closeFaqModal(); };
+}
+function toggleFaqAccordion(headerEl){
+  const item = headerEl.closest('.faq-accordion-item');
+  if(!item) return;
+  const isActive = item.classList.contains('active');
+  document.querySelectorAll('.faq-accordion-item').forEach(el => {
+    if(el !== item) el.classList.remove('active');
+  });
+  if(isActive){
+    item.classList.remove('active');
+  } else {
+    item.classList.add('active');
+  }
+}
 
 const modalOverlay = document.getElementById('modalOverlay');
 function openModal(){
