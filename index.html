@@ -5664,16 +5664,56 @@ render();
 let accessToken = null;
 let tokenClient = null;
 let isRefreshingToken = false;
+let pendingSilentReauth = false;
+
+function hasPassedMidnight(savedTimestampStr){
+  if(!savedTimestampStr) return true;
+  const savedTime = parseInt(savedTimestampStr, 10);
+  if(isNaN(savedTime)) return true;
+
+  const savedDate = new Date(savedTime);
+  const nowDate = new Date();
+
+  const savedMidnight = new Date(savedDate.getFullYear(), savedDate.getMonth(), savedDate.getDate()).getTime();
+  const nowMidnight = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()).getTime();
+
+  return nowMidnight > savedMidnight || (nowDate.getTime() - savedTime >= 24 * 60 * 60 * 1000);
+}
+
+async function verifyToken(token){
+  if(!token) return false;
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if(!res.ok) return false;
+    const info = await res.json();
+    return !!(info && info.email);
+  } catch(e) {
+    return false;
+  }
+}
 
 function handleAuthExpired(){
   if(isRefreshingToken) return;
   isRefreshingToken = true;
-  console.warn('Access token expired or unauthorized (401). Triggering OAuth token refresh/re-authentication...');
+  console.warn('Access token expired or unauthorized (401). Programmatically clearing expired token & triggering silent OAuth re-authentication...');
+  
+  accessToken = null;
+  try {
+    localStorage.removeItem('padi_app_token');
+    localStorage.removeItem('padi_app_token_timestamp');
+  } catch(e) {}
+
   if(tokenClient){
-    tokenClient.requestAccessToken();
-  }else{
-    logout();
-    showGateError("Sesi anda telah tamat. Sila log masuk semula.");
+    try {
+      tokenClient.requestAccessToken({ prompt: '' });
+    } catch(err) {
+      console.error('Failed to request silent access token:', err);
+      isRefreshingToken = false;
+    }
+  } else {
+    pendingSilentReauth = true;
   }
 }
 
@@ -5683,18 +5723,31 @@ function initGoogleAuth(){
     scope: OAUTH_SCOPE,
     callback: (tokenResponse) => {
       isRefreshingToken = false;
+      pendingSilentReauth = false;
       if(tokenResponse.error){
-        showGateError("Log masuk gagal. Sila cuba semula.");
+        console.warn("Silent re-authentication returned error:", tokenResponse.error);
+        showGateError("Sesi Google memerlukan pengesahan semula.");
         return;
       }
       accessToken = tokenResponse.access_token;
+      try {
+        localStorage.setItem('padi_app_token', accessToken);
+        localStorage.setItem('padi_app_token_timestamp', Date.now().toString());
+      } catch(e) {}
       fetchUserInfoAndProceed();
     },
     error_callback: (err) => {
       isRefreshingToken = false;
+      pendingSilentReauth = false;
+      console.warn("Google Auth error:", err);
       showGateError("Log masuk dibatalkan atau gagal.");
     }
   });
+
+  if(pendingSilentReauth || (!accessToken && localStorage.getItem('padi_app_user'))){
+    pendingSilentReauth = false;
+    handleAuthExpired();
+  }
 }
 
 function showGateError(msg, isInfo){
@@ -5761,6 +5814,7 @@ function attemptSignIn(email, name){
     try {
       localStorage.setItem('padi_app_user', JSON.stringify(currentUser));
       localStorage.setItem('padi_app_token', accessToken);
+      localStorage.setItem('padi_app_token_timestamp', Date.now().toString());
     } catch(e) {
       console.warn('Failed to save session to localStorage:', e);
     }
@@ -5778,6 +5832,7 @@ function attemptSignIn(email, name){
     try {
       localStorage.removeItem('padi_app_user');
       localStorage.removeItem('padi_app_token');
+      localStorage.removeItem('padi_app_token_timestamp');
     } catch(e) {}
   }
 }
@@ -5786,6 +5841,7 @@ function logout(){
   try {
     localStorage.removeItem('padi_app_user');
     localStorage.removeItem('padi_app_token');
+    localStorage.removeItem('padi_app_token_timestamp');
   } catch(e) {
     console.warn('Failed to clear session from localStorage:', e);
   }
@@ -5797,32 +5853,50 @@ function logout(){
   closeLagiMenu();
 }
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   // Restore persistent login from localStorage if present
   try {
     const savedUser = localStorage.getItem('padi_app_user');
     const savedToken = localStorage.getItem('padi_app_token');
+    const savedTokenTimestamp = localStorage.getItem('padi_app_token_timestamp');
+
     if(savedUser && savedToken){
       currentUser = JSON.parse(savedUser);
       accessToken = savedToken;
       showGateError("Menyambung semula sesi...", true);
       
-      loadAllowlistFromSheet().then(() => {
-        if(currentUser && currentUser.email){
-          attemptSignIn(currentUser.email, currentUser.name);
-        } else {
-          showGateError("");
-        }
-      }).catch(err => {
-        console.error('Session restore failed:', err);
-        showGateError("Sesi telah tamat. Sila log masuk semula.");
-        try {
-          localStorage.removeItem('padi_app_user');
-          localStorage.removeItem('padi_app_token');
-        } catch(e) {}
-        currentUser = null;
+      let tokenValid = true;
+      if(hasPassedMidnight(savedTokenTimestamp)){
+        console.warn('Midnight boundary (12:00 AM) passed since last valid token assignment. Triggering silent token verification check...');
+        tokenValid = await verifyToken(savedToken);
+      }
+
+      if(tokenValid){
+        try { localStorage.setItem('padi_app_token_timestamp', Date.now().toString()); } catch(e){}
+        loadAllowlistFromSheet().then(() => {
+          if(currentUser && currentUser.email){
+            attemptSignIn(currentUser.email, currentUser.name);
+          } else {
+            showGateError("");
+          }
+        }).catch(err => {
+          console.error('Session restore failed:', err);
+          if(err.message === 'UNAUTHORIZED'){
+            return;
+          }
+          if(currentUser && currentUser.email){
+            attemptSignIn(currentUser.email, currentUser.name);
+          }
+        });
+      } else {
+        console.warn('Token verification failed across midnight boundary. Programmatically clearing expired token and requesting silent re-authentication...');
         accessToken = null;
-      });
+        try {
+          localStorage.removeItem('padi_app_token');
+          localStorage.removeItem('padi_app_token_timestamp');
+        } catch(e) {}
+        handleAuthExpired();
+      }
     }
   } catch(e) {
     console.error('Error reading/parsing saved session:', e);
