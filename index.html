@@ -2899,7 +2899,7 @@ const FALLBACK_EDITOR_ALLOWLIST = [
   "shafikahoyeaw777@gmail.com",
   "shymatahat@gmail.com",
   "wiwierimin96@gmail.com",
-  "debracalley97@gmail.com",
+  "calleydy.work@gmail.com",
   "stacysoh81@gmail.com",
   "roziemansius@gmail.com",
   "ignesiaroze@gmail.com"
@@ -3429,7 +3429,7 @@ const STAFF_OFFICE_LOCATIONS = {
   "dzunisajaldin@gmail.com":       { name: "Kota Belud", lat: 6.356601, lng: 116.4292 },
 
   // Tambunan
-  "debracalley97@gmail.com":       { name: "Tambunan", lat: 5.665361, lng: 116.370559 },
+  "calleydy.work@gmail.com":       { name: "Tambunan", lat: 5.665361, lng: 116.370559 },
   "apriljohnny95@gmail.com":       { name: "Tambunan", lat: 5.665361, lng: 116.370559 },
 };
 const KH_LOC_RADIUS_METERS = 500;
@@ -3650,6 +3650,10 @@ async function selfDaftarMasuk(){
 
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    if(!accessToken){
+      handleAttendanceAuthError(401, 'Tiada token akses', note, btn, isLate ? 'Late Clock-In' : 'Clock In');
+      return;
+    }
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'POST',
@@ -3658,14 +3662,21 @@ async function selfDaftarMasuk(){
     });
     if(!res.ok){
       const errData = await res.json().catch(()=>({}));
-      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+      const errMsg = errData.error?.message || '';
+      if(res.status === 403 || res.status === 401 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('permission')){
+        handleAttendanceAuthError(res.status, errMsg, note, btn, isLate ? 'Late Clock-In' : 'Clock In');
+        return;
+      }
+      throw new Error(errMsg || ('Gagal menyimpan (status ' + res.status + ')'));
     }
     if(reasonInput) reasonInput.value = '';
     await loadKehadiranFromSheet();
     renderSelfCheckinCard();
     document.getElementById('khSelfNote').textContent = 'Masa masuk berjaya direkodkan.';
   }catch(e){
-    note.textContent = 'Ralat: ' + e.message;
+    if(!note.innerHTML.includes('requestAttendanceAuth')){
+      note.textContent = 'Ralat: ' + e.message;
+    }
     btn.disabled = false;
     btn.textContent = isLate ? 'Late Clock-In' : 'Clock In';
   }
@@ -3692,6 +3703,10 @@ async function selfSubmitStatus(){
 
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    if(!accessToken){
+      handleAttendanceAuthError(401, 'Tiada token akses', note, btn, 'Submit');
+      return;
+    }
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'POST',
@@ -3700,7 +3715,12 @@ async function selfSubmitStatus(){
     });
     if(!res.ok){
       const errData = await res.json().catch(()=>({}));
-      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+      const errMsg = errData.error?.message || '';
+      if(res.status === 403 || res.status === 401 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('permission')){
+        handleAttendanceAuthError(res.status, errMsg, note, btn, 'Submit');
+        return;
+      }
+      throw new Error(errMsg || ('Gagal menyimpan (status ' + res.status + ')'));
     }
     const savedStatus = khSelfStatus;
     khSelfStatus = 'Hadir';
@@ -3710,7 +3730,9 @@ async function selfSubmitStatus(){
     document.getElementById('khSelfNote').textContent =
       `✓ Status recorded: ${savedStatus}${remark ? ' — ' + remark : ''}`;
   }catch(e){
-    note.textContent = 'Ralat: ' + e.message;
+    if(!note.innerHTML.includes('requestAttendanceAuth')){
+      note.textContent = 'Ralat: ' + e.message;
+    }
     btn.disabled = false;
     btn.textContent = 'Submit';
   }
@@ -3738,6 +3760,10 @@ async function selfDaftarKeluar(){
 
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    if(!accessToken){
+      handleAttendanceAuthError(401, 'Tiada token akses', note, btn, 'Clock Out');
+      return;
+    }
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!D' + rec.rowIndex)}?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'PUT',
@@ -3746,13 +3772,20 @@ async function selfDaftarKeluar(){
     });
     if(!res.ok){
       const errData = await res.json().catch(()=>({}));
-      throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
+      const errMsg = errData.error?.message || '';
+      if(res.status === 403 || res.status === 401 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('permission')){
+        handleAttendanceAuthError(res.status, errMsg, note, btn, 'Clock Out');
+        return;
+      }
+      throw new Error(errMsg || ('Gagal menyimpan (status ' + res.status + ')'));
     }
     await loadKehadiranFromSheet();
     renderSelfCheckinCard();
     document.getElementById('khSelfNote').textContent = 'Masa keluar berjaya direkodkan.';
   }catch(e){
-    note.textContent = 'Ralat: ' + e.message;
+    if(!note.innerHTML.includes('requestAttendanceAuth')){
+      note.textContent = 'Ralat: ' + e.message;
+    }
     btn.disabled = false;
     btn.textContent = 'Clock Out';
   }
@@ -5964,6 +5997,33 @@ function handleAuthExpired(){
     pendingSilentReauth = true;
   }
 }
+
+function requestAttendanceAuth(){
+  if(tokenClient){
+    try {
+      tokenClient.requestAccessToken({
+        scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile'
+      });
+    } catch(err) {
+      console.error('Failed to request attendance access token:', err);
+      handleAuthExpired();
+    }
+  } else {
+    handleAuthExpired();
+  }
+}
+
+function handleAttendanceAuthError(resStatus, errMsg, noteEl, btnEl, originalBtnText){
+  requestAttendanceAuth();
+  if(noteEl){
+    noteEl.innerHTML = `<span style="color: var(--danger-color, #dc2626);">Kebenaran Google Sheets tidak mencukupi (${resStatus} / insufficient_scope). Sila sahkan semula akses akaun Google anda.</span><br><button type="button" class="btn btn-sm btn-outline-primary" style="margin-top: 8px; padding: 6px 12px; cursor: pointer; border-radius: 6px;" onclick="requestAttendanceAuth()">Sahkan Semula Akses Google</button>`;
+  }
+  if(btnEl){
+    btnEl.disabled = false;
+    btnEl.textContent = originalBtnText;
+  }
+}
+
 
 function initGoogleAuth(){
   tokenClient = google.accounts.oauth2.initTokenClient({
