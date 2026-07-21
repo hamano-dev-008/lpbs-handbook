@@ -2508,8 +2508,8 @@
           <div class="faq-accordion-content">
             <p style="margin-top:10px;">Jika sistem memaparkan nama singkat/emel sahaja atau mengalami ralat 401 (Tidak Dibenarkan):</p>
             <ul>
-              <li><strong>Punca:</strong> Token sesi Google OAuth telah tamat tempoh (cth: selepas midnight 12:00 AM) atau akaun anda memerlukan pengesahan semula.</li>
-              <li><strong>Penyelesaian Automatik:</strong> Sistem PadiApp akan cuba memperbaharui token secara senyap (<em>silent re-authentication</em>) tanpa melog keluar anda.</li>
+              <li><strong>Punca:</strong> Token sesi Google OAuth telah tamat tempoh atau akaun anda memerlukan pengesahan semula.</li>
+              <li><strong>Pengesahan On-Demand:</strong> Pengesahan token dan sesi dijalankan secara on-demand apabila pengguna membuka atau mengendalikan aplikasi.</li>
               <li><strong>Penyelesaian Manual (jika masih tersekat):</strong>
                 <ol style="margin-top:4px;">
                   <li>Buka menu <strong>More (•••)</strong> di bahagian bawah skrin dan tekan <strong>Log Keluar</strong>.</li>
@@ -5947,6 +5947,10 @@ let tokenClient = null;
 let isRefreshingToken = false;
 let pendingSilentReauth = false;
 
+// AUTOMATED MIDNIGHT SCHEDULE & HEALTH CHECK DISABLED:
+// 12:00 AM (00:00) timer triggers, cron schedules, and scheduled health checks/token refreshes have been removed.
+// Token verifications and user sessions run on-demand when staff actively open or interact with the app.
+/*
 function hasPassedMidnight(savedTimestampStr){
   if(!savedTimestampStr) return true;
   const savedTime = parseInt(savedTimestampStr, 10);
@@ -5960,6 +5964,7 @@ function hasPassedMidnight(savedTimestampStr){
 
   return nowMidnight > savedMidnight || (nowDate.getTime() - savedTime >= 24 * 60 * 60 * 1000);
 }
+*/
 
 async function verifyToken(token){
   if(!token) return false;
@@ -6052,7 +6057,7 @@ function initGoogleAuth(){
     }
   });
 
-  if(pendingSilentReauth || (!accessToken && localStorage.getItem('padi_app_user'))){
+  if(pendingSilentReauth){
     pendingSilentReauth = false;
     handleAuthExpired();
   }
@@ -6173,38 +6178,23 @@ window.addEventListener('load', async () => {
       accessToken = savedToken;
       showGateError("Menyambung semula sesi...", true);
       
-      let tokenValid = true;
-      if(hasPassedMidnight(savedTokenTimestamp)){
-        console.warn('Midnight boundary (12:00 AM) passed since last valid token assignment. Triggering silent token verification check...');
-        tokenValid = await verifyToken(savedToken);
-      }
-
-      if(tokenValid){
-        try { localStorage.setItem('padi_app_token_timestamp', Date.now().toString()); } catch(e){}
-        loadAllowlistFromSheet().then(() => {
-          if(currentUser && currentUser.email){
-            attemptSignIn(currentUser.email, currentUser.name);
-          } else {
-            showGateError("");
-          }
-        }).catch(err => {
-          console.error('Session restore failed:', err);
-          if(err.message === 'UNAUTHORIZED'){
-            return;
-          }
-          if(currentUser && currentUser.email){
-            attemptSignIn(currentUser.email, currentUser.name);
-          }
-        });
-      } else {
-        console.warn('Token verification failed across midnight boundary. Programmatically clearing expired token and requesting silent re-authentication...');
-        accessToken = null;
-        try {
-          localStorage.removeItem('padi_app_token');
-          localStorage.removeItem('padi_app_token_timestamp');
-        } catch(e) {}
-        handleAuthExpired();
-      }
+      // User sessions and token verifications run on-demand upon active user load/interaction,
+      // without an automated midnight (12:00 AM) schedule or background health check trigger.
+      loadAllowlistFromSheet().then(() => {
+        if(currentUser && currentUser.email){
+          attemptSignIn(currentUser.email, currentUser.name);
+        } else {
+          showGateError("");
+        }
+      }).catch(err => {
+        console.error('Session restore failed:', err);
+        if(err.message === 'UNAUTHORIZED'){
+          return;
+        }
+        if(currentUser && currentUser.email){
+          attemptSignIn(currentUser.email, currentUser.name);
+        }
+      });
     }
   } catch(e) {
     console.error('Error reading/parsing saved session:', e);
