@@ -3,7 +3,7 @@
 // nama cache berversi memastikan cache lama dibuang bersih semasa activate.
 // Data Google API (Calendar/Sheets) TIDAK dicache — sentiasa live dari network.
 
-const APP_VERSION = '1.0.2';
+const APP_VERSION = '1.0.3';
 const CACHE_NAME = 'padiapp-v' + APP_VERSION;
 const APP_SHELL = [
   './',
@@ -17,9 +17,11 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
+  // no-store: pastikan shell yang dicache adalah versi terkini dari network,
+  // bukan salinan basi dari HTTP cache pelayar/CDN.
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then((cache) => cache.addAll(APP_SHELL.map((u) => new Request(u, { cache: 'no-store' }))))
       .then(() => self.skipWaiting())
   );
 });
