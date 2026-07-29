@@ -1907,6 +1907,22 @@
     width:1px;
     background:var(--sage-line);
   }
+  .update-banner{
+    position:fixed;top:0;left:0;right:0;z-index:10000;
+    display:none;align-items:center;justify-content:center;gap:10px;
+    background:#1B3A6B;color:#fff;font-size:12.5px;line-height:1.3;
+    padding:7px 34px 7px 12px;box-shadow:0 2px 8px rgba(0,0,0,.25);
+  }
+  .update-banner.show{display:flex;}
+  .update-banner .ub-reload{
+    background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.45);
+    border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  .update-banner .ub-reload:hover{background:rgba(255,255,255,.25);}
+  .update-banner .ub-close{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    background:none;border:none;color:rgba(255,255,255,.75);font-size:16px;cursor:pointer;padding:2px 6px;
+  }
   .gate{
     min-height:100vh;
     display:flex;
@@ -2030,6 +2046,11 @@
 </style>
 </head>
 <body>
+<div class="update-banner" id="updateBanner">
+  <span>PadiApp telah dikemaskini. Muat semula untuk versi terbaru.</span>
+  <button type="button" class="ub-reload" onclick="window.location.reload()">Muat Semula</button>
+  <button type="button" class="ub-close" onclick="dismissUpdateBanner()" aria-label="Tutup">&times;</button>
+</div>
 <div class="gate" id="gateScreen">
   <div class="gate-card">
     <p class="eyebrow">Lembaga Padi dan Beras Sabah</p>
@@ -2818,6 +2839,8 @@
 // ============================================================
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
+// Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
+const APP_VERSION = "1.0.0";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -2943,7 +2966,7 @@ async function loadAllowlistFromSheet(){
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${ALLOWLIST_SHEET_ID}/values/${encodeURIComponent(ALLOWLIST_SHEET_RANGE)}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(res.status === 401){
       handleAuthExpired();
       throw new Error('UNAUTHORIZED');
@@ -3028,7 +3051,7 @@ async function loadKehadiranFromSheet(){
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(res.status === 401){
       handleAuthExpired();
       throw new Error('UNAUTHORIZED');
@@ -3157,7 +3180,7 @@ async function saveEditKehadiranRow(rowIndex){
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A'+rowIndex+':F'+rowIndex)}?valueInputOption=USER_ENTERED`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [[tarikh, nama, masuk, keluar, status, remark]] })
@@ -3209,7 +3232,7 @@ async function saveKehadiranRecord(){
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [[tarikh, nama, masuk, keluar, status, remark]] })
@@ -3286,7 +3309,7 @@ async function bulkAddAllStaff(){
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: rowsToAdd })
@@ -3315,7 +3338,7 @@ async function deleteKehadiranRow(rowIndex){
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     // Clear the row's values (keeps row structure stable) via a batch update.
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A'+rowIndex+':F'+rowIndex)}:clear`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}` }
     });
@@ -3340,7 +3363,7 @@ async function deleteAllKehadiranRecords(){
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}:clear`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}` }
     });
@@ -3655,7 +3678,7 @@ async function selfDaftarMasuk(){
       return;
     }
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [[tarikh, nama, nowHHMM(), '', 'Hadir', reasonVal]] })
@@ -3708,7 +3731,7 @@ async function selfSubmitStatus(){
       return;
     }
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [[tarikh, nama, '', '', khSelfStatus, remark]] })
@@ -3765,7 +3788,7 @@ async function selfDaftarKeluar(){
       return;
     }
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!D' + rec.rowIndex)}?valueInputOption=USER_ENTERED`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [[nowHHMM()]] })
@@ -4241,7 +4264,7 @@ async function loadTaskFromSheet(){
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent(TASK_SHEET_RANGE)}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(res.status === 401){
       handleAuthExpired();
       throw new Error('UNAUTHORIZED');
@@ -4346,7 +4369,7 @@ async function cycleTaskStatus(rowIndex){
 
   try{
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent('Tugasan!E' + rowIndex)}?valueInputOption=USER_ENTERED`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [[nextStatus]] })
@@ -4378,7 +4401,7 @@ function deleteTaskPrompt(rowIndex){
   const onExpire = async () => {
     try{
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent('Tugasan!A' + rowIndex + ':G' + rowIndex)}:clear`;
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` }
       });
@@ -4601,7 +4624,7 @@ async function saveNewTask(){
 
   try{
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent('Tugasan!A:G')}:append?valueInputOption=USER_ENTERED`;
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [[tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir, tagStaf]] })
@@ -4643,7 +4666,7 @@ async function loadNotifReadFromSheet(){
   try{
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${NOTIF_READ_SHEET_ID}/values/${encodeURIComponent(NOTIF_READ_SHEET_RANGE)}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(res.status === 401){
       handleAuthExpired();
       throw new Error('UNAUTHORIZED');
@@ -4743,7 +4766,7 @@ async function markTaskAsRead(rowIndex){
   try{
     if(currentUserReadRowIndex){
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${NOTIF_READ_SHEET_ID}/values/${encodeURIComponent('Dibaca!B' + currentUserReadRowIndex)}?valueInputOption=USER_ENTERED`;
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ values: [[idsList]] })
@@ -4751,7 +4774,7 @@ async function markTaskAsRead(rowIndex){
       if(!res.ok) throw new Error('status ' + res.status);
     } else {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${NOTIF_READ_SHEET_ID}/values/${encodeURIComponent('Dibaca!A:B')}:append?valueInputOption=USER_ENTERED`;
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ values: [[currentUser.email, idsList]] })
@@ -4927,7 +4950,7 @@ async function loadEventsFromGoogleCalendar(){
       });
       if(pageToken) params.set('pageToken', pageToken);
 
-      const res = await fetch(
+      const res = await apiFetch(
         `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events?${params.toString()}`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
@@ -5947,6 +5970,90 @@ let tokenClient = null;
 let isRefreshingToken = false;
 let pendingSilentReauth = false;
 
+// --- Silent token refresh (Google access token luput ~1 jam) ---
+const TOKEN_REFRESH_INTERVAL_MS = 45 * 60 * 1000; // refresh sebelum token luput
+const MAX_IDLE_MS = 8 * 60 * 60 * 1000;           // 8 jam tidak aktif -> log masuk semula
+let tokenIssuedAt = 0;
+let lastActivityAt = Date.now();
+let silentRefreshPromise = null;
+let silentRefreshResolve = null;
+let silentRefreshTimer = null;
+
+['pointerdown','keydown','touchstart'].forEach(ev => {
+  document.addEventListener(ev, () => { lastActivityAt = Date.now(); }, { passive: true });
+});
+
+function finishSilentRefresh(ok){
+  if(silentRefreshTimer){ clearTimeout(silentRefreshTimer); silentRefreshTimer = null; }
+  const resolve = silentRefreshResolve;
+  silentRefreshResolve = null;
+  silentRefreshPromise = null;
+  if(resolve) resolve(ok);
+}
+
+// Minta token baharu secara senyap (prompt: '') — tiada popup selagi pengguna
+// masih log masuk ke Google dalam pelayar. Resolve true/false, tidak throw.
+function requestSilentToken(){
+  if(!tokenClient){
+    pendingSilentReauth = true;
+    return Promise.resolve(false);
+  }
+  if(silentRefreshPromise) return silentRefreshPromise;
+  silentRefreshPromise = new Promise((resolve) => {
+    silentRefreshResolve = resolve;
+    silentRefreshTimer = setTimeout(() => finishSilentRefresh(false), 15000);
+    try {
+      tokenClient.requestAccessToken({ prompt: '' });
+    } catch(err) {
+      console.error('Silent token request failed:', err);
+      finishSilentRefresh(false);
+    }
+  });
+  return silentRefreshPromise;
+}
+
+function forceReLogin(msg){
+  accessToken = null;
+  try {
+    localStorage.removeItem('padi_app_token');
+    localStorage.removeItem('padi_app_token_timestamp');
+  } catch(e) {}
+  document.getElementById('gateScreen').style.display = '';
+  document.getElementById('mainApp').style.display = 'none';
+  showGateError(msg || 'Sesi telah tamat. Sila log masuk semula.');
+}
+
+// Wrapper untuk SEMUA panggilan Google API (Calendar/Sheets/Drive):
+// suntik token semasa, dan jika 401 — cuba refresh senyap sekali lalu ulang.
+async function apiFetch(url, opts = {}){
+  const doFetch = () => {
+    const headers = Object.assign({}, opts.headers || {}, { Authorization: `Bearer ${accessToken}` });
+    return fetch(url, Object.assign({}, opts, { headers }));
+  };
+  let res = await doFetch();
+  if(res.status === 401){
+    const refreshed = await requestSilentToken();
+    if(refreshed){
+      res = await doFetch();
+    } else if(currentUser){
+      forceReLogin('Sesi Google telah tamat. Sila log masuk semula.');
+    }
+  }
+  return res;
+}
+
+// Refresh berkala setiap 45 minit supaya token tidak sempat luput semasa sesi aktif.
+setInterval(() => {
+  if(!accessToken || !currentUser) return;
+  if(Date.now() - lastActivityAt > MAX_IDLE_MS){
+    forceReLogin('Sesi tamat selepas 8 jam tidak aktif. Sila log masuk semula.');
+    return;
+  }
+  requestSilentToken().then(ok => {
+    if(!ok) forceReLogin('Sesi Google telah tamat. Sila log masuk semula.');
+  });
+}, TOKEN_REFRESH_INTERVAL_MS);
+
 // AUTOMATED MIDNIGHT SCHEDULE & HEALTH CHECK DISABLED:
 // 12:00 AM (00:00) timer triggers, cron schedules, and scheduled health checks/token refreshes have been removed.
 // Token verifications and user sessions run on-demand when staff actively open or interact with the app.
@@ -5981,26 +6088,12 @@ async function verifyToken(token){
 }
 
 function handleAuthExpired(){
-  if(isRefreshingToken) return;
-  isRefreshingToken = true;
-  console.warn('Access token expired or unauthorized (401). Programmatically clearing expired token & triggering silent OAuth re-authentication...');
-  
-  accessToken = null;
-  try {
-    localStorage.removeItem('padi_app_token');
-    localStorage.removeItem('padi_app_token_timestamp');
-  } catch(e) {}
-
-  if(tokenClient){
-    try {
-      tokenClient.requestAccessToken({ prompt: '' });
-    } catch(err) {
-      console.error('Failed to request silent access token:', err);
-      isRefreshingToken = false;
+  console.warn('Access token expired or unauthorized (401). Attempting silent OAuth re-authentication...');
+  requestSilentToken().then(ok => {
+    if(!ok && currentUser){
+      forceReLogin('Sesi Google telah tamat. Sila log masuk semula.');
     }
-  } else {
-    pendingSilentReauth = true;
-  }
+  });
 }
 
 function requestAttendanceAuth(){
@@ -6039,20 +6132,26 @@ function initGoogleAuth(){
       pendingSilentReauth = false;
       if(tokenResponse.error){
         console.warn("Silent re-authentication returned error:", tokenResponse.error);
+        if(silentRefreshResolve){ finishSilentRefresh(false); return; }
         showGateError("Sesi Google memerlukan pengesahan semula.");
         return;
       }
       accessToken = tokenResponse.access_token;
+      tokenIssuedAt = Date.now();
       try {
         localStorage.setItem('padi_app_token', accessToken);
         localStorage.setItem('padi_app_token_timestamp', Date.now().toString());
       } catch(e) {}
+      // Refresh senyap pertengahan sesi: kemas kini token sahaja, jangan
+      // ulang aliran log masuk penuh (allowlist/switch view) — tiada gangguan UI.
+      if(silentRefreshResolve){ finishSilentRefresh(true); return; }
       fetchUserInfoAndProceed();
     },
     error_callback: (err) => {
       isRefreshingToken = false;
       pendingSilentReauth = false;
       console.warn("Google Auth error:", err);
+      if(silentRefreshResolve){ finishSilentRefresh(false); return; }
       showGateError("Log masuk dibatalkan atau gagal.");
     }
   });
@@ -6208,10 +6307,15 @@ window.addEventListener('load', async () => {
     }
   }, 100);
 
-  // Register service worker for PWA installability (Add to Home Screen).
+  // Register service worker (PWA installability + app-shell cache & update banner).
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(err => {
       console.error('Service worker registration failed:', err);
+    });
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if(e.data && e.data.type === 'UPDATE_AVAILABLE'){
+        showUpdateBanner();
+      }
     });
   }
 });
@@ -6224,6 +6328,16 @@ document.getElementById('gateSigninBtn').addEventListener('click', () => {
   showGateError("");
   tokenClient.requestAccessToken();
 });
+
+// Update banner — dipaparkan apabila service worker mengesan versi baharu.
+function showUpdateBanner(){
+  const el = document.getElementById('updateBanner');
+  if(el) el.classList.add('show');
+}
+function dismissUpdateBanner(){
+  const el = document.getElementById('updateBanner');
+  if(el) el.classList.remove('show');
+}
 
 // FAQ Modal Handlers
 const faqModalOverlay = document.getElementById('faqModalOverlay');
@@ -6388,7 +6502,7 @@ async function saveNewEventToGoogleCalendar(){
   saveBtn.textContent = 'Menyimpan...';
   try{
     const params = new URLSearchParams({ supportsAttachments: 'true' });
-    const res = await fetch(
+    const res = await apiFetch(
       `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events?${params.toString()}`,
       {
         method: 'POST',
@@ -6597,7 +6711,7 @@ async function saveEditedEvent(uid){
   if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan...'; }
 
   try{
-    const res = await fetch(
+    const res = await apiFetch(
       `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events/${encodeURIComponent(e.id)}`,
       {
         method: 'PATCH',
@@ -6688,7 +6802,7 @@ async function deleteEventPrompt(eventId, uid){
 
   const onExpire = async () => {
     try{
-      const res = await fetch(
+      const res = await apiFetch(
         `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events/${encodeURIComponent(eventId)}`,
         { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } }
       );
@@ -6803,7 +6917,7 @@ async function resolveDriveFolder(code) {
   if (!rootFolderId) {
     const q = `mimeType='application/vnd.google-apps.folder' and name='Sistem Fail LPBS' and trashed=false`;
     const listUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`;
-    const listRes = await fetch(listUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const listRes = await apiFetch(listUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!listRes.ok) throw new Error("Gagal mencari folder induk LPBS.");
     const listData = await listRes.json();
     
@@ -6811,7 +6925,7 @@ async function resolveDriveFolder(code) {
       rootFolderId = listData.files[0].id;
     } else {
       const createUrl = `https://www.googleapis.com/drive/v3/files`;
-      const createRes = await fetch(createUrl, {
+      const createRes = await apiFetch(createUrl, {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -6829,7 +6943,7 @@ async function resolveDriveFolder(code) {
   const subFolderName = `${code} ${folderMeta.name}`;
   const qSub = `mimeType='application/vnd.google-apps.folder' and name='${subFolderName}' and '${rootFolderId}' in parents and trashed=false`;
   const subListUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qSub)}&fields=files(id)`;
-  const subListRes = await fetch(subListUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+  const subListRes = await apiFetch(subListUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!subListRes.ok) throw new Error(`Gagal mencari folder sub ${subFolderName}.`);
   const subListData = await subListRes.json();
   
@@ -6838,7 +6952,7 @@ async function resolveDriveFolder(code) {
     subFolderId = subListData.files[0].id;
   } else {
     const subCreateUrl = `https://www.googleapis.com/drive/v3/files`;
-    const subCreateRes = await fetch(subCreateUrl, {
+    const subCreateRes = await apiFetch(subCreateUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -6905,7 +7019,7 @@ async function saveFileToRegistry(uid) {
     
     statusEl.innerHTML = `<span style="color:var(--paddy)">Menyalin fail ke Drive LPBS...</span>`;
     const copyUrl = `https://www.googleapis.com/drive/v3/files/${fileId}/copy?fields=id,name,webViewLink&supportsAllDrives=true`;
-    const copyRes = await fetch(copyUrl, {
+    const copyRes = await apiFetch(copyUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -6928,7 +7042,7 @@ async function saveFileToRegistry(uid) {
     statusEl.innerHTML = `<span style="color:var(--paddy)">Merekodkan log fail ke Sheet...</span>`;
     const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/${encodeURIComponent('SistemFail!A:F')}:append?valueInputOption=USER_ENTERED`;
     
-    const appendRes = await fetch(sheetUrl, {
+    const appendRes = await apiFetch(sheetUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -6977,7 +7091,7 @@ async function setupFailSheetTab() {
   
   try {
     const addUrl = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}:batchUpdate`;
-    const addRes = await fetch(addUrl, {
+    const addRes = await apiFetch(addUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -6998,7 +7112,7 @@ async function setupFailSheetTab() {
     }
     
     const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/SistemFail!A1:F1?valueInputOption=USER_ENTERED`;
-    const headerRes = await fetch(headerUrl, {
+    const headerRes = await apiFetch(headerUrl, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -7028,7 +7142,7 @@ async function loadFailsFromSheet() {
   try {
     accessToken = localStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/SistemFail!A2:F1000`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (res.status === 401) {
       handleAuthExpired();
       throw new Error("UNAUTHORIZED");
@@ -7214,7 +7328,7 @@ async function saveNewFileFromModal() {
     bodyBytes.set(footerBytes, headerBytes.length + fileData.length);
 
     const uploadUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink';
-    const uploadRes = await fetch(uploadUrl, {
+    const uploadRes = await apiFetch(uploadUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -7235,7 +7349,7 @@ async function saveNewFileFromModal() {
     note.innerHTML = `<span style="color:var(--paddy)">Merekodkan fail ke Google Sheets...</span>`;
     const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/${encodeURIComponent('SistemFail!A:F')}:append?valueInputOption=USER_ENTERED`;
     
-    const appendRes = await fetch(sheetUrl, {
+    const appendRes = await apiFetch(sheetUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
