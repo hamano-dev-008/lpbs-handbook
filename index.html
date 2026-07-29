@@ -2840,7 +2840,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.0.1";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -6309,7 +6309,11 @@ window.addEventListener('load', async () => {
 
   // Register service worker (PWA installability + app-shell cache & update banner).
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').catch(err => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      // Semak sw.js baharu setiap minit supaya deploy pertengahan sesi
+      // dikesan tanpa menunggu navigasi seterusnya.
+      setInterval(() => reg.update().catch(()=>{}), 60 * 1000);
+    }).catch(err => {
       console.error('Service worker registration failed:', err);
     });
     navigator.serviceWorker.addEventListener('message', (e) => {
