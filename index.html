@@ -1991,6 +1991,13 @@
     margin:0 0 28px;
     line-height:1.5;
   }
+  .gate-privacy{
+    color:var(--sage);
+    font-size:11.5px;
+    margin:-16px 0 24px;
+    line-height:1.5;
+    text-align:center;
+  }
   .gate-signin-btn{
     display:inline-flex;
     align-items:center;
@@ -2089,6 +2096,7 @@
     </video>
     <h1 class="gate-title">PadiApp</h1>
     <p class="gate-sub">Akses terhad kepada staf LPBS yang dibenarkan sahaja.</p>
+    <p class="gate-privacy">PadiApp mengumpul nama, alamat e-mel, masa kehadiran, dan lokasi GPS untuk tujuan pengurusan dalaman LPBS sahaja. Data tidak dikongsi dengan pihak ketiga.</p>
     <button class="gate-signin-btn" id="gateSigninBtn"><i class="g-icon">G</i> Log masuk dengan Google</button>
     <p class="gate-note" id="gateNote"></p>
   </div>
@@ -2888,7 +2896,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.6";
+const APP_VERSION = "1.0.7";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
