@@ -2259,6 +2259,7 @@
           <button type="button" class="kh-pill" data-status="MC">MC</button>
           <button type="button" class="kh-pill" data-status="Cuti">Cuti</button>
           <button type="button" class="kh-pill" data-status="Outstation">Outstation</button>
+          <button type="button" class="kh-pill" data-status="Kursus">Kursus</button>
         </div>
         <div class="kh-self-remark" id="khSelfRemarkWrap" style="display:none;">
           <input type="text" id="kh-self-remark" placeholder="Add a note (optional)">
@@ -2303,6 +2304,7 @@
               <option value="MC">MC</option>
               <option value="Cuti">Cuti</option>
               <option value="Outstation">Outstation</option>
+              <option value="Kursus">Kursus</option>
             </select>
           </div>
           <div>
@@ -2886,7 +2888,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.5";
+const APP_VERSION = "1.0.6";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -2894,7 +2896,7 @@ const ALLOWLIST_SHEET_RANGE = "Senarai!A2:D1000";
 // TODO: ganti dengan ID Sheet "LPBS Kehadiran Staf" sebenar selepas dicipta.
 const KEHADIRAN_SHEET_ID = "1lGD1XnlEuOGHHnfrUnaqaMPbYMgfnBvkFTXRsNYNkmg";
 const KEHADIRAN_SHEET_RANGE = "Kehadiran!A2:F1000";
-const KEHADIRAN_STATUS_OPTIONS = ['Hadir', 'MC', 'Cuti', 'Outstation'];
+const KEHADIRAN_STATUS_OPTIONS = ['Hadir', 'MC', 'Cuti', 'Outstation', 'Kursus'];
 const TASK_SHEET_ID = "1o7S2umTuo9Njjt8AAqsK5F9cXafmkz_NzKlE7UQKjo4";
 const TASK_SHEET_RANGE = "Tugasan!A2:G1000";
 const NOTIF_READ_SHEET_ID = "1hKBAZXg-ueqWgHDOLGRfP3EkulRcmbLzq6FvMpOhKTA";
@@ -3448,8 +3450,8 @@ let KH_MASUK_START_HOUR = 6, KH_MASUK_START_MINUTE = 30;
 let KH_KELUAR_START_HOUR = 16, KH_KELUAR_START_MINUTE = 30;
 let KH_KELUAR_END_HOUR = 21, KH_KELUAR_END_MINUTE = 0;
 
-// Status daftar sendiri yang dipilih (Hadir | MC | Cuti | Outstation).
-// MC/Cuti/Outstation tidak tertakluk kepada semakan lokasi atau had waktu.
+// Status daftar sendiri yang dipilih (Hadir | MC | Cuti | Outstation | Kursus).
+// MC/Cuti/Outstation/Kursus tidak tertakluk kepada semakan lokasi atau had waktu.
 let khSelfStatus = 'Hadir';
 let khSelfPickerOpen = false; // pemilih status tersembunyi secara lalai; "Not coming in today?" mendedahkannya
 
