@@ -547,6 +547,35 @@
   }
   .lagi-row-icon svg{width:20px; height:20px;}
   .lagi-row-label{font-size:14.5px; font-weight:600;}
+  .pautan-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:10px;
+    text-decoration:none;
+    color:var(--ink);
+    transition:box-shadow .15s, border-color .15s;
+  }
+  .pautan-card:hover{box-shadow:0 2px 14px rgba(31,58,46,0.08); border-color:var(--sage-line);}
+  .pautan-card-icon{
+    flex:none;
+    width:36px;
+    height:36px;
+    border-radius:10px;
+    background:var(--bg);
+    color:var(--paddy);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .pautan-card-icon svg{width:20px; height:20px;}
+  .pautan-card-text{display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .pautan-card-nama{font-size:14.5px; font-weight:700; color:var(--ink);}
+  .pautan-card-url{font-size:12px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .task-status-toggle{
     margin-bottom:16px;
     overflow-x:auto;
@@ -2418,6 +2447,19 @@
   </section>
   </div>
 
+  <div id="sectionPautan" style="display:none;">
+  <section class="analytics no-border-top">
+    <div class="print-head">
+      <p class="eyebrow">PAUTAN BERGUNA</p>
+      <h2 class="ana-title">Pautan Berguna</h2>
+    </div>
+
+    <div id="pautanListWrap">
+      <div class="empty-state"><div class="big">Memuatkan pautan...</div></div>
+    </div>
+  </section>
+  </div>
+
   <footer>Data disegerakkan terus daripada Kalendar Rasmi LPBS &middot; Google Calendar<br>PadiApp &middot; Dibangunkan oleh neiljeremiah</footer>
   </div>
 
@@ -2457,6 +2499,10 @@
     <button class="lagi-row" id="lagiRowFail" onclick="openLagiSection('fail')" style="display:none;">
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7v10a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3H9.828a2 2 0 0 1-1.414-.586l-1.586-1.586A2 2 0 0 0 5.414 3H5a2 2 0 0 0-2 2z"/><path d="M8 12h8m-8 3h5"/></svg></span>
       <span class="lagi-row-label">Sistem Fail</span>
+    </button>
+    <button class="lagi-row" id="lagiRowPautan" onclick="openLagiSection('pautan')" style="display:none;">
+      <span class="lagi-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M14.828 9.172a4 4 0 0 1 0 5.656l-3 3a4 4 0 0 1-5.656-5.656l1.5-1.5"/><path d="M9.172 14.828a4 4 0 0 1 0-5.656l3-3a4 4 0 0 1 5.656 5.656l-1.5 1.5"/></svg></span>
+      <span class="lagi-row-label">Pautan Berguna</span>
     </button>
     <button class="lagi-row" id="lagiRowFaq" onclick="closeLagiMenu(); openFaqModal();">
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
@@ -2840,7 +2886,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.3";
+const APP_VERSION = "1.0.4";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -2855,6 +2901,8 @@ const NOTIF_READ_SHEET_ID = "1hKBAZXg-ueqWgHDOLGRfP3EkulRcmbLzq6FvMpOhKTA";
 const NOTIF_READ_SHEET_RANGE = "Dibaca!A2:B1000";
 const FAIL_SHEET_ID = "1o7S2umTuo9Njjt8AAqsK5F9cXafmkz_NzKlE7UQKjo4";
 const FAIL_SHEET_RANGE = "SistemFail!A2:F1000";
+const PAUTAN_SHEET_ID = "1hut5np1Vi34NEkRTNzrIm-IWH8QJtxAIdGDSqO2emXs";
+const PAUTAN_SHEET_RANGE = "Pautan!A2:B1000";
 
 const LPBS_CLASSIFICATION_FOLDERS = {
   "100": { code: "100", name: "Pentadbiran", folderId: "placeholder-100" },
@@ -3395,8 +3443,9 @@ function isPastSelfCheckinCutoff(){
 }
 
 // Had waktu daftar sendiri (terpakai kepada semua pengguna kad, termasuk editor dalam Mod Peribadi):
-// Daftar Masuk hanya dari 7:00 pagi; Daftar Keluar hanya sehingga 9:00 malam.
-let KH_MASUK_START_HOUR = 7, KH_MASUK_START_MINUTE = 0;
+// Daftar Masuk hanya dari 6:30 pagi; Daftar Keluar hanya dari 4:30 petang hingga 9:00 malam.
+let KH_MASUK_START_HOUR = 6, KH_MASUK_START_MINUTE = 30;
+let KH_KELUAR_START_HOUR = 16, KH_KELUAR_START_MINUTE = 30;
 let KH_KELUAR_END_HOUR = 21, KH_KELUAR_END_MINUTE = 0;
 
 // Status daftar sendiri yang dipilih (Hadir | MC | Cuti | Outstation).
@@ -3419,6 +3468,11 @@ function toggleSelfStatusPicker(){
 function isBeforeSelfMasukStart(){
   const now = new Date();
   return now.getHours() * 60 + now.getMinutes() < KH_MASUK_START_HOUR * 60 + KH_MASUK_START_MINUTE;
+}
+
+function isBeforeSelfKeluarStart(){
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes() < KH_KELUAR_START_HOUR * 60 + KH_KELUAR_START_MINUTE;
 }
 
 function isPastSelfKeluarEnd(){
@@ -3513,7 +3567,9 @@ function applySelfCheckinLock(){
   const checking = clockPhase && khLocationState === 'pending';
   let timeMsg = '';
   if(masukPhase && isBeforeSelfMasukStart()){
-    timeMsg = 'Clock in is available from 7:00 AM.';
+    timeMsg = 'Clock in is available from 6:30 AM.';
+  } else if(keluarPhase && isBeforeSelfKeluarStart()){
+    timeMsg = 'Clock out is available from 4:30 PM.';
   } else if(keluarPhase && isPastSelfKeluarEnd()){
     timeMsg = 'Clock out is no longer available. Please contact your admin.';
   }
@@ -5191,18 +5247,66 @@ function toggleEvent(uid){
   if(el) el.classList.toggle('open');
 }
 
-let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'kehadiran' | 'minit' | 'task' | 'fail'
+let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'kehadiran' | 'minit' | 'task' | 'fail' | 'pautan'
+
+// ============================================================
+// PAUTAN — Pautan Berguna (Sheet-backed links list)
+// ============================================================
+async function loadPautanFromSheet(){
+  const wrap = document.getElementById('pautanListWrap');
+  wrap.innerHTML = `<div class="empty-state"><div class="big">Memuatkan pautan...</div></div>`;
+  try{
+    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${PAUTAN_SHEET_ID}/values/${encodeURIComponent(PAUTAN_SHEET_RANGE)}`;
+    const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if(res.status === 401){
+      handleAuthExpired();
+      throw new Error('UNAUTHORIZED');
+    }
+    if(!res.ok) throw new Error('status ' + res.status);
+    const data = await res.json();
+    const rows = data.values || [];
+
+    const links = rows.map(row => {
+      const [namaPautan, url] = row;
+      if(!namaPautan || !url) return null;
+      return { namaPautan, url };
+    }).filter(Boolean);
+
+    renderPautanList(links);
+  }catch(e){
+    console.error('loadPautanFromSheet failed:', e);
+    wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan pautan</div>Sila cuba semula.<br><button type="button" class="save-btn" style="margin-top:14px; padding:8px 20px; font-size:13px;" onclick="loadPautanFromSheet()">Cuba Semula</button></div>`;
+  }
+}
+
+function renderPautanList(links){
+  const wrap = document.getElementById('pautanListWrap');
+  if(links.length === 0){
+    wrap.innerHTML = `<div class="empty-state"><div class="big">Tiada pautan tersedia.</div></div>`;
+    return;
+  }
+  wrap.innerHTML = links.map(l => `
+    <a class="pautan-card" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">
+      <span class="pautan-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M14.828 9.172a4 4 0 0 1 0 5.656l-3 3a4 4 0 0 1-5.656-5.656l1.5-1.5"/><path d="M9.172 14.828a4 4 0 0 1 0-5.656l3-3a4 4 0 0 1 5.656 5.656l-1.5 1.5"/></svg></span>
+      <span class="pautan-card-text">
+        <span class="pautan-card-nama">${escapeHtml(l.namaPautan)}</span>
+        <span class="pautan-card-url">${escapeHtml(l.url)}</span>
+      </span>
+    </a>`).join('');
+}
 
 const SECTION_TITLES = {
   aktiviti: { title: 'Papar Aktiviti' },
   analitik: { title: 'Analitik' },
   task: { title: 'Tugasan' },
-  fail: { title: 'Sistem Fail' }
+  fail: { title: 'Sistem Fail' },
+  pautan: { title: 'Pautan Berguna' }
 };
 
 function switchSection(section){
   appSection = section;
-  ['Aktiviti','Analitik','Kehadiran','Minit','Task','Fail'].forEach(name=>{
+  ['Aktiviti','Analitik','Kehadiran','Minit','Task','Fail','Pautan'].forEach(name=>{
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
@@ -5211,7 +5315,7 @@ function switchSection(section){
     if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
   });
   const tabLagi = document.getElementById('tabLagi');
-  if(tabLagi) tabLagi.classList.toggle('active', section === 'analitik' || section === 'minit' || section === 'fail');
+  if(tabLagi) tabLagi.classList.toggle('active', section === 'analitik' || section === 'minit' || section === 'fail' || section === 'pautan');
 
   const titles = SECTION_TITLES[section] || SECTION_TITLES.aktiviti;
 
@@ -5242,6 +5346,8 @@ function switchSection(section){
     loadTaskFromSheet();
   } else if(section === 'fail'){
     loadFailsFromSheet();
+  } else if(section === 'pautan'){
+    loadPautanFromSheet();
   }
 
   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -5645,6 +5751,7 @@ function syncSignInButtons(){
   applyKehadiranMode();
   document.getElementById('lagiRowAnalitik').style.display = '';  // Analitik visible to all signed-in users
   document.getElementById('lagiRowFail').style.display = '';      // Sistem Fail visible to all signed-in users
+  document.getElementById('lagiRowPautan').style.display = '';    // Pautan Berguna visible to all signed-in users
 
   const canEditMinit = isAllowedMinitEditor(currentUser.email);
   document.getElementById('lagiRowMinit').style.display = canEditMinit ? '' : 'none';
