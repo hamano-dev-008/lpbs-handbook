@@ -1039,6 +1039,7 @@
     display:flex;
     align-items:baseline;
     gap:10px;
+    width:100%;
   }
   .kh-date-group-main{
     font-family:'Space Grotesk',sans-serif;
@@ -2977,7 +2978,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.15";
+const APP_VERSION = "1.0.16";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -4292,22 +4293,23 @@ function generateKehadiranPDF(tarikh, recordsToPrint){
     const todayStr = new Date().toLocaleDateString('en-GB');
     doc.text(`Tarikh: ${fmtTarikhMalay(tarikh)} | Jumlah rekod: ${recordsToPrint.length} | Dicetak: ${todayStr}`, 40, 60);
 
-    const rows = recordsToPrint.map(r => [r.tarikh, r.nama, r.masuk, r.keluar, fmtHours(r.jam), r.status, r.remark]);
+    const rows = recordsToPrint.map((r, i) => [i + 1, r.tarikh, r.nama, r.masuk, r.keluar, fmtHours(r.jam), r.status, r.remark]);
 
     doc.autoTable({
       startY: 72,
-      head: [['Tarikh','Nama','Masa Masuk','Masa Keluar','Jumlah Jam','Status','Remark']],
+      head: [['Bil','Tarikh','Nama','Masa Masuk','Masa Keluar','Jumlah Jam','Status','Remark']],
       body: rows,
       styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 5 },
       headStyles: { fillColor: [31,58,46], textColor: [255,255,255], fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: 70 },
-        1: { cellWidth: 200 },
-        2: { cellWidth: 75 },
+        0: { cellWidth: 28, halign: 'center' },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 200 },
         3: { cellWidth: 75 },
-        4: { cellWidth: 85 },
-        5: { cellWidth: 75 },
-        6: { cellWidth: 'auto' }
+        4: { cellWidth: 75 },
+        5: { cellWidth: 85 },
+        6: { cellWidth: 75 },
+        7: { cellWidth: 'auto' }
       },
       theme: 'grid'
     });
