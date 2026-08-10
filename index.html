@@ -2352,6 +2352,24 @@
       <p class="print-note" id="khPrintNote"></p>
     </div>
 
+    <div class="modal-overlay" id="khPdfModalOverlay">
+      <div class="modal" style="max-width:380px;">
+        <div class="modal-head">
+          <h3>Pilih Tarikh untuk PDF</h3>
+          <button class="modal-close" id="khPdfModalClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <label class="field-label">Tarikh</label>
+          <input type="date" id="khPdfDate">
+          <p class="kh-note" id="khPdfModalNote"></p>
+        </div>
+        <div class="modal-foot">
+          <button class="cancel-btn" id="khPdfModalCancel">Batal</button>
+          <button class="save-btn" id="khPdfModalConfirm">Jana PDF</button>
+        </div>
+      </div>
+    </div>
+
   </section>
   </div>
 
@@ -2901,7 +2919,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.10";
+const APP_VERSION = "1.0.11";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -4086,18 +4104,43 @@ function applyKehadiranMode(){
   if(showSelf && appSection === 'kehadiran') verifySelfCheckinLocation();
 }
 
-function generateKehadiranPDF(){
+function openKhPdfModal(){
+  const dateInput = document.getElementById('khPdfDate');
+  if(!dateInput.value) dateInput.value = fmtKey(new Date());
+  document.getElementById('khPdfModalNote').textContent = '';
+  document.getElementById('khPdfModalOverlay').classList.add('open');
+}
+
+function closeKhPdfModal(){
+  document.getElementById('khPdfModalOverlay').classList.remove('open');
+}
+
+function confirmKhPdfModal(){
+  const tarikh = document.getElementById('khPdfDate').value;
+  const modalNote = document.getElementById('khPdfModalNote');
+  if(!tarikh) return;
+
+  const excluded = new Set(Array.from(document.getElementById('khExcludeStaff').selectedOptions).map(o => o.value));
+  const recordsToPrint = kehadiranRecords.filter(r => r.tarikh === tarikh && !excluded.has(r.nama));
+
+  if(recordsToPrint.length === 0){
+    modalNote.textContent = 'Tiada rekod kehadiran pada tarikh ini.';
+    return;
+  }
+
+  closeKhPdfModal();
+  generateKehadiranPDF(tarikh, recordsToPrint);
+}
+
+function fmtTarikhMalay(tarikh){
+  const [y, m, d] = tarikh.split('-').map(Number);
+  return `${d} ${MONTH_NAMES[m - 1]} ${y}`;
+}
+
+function generateKehadiranPDF(tarikh, recordsToPrint){
   const note = document.getElementById('khPrintNote');
   const btn = document.getElementById('khPrintBtn');
   note.textContent = '';
-
-  const excluded = new Set(Array.from(document.getElementById('khExcludeStaff').selectedOptions).map(o => o.value));
-  const recordsToPrint = kehadiranRecords.filter(r => !excluded.has(r.nama));
-
-  if(recordsToPrint.length === 0){
-    note.textContent = 'Tiada rekod untuk dicetak.';
-    return;
-  }
 
   btn.disabled = true;
   btn.textContent = 'Menjana PDF...';
@@ -4116,7 +4159,7 @@ function generateKehadiranPDF(){
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     const todayStr = new Date().toLocaleDateString('en-GB');
-    doc.text(`Jumlah rekod: ${recordsToPrint.length} | Dicetak: ${todayStr}`, 40, 60);
+    doc.text(`Tarikh: ${fmtTarikhMalay(tarikh)} | Jumlah rekod: ${recordsToPrint.length} | Dicetak: ${todayStr}`, 40, 60);
 
     const rows = recordsToPrint.map(r => [r.tarikh, r.nama, r.masuk, r.keluar, fmtHours(r.jam), r.status, r.remark]);
 
@@ -4164,7 +4207,7 @@ function generateKehadiranPDF(){
     sy += 13;
     doc.text('Lembaga Padi dan Beras Sabah', marginPt, sy);
 
-    doc.save(`LPBS_Kehadiran_Staf_${fmtKey(new Date())}.pdf`);
+    doc.save(`LPBS_Kehadiran_${tarikh}.pdf`);
     note.textContent = `PDF berjaya dijana (${recordsToPrint.length} rekod).`;
   }catch(err){
     note.textContent = 'Ralat menjana PDF: ' + err.message;
@@ -4189,7 +4232,10 @@ document.getElementById('khBulkAddBtn').addEventListener('click', bulkAddAllStaf
 document.getElementById('khDeleteAllBtn').addEventListener('click', deleteAllKehadiranRecords);
 document.getElementById('khBulkEditBtn').addEventListener('click', toggleBulkEditPanel);
 document.getElementById('khBulkEditDate').addEventListener('change', changeBulkEditDate);
-document.getElementById('khPrintBtn').addEventListener('click', generateKehadiranPDF);
+document.getElementById('khPrintBtn').addEventListener('click', openKhPdfModal);
+document.getElementById('khPdfModalClose').addEventListener('click', closeKhPdfModal);
+document.getElementById('khPdfModalCancel').addEventListener('click', closeKhPdfModal);
+document.getElementById('khPdfModalConfirm').addEventListener('click', confirmKhPdfModal);
 
 document.querySelectorAll('#khSelfStatusPills .kh-pill').forEach(b =>
   b.addEventListener('click', () => setSelfCheckinStatus(b.dataset.status)));
