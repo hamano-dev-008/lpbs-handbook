@@ -2338,6 +2338,22 @@
         <h2 class="section-heading">Rekod Tersimpan</h2>
       </div>
 
+      <div class="kh-filter-bar" style="margin-bottom:16px;">
+        <div class="period-toggle" id="khDateFilterPreset">
+          <button class="period-btn" data-preset="today">Hari Ini</button>
+          <button class="period-btn" data-preset="7d">7 Hari</button>
+          <button class="period-btn active" data-preset="30d">30 Hari</button>
+          <button class="period-btn" data-preset="month">Bulan Ini</button>
+          <button class="period-btn" data-preset="all">Semua</button>
+        </div>
+        <div class="datebar" style="margin:12px 0 0;">
+          <span class="range-label">Dari</span>
+          <input type="date" id="khFilterFrom">
+          <span class="range-label">Hingga</span>
+          <input type="date" id="khFilterTo">
+        </div>
+      </div>
+
       <div class="kh-table-wrap" id="khTableWrap">
         <div class="empty-state"><div class="big">Memuatkan rekod...</div></div>
       </div>
@@ -2919,7 +2935,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.11";
+const APP_VERSION = "1.0.12";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3168,6 +3184,42 @@ async function loadKehadiranFromSheet(){
 let editingKehadiranRow = null;
 let bulkEditDate = null;
 let bulkEditDirtyRows = new Set();
+let khFilterFrom = '';
+let khFilterTo = '';
+
+function khPresetRange(preset){
+  const today = new Date();
+  if(preset === 'today') return { from: fmtKey(today), to: fmtKey(today) };
+  if(preset === '7d'){
+    const d = new Date(today); d.setDate(d.getDate() - 6);
+    return { from: fmtKey(d), to: fmtKey(today) };
+  }
+  if(preset === '30d'){
+    const d = new Date(today); d.setDate(d.getDate() - 29);
+    return { from: fmtKey(d), to: fmtKey(today) };
+  }
+  if(preset === 'month'){
+    return { from: fmtKey(new Date(today.getFullYear(), today.getMonth(), 1)), to: fmtKey(today) };
+  }
+  return { from: '', to: '' }; // 'all'
+}
+
+function applyKhDatePreset(preset){
+  const { from, to } = khPresetRange(preset);
+  khFilterFrom = from;
+  khFilterTo = to;
+  document.getElementById('khFilterFrom').value = from;
+  document.getElementById('khFilterTo').value = to;
+  document.querySelectorAll('#khDateFilterPreset .period-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === preset));
+  renderKehadiranTable();
+}
+
+function applyKhCustomRange(){
+  khFilterFrom = document.getElementById('khFilterFrom').value;
+  khFilterTo = document.getElementById('khFilterTo').value;
+  document.querySelectorAll('#khDateFilterPreset .period-btn').forEach(b => b.classList.remove('active'));
+  renderKehadiranTable();
+}
 
 function renderKehadiranTable(){
   if(bulkEditDate){
@@ -3183,7 +3235,17 @@ function renderKehadiranTable(){
     return;
   }
 
-  const rows = kehadiranRecords.map(r => {
+  const filteredRecords = kehadiranRecords.filter(r =>
+    (!khFilterFrom || r.tarikh >= khFilterFrom) && (!khFilterTo || r.tarikh <= khFilterTo)
+  );
+
+  if(filteredRecords.length === 0){
+    wrap.innerHTML = `<div class="empty-state"><div class="big">Tiada rekod dalam julat tarikh ini</div>Cuba pilih julat tarikh lain.</div>`;
+    populateKehadiranStaffFilter();
+    return;
+  }
+
+  const rows = filteredRecords.map(r => {
     if(canEdit && r.rowIndex === editingKehadiranRow){
       return `
         <tr onclick="event.stopPropagation()">
@@ -4236,6 +4298,13 @@ document.getElementById('khPrintBtn').addEventListener('click', openKhPdfModal);
 document.getElementById('khPdfModalClose').addEventListener('click', closeKhPdfModal);
 document.getElementById('khPdfModalCancel').addEventListener('click', closeKhPdfModal);
 document.getElementById('khPdfModalConfirm').addEventListener('click', confirmKhPdfModal);
+
+document.querySelectorAll('#khDateFilterPreset .period-btn').forEach(b =>
+  b.addEventListener('click', () => applyKhDatePreset(b.dataset.preset))
+);
+document.getElementById('khFilterFrom').addEventListener('change', applyKhCustomRange);
+document.getElementById('khFilterTo').addEventListener('change', applyKhCustomRange);
+applyKhDatePreset('30d');
 
 document.querySelectorAll('#khSelfStatusPills .kh-pill').forEach(b =>
   b.addEventListener('click', () => setSelfCheckinStatus(b.dataset.status)));
