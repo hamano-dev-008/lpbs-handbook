@@ -2901,7 +2901,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.9";
+const APP_VERSION = "1.0.10";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3291,6 +3291,15 @@ function changeBulkEditDate(){
   renderKehadiranTable();
 }
 
+function normalizeTime(t){
+  if(!t) return '';
+  // Sheets can return times like "7:01" or "7:01:00" without a leading zero;
+  // <input type="time"> silently rejects anything but strict "HH:MM".
+  const parts = t.trim().split(':');
+  if(parts.length < 2) return '';
+  return parts[0].padStart(2,'0') + ':' + parts[1].padStart(2,'0');
+}
+
 function renderBulkEditTable(){
   const wrap = document.getElementById('khTableWrap');
   const rows = kehadiranRecords.filter(r => r.tarikh === bulkEditDate);
@@ -3300,6 +3309,8 @@ function renderBulkEditTable(){
     wrap.innerHTML = `<div class="empty-state"><div class="big">Tiada rekod pada ${bulkEditDate}</div></div>`;
     return;
   }
+
+  rows.forEach(r => console.log('row data:', r.tarikh, r.nama, 'masuk:', r.masuk, 'keluar:', r.keluar));
 
   const trs = rows.map(r => `
     <tr>
@@ -3337,8 +3348,8 @@ function renderBulkEditTable(){
   // strings, but we set it explicitly here too since <select> options need the
   // DOM to exist before .value can select the matching <option>).
   rows.forEach(r => {
-    document.getElementById(`khBulk-masuk-${r.rowIndex}`).value = r.masuk;
-    document.getElementById(`khBulk-keluar-${r.rowIndex}`).value = r.keluar;
+    document.getElementById(`khBulk-masuk-${r.rowIndex}`).value = normalizeTime(r.masuk);
+    document.getElementById(`khBulk-keluar-${r.rowIndex}`).value = normalizeTime(r.keluar);
     document.getElementById(`khBulk-status-${r.rowIndex}`).value = r.status;
     document.getElementById(`khBulk-remark-${r.rowIndex}`).value = r.remark;
   });
