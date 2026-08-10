@@ -1028,6 +1028,14 @@
     white-space:nowrap;
   }
   .kh-table tr:last-child td{border-bottom:none;}
+  .kh-date-group-row td{
+    background:var(--bg-main);
+    color:var(--paddy);
+    font-weight:600;
+    font-size:12px;
+    padding:8px 10px;
+    white-space:nowrap;
+  }
   .kh-table .kh-hours-cell{
     font-family:'Space Grotesk',sans-serif;
     font-weight:500;
@@ -2935,7 +2943,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.13";
+const APP_VERSION = "1.0.14";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3246,9 +3254,26 @@ function renderKehadiranTable(){
     return;
   }
 
+  const khGroupColspan = canEdit ? 8 : 7;
+  const khDateCounts = {};
+  filteredRecords.forEach(r => { khDateCounts[r.tarikh] = (khDateCounts[r.tarikh] || 0) + 1; });
+  let khLastGroupDate = null;
+
   const rows = filteredRecords.map(r => {
+    let groupHeader = '';
+    if(r.tarikh !== khLastGroupDate){
+      khLastGroupDate = r.tarikh;
+      const [gy, gm, gd] = r.tarikh.split('-').map(Number);
+      const dayName = DAY_NAMES[new Date(gy, gm - 1, gd).getDay()];
+      groupHeader = `
+        <tr class="kh-date-group-row">
+          <td colspan="${khGroupColspan}">${gd} ${MONTH_NAMES[gm - 1]} ${gy} &middot; ${dayName} (${khDateCounts[r.tarikh]} rekod)</td>
+        </tr>
+      `;
+    }
+
     if(canEdit && r.rowIndex === editingKehadiranRow){
-      return `
+      return groupHeader + `
         <tr onclick="event.stopPropagation()">
           <td><input type="date" value="${r.tarikh}" id="khEdit-tarikh-${r.rowIndex}"></td>
           <td><input type="text" value="${r.nama}" id="khEdit-nama-${r.rowIndex}"></td>
@@ -3268,7 +3293,7 @@ function renderKehadiranTable(){
         </tr>
       `;
     }
-    return `
+    return groupHeader + `
     <tr>
       <td>${r.tarikh}</td>
       <td>${r.nama}</td>
