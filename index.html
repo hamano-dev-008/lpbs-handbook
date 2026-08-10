@@ -2901,7 +2901,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.8";
+const APP_VERSION = "1.0.9";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3149,6 +3149,7 @@ async function loadKehadiranFromSheet(){
 
 let editingKehadiranRow = null;
 let bulkEditDate = null;
+let bulkEditDirtyRows = new Set();
 
 function renderKehadiranTable(){
   if(bulkEditDate){
@@ -3271,6 +3272,7 @@ function toggleBulkEditPanel(){
   if(showing){
     panel.style.display = 'none';
     bulkEditDate = null;
+    bulkEditDirtyRows = new Set();
     editingKehadiranRow = null;
     renderKehadiranTable();
     return;
@@ -3292,6 +3294,7 @@ function changeBulkEditDate(){
 function renderBulkEditTable(){
   const wrap = document.getElementById('khTableWrap');
   const rows = kehadiranRecords.filter(r => r.tarikh === bulkEditDate);
+  bulkEditDirtyRows = new Set();
 
   if(rows.length === 0){
     wrap.innerHTML = `<div class="empty-state"><div class="big">Tiada rekod pada ${bulkEditDate}</div></div>`;
@@ -3301,15 +3304,15 @@ function renderBulkEditTable(){
   const trs = rows.map(r => `
     <tr>
       <td>${escapeHtml(r.nama)}</td>
-      <td><input type="time" value="${r.masuk}" id="khBulk-masuk-${r.rowIndex}" oninput="updateBulkEditHours(${r.rowIndex})"></td>
-      <td><input type="time" value="${r.keluar}" id="khBulk-keluar-${r.rowIndex}" oninput="updateBulkEditHours(${r.rowIndex})"></td>
+      <td><input type="time" id="khBulk-masuk-${r.rowIndex}" oninput="updateBulkEditHours(${r.rowIndex}); markBulkEditRowDirty(${r.rowIndex})"></td>
+      <td><input type="time" id="khBulk-keluar-${r.rowIndex}" oninput="updateBulkEditHours(${r.rowIndex}); markBulkEditRowDirty(${r.rowIndex})"></td>
       <td class="kh-hours-cell" id="khBulk-hours-${r.rowIndex}">${fmtHours(r.jam)}</td>
       <td>
-        <select id="khBulk-status-${r.rowIndex}">
+        <select id="khBulk-status-${r.rowIndex}" onchange="markBulkEditRowDirty(${r.rowIndex})">
           ${KEHADIRAN_STATUS_OPTIONS.map(s => `<option value="${s}" ${r.status === s ? 'selected' : ''}>${s}</option>`).join('')}
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(r.remark)}" id="khBulk-remark-${r.rowIndex}"></td>
+      <td><input type="text" id="khBulk-remark-${r.rowIndex}" oninput="markBulkEditRowDirty(${r.rowIndex})"></td>
     </tr>
   `).join('');
 
@@ -3329,8 +3332,23 @@ function renderBulkEditTable(){
     <p class="kh-note" id="khBulkEditNote"></p>
   `;
 
+  // Set input values after the elements exist in the DOM (setting .value in the
+  // template string's `value="..."` attribute before insertion is fine for plain
+  // strings, but we set it explicitly here too since <select> options need the
+  // DOM to exist before .value can select the matching <option>).
+  rows.forEach(r => {
+    document.getElementById(`khBulk-masuk-${r.rowIndex}`).value = r.masuk;
+    document.getElementById(`khBulk-keluar-${r.rowIndex}`).value = r.keluar;
+    document.getElementById(`khBulk-status-${r.rowIndex}`).value = r.status;
+    document.getElementById(`khBulk-remark-${r.rowIndex}`).value = r.remark;
+  });
+
   document.getElementById('khBulkSaveAllBtn').addEventListener('click', saveAllBulkEdit);
   document.getElementById('khBulkCancelBtn').addEventListener('click', cancelBulkEdit);
+}
+
+function markBulkEditRowDirty(rowIndex){
+  bulkEditDirtyRows.add(rowIndex);
 }
 
 function updateBulkEditHours(rowIndex){
@@ -3342,9 +3360,14 @@ function updateBulkEditHours(rowIndex){
 
 async function saveAllBulkEdit(){
   if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
-  const rows = kehadiranRecords.filter(r => r.tarikh === bulkEditDate);
+  const rows = kehadiranRecords.filter(r => r.tarikh === bulkEditDate && bulkEditDirtyRows.has(r.rowIndex));
   const note = document.getElementById('khBulkEditNote');
   const btn = document.getElementById('khBulkSaveAllBtn');
+
+  if(rows.length === 0){
+    note.textContent = 'Tiada perubahan untuk disimpan.';
+    return;
+  }
 
   const editedRows = rows.map(r => ({
     rowIndex: r.rowIndex,
@@ -3378,6 +3401,7 @@ async function saveAllBulkEdit(){
       throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
     }
     bulkEditDate = null;
+    bulkEditDirtyRows = new Set();
     document.getElementById('khBulkEditPanel').style.display = 'none';
     await loadKehadiranFromSheet();
     const wrap = document.getElementById('khTableWrap');
@@ -3391,6 +3415,7 @@ async function saveAllBulkEdit(){
 
 function cancelBulkEdit(){
   bulkEditDate = null;
+  bulkEditDirtyRows = new Set();
   document.getElementById('khBulkEditPanel').style.display = 'none';
   renderKehadiranTable();
 }
