@@ -2978,7 +2978,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.18";
+const APP_VERSION = "1.0.19";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -6401,29 +6401,30 @@ function generatePrintPDF(){
     const totalUniqueActivities = dedupeEventsById(result.events).length;
     doc.text(`Jumlah aktiviti: ${totalUniqueActivities} | Tempoh: ${result.startKey} hingga ${result.endKey} | Dicetak: ${todayStr}`, 40, 60);
 
-    const rows = result.events.map(e => {
+    const rows = result.events.map((e, i) => {
       const d = new Date(e.dateKey + "T00:00:00");
       const dateStr = d.toLocaleDateString('en-GB');
       const dayName = DAY_NAMES[d.getDay()];
       const masa = e.allDay ? 'Sepanjang hari' : (e.time || '');
       const cell = v => (v == null || String(v).trim() === '') ? '-' : String(v).toUpperCase();
-      return [cell(dateStr), cell(dayName), cell(masa), cell(e.category), cell(e.title), cell(e.vip), cell(e.location)];
+      return [cell(i + 1), cell(dateStr), cell(dayName), cell(masa), cell(e.category), cell(e.title), cell(e.vip), cell(e.location)];
     });
 
     doc.autoTable({
       startY: 72,
-      head: [['TARIKH','HARI','MASA','KATEGORI','TAJUK AKTIVITI','VIP','LOKASI']],
+      head: [['BIL','TARIKH','HARI','MASA','KATEGORI','TAJUK AKTIVITI','VIP','LOKASI']],
       body: rows,
       styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 4, overflow: 'linebreak' },
       headStyles: { fillColor: [31,58,46], textColor: [255,255,255], fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: 58 },
-        1: { cellWidth: 48 },
-        2: { cellWidth: 62 },
-        3: { cellWidth: 68 },
-        4: { cellWidth: 220 },
-        5: { cellWidth: 150 },
-        6: { cellWidth: 130 }
+        0: { cellWidth: 28 },
+        1: { cellWidth: 58 },
+        2: { cellWidth: 48 },
+        3: { cellWidth: 62 },
+        4: { cellWidth: 68 },
+        5: { cellWidth: 220 },
+        6: { cellWidth: 150 },
+        7: { cellWidth: 130 }
       },
       theme: 'grid'
     });
