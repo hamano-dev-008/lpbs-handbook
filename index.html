@@ -3847,6 +3847,7 @@ const STAFF_OFFICE_LOCATIONS = {
   "apriljohnny95@gmail.com":       { name: "Tambunan", lat: 5.665360907125367, lng: 116.3705462466367 },
 };
 const KH_LOC_RADIUS_METERS = 500;
+const KOTA_BELUD_ALT_POINT = { lat: 6.356105625768095, lng: 116.42965984051783 };
 
 function getStaffOfficeLocation(){
   if(currentUser && STAFF_OFFICE_LOCATIONS[currentUser.email.toLowerCase()]){
@@ -3880,7 +3881,11 @@ function verifySelfCheckinLocation(){
   navigator.geolocation.getCurrentPosition(
     pos => {
       const office = getStaffOfficeLocation();
-      const dist = haversineMeters(pos.coords.latitude, pos.coords.longitude, office.lat, office.lng);
+      let dist = haversineMeters(pos.coords.latitude, pos.coords.longitude, office.lat, office.lng);
+      if(office.name === "Kota Belud"){
+        const altDist = haversineMeters(pos.coords.latitude, pos.coords.longitude, KOTA_BELUD_ALT_POINT.lat, KOTA_BELUD_ALT_POINT.lng);
+        dist = Math.min(dist, altDist);
+      }
       const accuracy = pos.coords.accuracy;
       khLocationDist = dist;
       khLocationAccuracy = accuracy;
