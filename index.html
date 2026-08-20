@@ -3858,6 +3858,7 @@ function getStaffOfficeLocation(){
 
 let khLocationState = 'pending'; // 'pending' | 'ok' | 'outside' | 'unavailable'
 let khLocationDist = null;
+let khLocationMatchedOfficeName = null;
 let khLocationAccuracy = null;
 
 function haversineMeters(lat1, lng1, lat2, lng2){
@@ -3889,7 +3890,12 @@ function verifySelfCheckinLocation(){
       // Staff visiting HQ (meeting/training) can also clock in from Kota Kinabalu HQ,
       // regardless of their assigned district office.
       const hqDist = haversineMeters(pos.coords.latitude, pos.coords.longitude, STAFF_OFFICE_LOCATIONS.DEFAULT.lat, STAFF_OFFICE_LOCATIONS.DEFAULT.lng);
-      dist = Math.min(dist, hqDist);
+      if(hqDist < dist){
+        dist = hqDist;
+        khLocationMatchedOfficeName = STAFF_OFFICE_LOCATIONS.DEFAULT.name;
+      } else {
+        khLocationMatchedOfficeName = office.name;
+      }
       const accuracy = pos.coords.accuracy;
       khLocationDist = dist;
       khLocationAccuracy = accuracy;
@@ -4059,11 +4065,15 @@ function renderSelfCheckinCard(){
 async function selfDaftarMasuk(){
   const isLate = isPastSelfCheckinCutoff();
   const reasonInput = document.getElementById('kh-self-late-reason');
-  const reasonVal = isLate ? (reasonInput?.value.trim() || '') : '';
+  let reasonVal = isLate ? (reasonInput?.value.trim() || '') : '';
 
   if(isBeforeSelfMasukStart() || (isLate && !reasonVal) || khLocationState !== 'ok'){
     applySelfCheckinLock();
     return;
+  }
+  if(khLocationMatchedOfficeName && khLocationMatchedOfficeName !== getStaffOfficeLocation().name){
+    const officeNote = `(Clock in di ${khLocationMatchedOfficeName})`;
+    reasonVal = reasonVal ? `${reasonVal} ${officeNote}` : officeNote;
   }
   const nama = getSelfCheckinName();
   const tarikh = fmtKey(new Date());
