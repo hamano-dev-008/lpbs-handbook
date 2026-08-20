@@ -3051,7 +3051,7 @@ const FALLBACK_EDITOR_ALLOWLIST = [
   "dzulkifliewilyawaty@gmail.com",
   "dzunisajaldin@gmail.com",
   "jeffreyjames2503@gmail.com",
-  "jenna.kulai@gmail.com",
+  "j.kulai201@gmail.com",
   "jhuzaika@gmail.com",
   "juanapoyong@gmail.com",
   "khairiyyahrazanah.work@gmail.com",
@@ -3886,6 +3886,10 @@ function verifySelfCheckinLocation(){
         const altDist = haversineMeters(pos.coords.latitude, pos.coords.longitude, KOTA_BELUD_ALT_POINT.lat, KOTA_BELUD_ALT_POINT.lng);
         dist = Math.min(dist, altDist);
       }
+      // Staff visiting HQ (meeting/training) can also clock in from Kota Kinabalu HQ,
+      // regardless of their assigned district office.
+      const hqDist = haversineMeters(pos.coords.latitude, pos.coords.longitude, STAFF_OFFICE_LOCATIONS.DEFAULT.lat, STAFF_OFFICE_LOCATIONS.DEFAULT.lng);
+      dist = Math.min(dist, hqDist);
       const accuracy = pos.coords.accuracy;
       khLocationDist = dist;
       khLocationAccuracy = accuracy;
