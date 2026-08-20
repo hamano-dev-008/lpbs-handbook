@@ -6816,24 +6816,36 @@ window.addEventListener('load', async () => {
       currentUser = JSON.parse(savedUser);
       accessToken = savedToken;
       showGateError("Menyambung semula sesi...", true);
-      
-      // User sessions and token verifications run on-demand upon active user load/interaction,
-      // without an automated midnight (12:00 AM) schedule or background health check trigger.
-      loadAllowlistFromSheet().then(() => {
-        if(currentUser && currentUser.email){
-          attemptSignIn(currentUser.email, currentUser.name);
-        } else {
-          showGateError("");
-        }
-      }).catch(err => {
-        console.error('Session restore failed:', err);
-        if(err.message === 'UNAUTHORIZED'){
-          return;
-        }
-        if(currentUser && currentUser.email){
-          attemptSignIn(currentUser.email, currentUser.name);
-        }
-      });
+
+      const tokenValid = await verifyToken(savedToken);
+      if(!tokenValid){
+        currentUser = null;
+        accessToken = null;
+        try {
+          localStorage.removeItem('padi_app_token');
+          localStorage.removeItem('padi_app_token_timestamp');
+          localStorage.removeItem('padi_app_user');
+        } catch(e) {}
+        showGateError("");
+      } else {
+        // User sessions and token verifications run on-demand upon active user load/interaction,
+        // without an automated midnight (12:00 AM) schedule or background health check trigger.
+        loadAllowlistFromSheet().then(() => {
+          if(currentUser && currentUser.email){
+            attemptSignIn(currentUser.email, currentUser.name);
+          } else {
+            showGateError("");
+          }
+        }).catch(err => {
+          console.error('Session restore failed:', err);
+          if(err.message === 'UNAUTHORIZED'){
+            return;
+          }
+          if(currentUser && currentUser.email){
+            attemptSignIn(currentUser.email, currentUser.name);
+          }
+        });
+      }
     }
   } catch(e) {
     console.error('Error reading/parsing saved session:', e);
