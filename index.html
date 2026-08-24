@@ -6483,6 +6483,11 @@ render();
 let accessToken = null;
 let tokenClient = null;
 let isRefreshingToken = false;
+
+// Resolves once initGoogleAuth() has run and tokenClient is ready — session restore
+// awaits this so a silent refresh isn't attempted before tokenClient exists.
+let googleReadyResolve;
+const googleReadyPromise = new Promise(res => { googleReadyResolve = res; });
 let pendingSilentReauth = false;
 
 // --- Silent token refresh (Google access token luput ~1 jam) ---
@@ -6806,6 +6811,16 @@ function logout(){
 }
 
 window.addEventListener('load', async () => {
+  // Google Identity Services script loads async; wait for it. Started before the
+  // session-restore block below so googleReadyPromise can resolve while it's awaited.
+  const waitForGoogle = setInterval(() => {
+    if(window.google && window.google.accounts){
+      clearInterval(waitForGoogle);
+      initGoogleAuth();
+      googleReadyResolve();
+    }
+  }, 100);
+
   // Restore persistent login from localStorage if present
   try {
     const savedUser = localStorage.getItem('padi_app_user');
@@ -6816,6 +6831,9 @@ window.addEventListener('load', async () => {
       currentUser = JSON.parse(savedUser);
       accessToken = savedToken;
       showGateError("Menyambung semula sesi...", true);
+
+      // Wait for tokenClient to be ready before any silent-refresh-dependent call runs.
+      await googleReadyPromise;
 
       const tokenValid = await verifyToken(savedToken);
       if(!tokenValid){
@@ -6850,14 +6868,6 @@ window.addEventListener('load', async () => {
   } catch(e) {
     console.error('Error reading/parsing saved session:', e);
   }
-
-  // Google Identity Services script loads async; wait for it.
-  const waitForGoogle = setInterval(() => {
-    if(window.google && window.google.accounts){
-      clearInterval(waitForGoogle);
-      initGoogleAuth();
-    }
-  }, 100);
 
   // Register service worker (PWA installability + app-shell cache & update banner).
   if('serviceWorker' in navigator){
