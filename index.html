@@ -930,6 +930,34 @@
     color:var(--sage);
     min-height:16px;
   }
+  .kh-semak-bar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:6px;
+  }
+  .kh-semak-bar input[type="date"]{flex:1;}
+  .kh-semak-bar .save-btn{width:auto; margin:0; padding:10px 18px;}
+  .kh-semak-count{
+    margin:14px 0 6px;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .kh-semak-ok{
+    margin:14px 0 0;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--paddy);
+  }
+  .kh-semak-list{
+    margin:0;
+    padding-left:20px;
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  .kh-semak-list li{margin:4px 0;}
+  .kh-semak-jawatan{color:var(--ink-soft); font-size:12.5px;}
   .kh-mode-btn{
     display:inline-flex;
     align-items:center;
@@ -2397,6 +2425,16 @@
         </div>
       </div>
 
+      <div class="kehadiran-form" style="margin-bottom:16px;">
+        <h3 class="section-heading" style="margin:0 0 8px; font-size:15px;">Semak Staf Tidak Hadir</h3>
+        <label class="field-label">Tarikh</label>
+        <div class="kh-semak-bar">
+          <input type="date" id="khSemakTarikh">
+          <button class="save-btn" id="khSemakBtn">Semak</button>
+        </div>
+        <div id="khSemakResults"></div>
+      </div>
+
       <div class="kh-table-wrap" id="khTableWrap">
         <div class="empty-state"><div class="big">Memuatkan rekod...</div></div>
       </div>
@@ -3263,6 +3301,48 @@ function applyKhCustomRange(){
   khFilterTo = document.getElementById('khFilterTo').value;
   document.querySelectorAll('#khDateFilterPreset .period-btn').forEach(b => b.classList.remove('active'));
   renderKehadiranTable();
+}
+
+// Semak staf yang belum key-in kehadiran pada tarikh dipilih — kiraan
+// client-side sahaja daripada STAFF_DIRECTORY & kehadiranRecords (tiada API call).
+function semakStafTidakHadir(){
+  const tarikh = document.getElementById('khSemakTarikh').value;
+  const out = document.getElementById('khSemakResults');
+  if(!tarikh){
+    out.innerHTML = `<p class="kh-note">Sila pilih tarikh dahulu.</p>`;
+    return;
+  }
+  if(STAFF_DIRECTORY.size === 0){
+    out.innerHTML = `<p class="kh-note">Senarai staf belum dimuatkan. Cuba log keluar dan log masuk semula.</p>`;
+    return;
+  }
+  const recordedNames = new Set(
+    kehadiranRecords
+      .filter(r => r.tarikh === tarikh)
+      .map(r => r.nama.trim().toLowerCase())
+  );
+  const missing = [];
+  for(const [email, info] of STAFF_DIRECTORY){
+    const nama = (info && info.nama) ? info.nama : getStaffDisplayName(email);
+    if(!recordedNames.has(nama.trim().toLowerCase())){
+      missing.push({ nama, jawatan: (info && info.jawatan) || '' });
+    }
+  }
+  missing.sort((a,b) => a.nama.localeCompare(b.nama));
+
+  const [y, m, d] = tarikh.split('-').map(Number);
+  const tarikhLabel = `${d} ${MONTH_NAMES[m - 1]} ${y}`;
+
+  if(missing.length === 0){
+    out.innerHTML = `<p class="kh-semak-ok">&#10003; Semua staf telah key-in kehadiran pada ${tarikhLabel}.</p>`;
+    return;
+  }
+  out.innerHTML = `
+    <p class="kh-semak-count">${missing.length} daripada ${STAFF_DIRECTORY.size} staf belum key-in kehadiran pada ${tarikhLabel}:</p>
+    <ul class="kh-semak-list">
+      ${missing.map(s => `<li>${escapeHtml(s.nama)}${s.jawatan ? ` <span class="kh-semak-jawatan">&mdash; ${escapeHtml(s.jawatan)}</span>` : ''}</li>`).join('')}
+    </ul>
+  `;
 }
 
 function renderKehadiranTable(){
@@ -4404,6 +4484,9 @@ document.querySelectorAll('#khDateFilterPreset .period-btn').forEach(b =>
 );
 document.getElementById('khFilterFrom').addEventListener('change', applyKhCustomRange);
 document.getElementById('khFilterTo').addEventListener('change', applyKhCustomRange);
+document.getElementById('khSemakTarikh').value = fmtKey(new Date());
+document.getElementById('khSemakBtn').addEventListener('click', semakStafTidakHadir);
+document.getElementById('khSemakTarikh').addEventListener('change', semakStafTidakHadir);
 
 document.querySelectorAll('#khSelfStatusPills .kh-pill').forEach(b =>
   b.addEventListener('click', () => setSelfCheckinStatus(b.dataset.status)));
