@@ -3929,6 +3929,11 @@ const STAFF_OFFICE_LOCATIONS = {
 const KH_LOC_RADIUS_METERS = 500;
 const KOTA_BELUD_ALT_POINT = { lat: 6.356105625768095, lng: 116.42965984051783 };
 
+// Staf yang dikecualikan sepenuhnya daripada semakan lokasi GPS.
+const GEOFENCE_EXEMPT_STAFF = new Set([
+  "dzunisajaldin@gmail.com"
+]);
+
 function getStaffOfficeLocation(){
   if(currentUser && STAFF_OFFICE_LOCATIONS[currentUser.email.toLowerCase()]){
     return STAFF_OFFICE_LOCATIONS[currentUser.email.toLowerCase()];
@@ -3952,6 +3957,11 @@ function haversineMeters(lat1, lng1, lat2, lng2){
 }
 
 function verifySelfCheckinLocation(){
+  if(currentUser && GEOFENCE_EXEMPT_STAFF.has(currentUser.email.toLowerCase())){
+    khLocationState = 'ok';
+    applySelfCheckinLock();
+    return;
+  }
   khLocationState = 'pending';
   applySelfCheckinLock();
   if(!navigator.geolocation){
