@@ -2208,6 +2208,9 @@
         <button class="hero-v2-bell" id="faqBtn" aria-label="Soalan Lazim & Bantuan" title="Soalan Lazim & Bantuan (FAQ)" onclick="openFaqModal()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </button>
+        <button class="hero-v2-bell" id="hardRefreshBtn" aria-label="Muat Semula Paksa" title="Muat Semula Paksa (jika app tersangkut pada versi lama)" onclick="forceHardRefresh()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
         <button class="hero-v2-bell" id="notifBellBtn" aria-label="Notifikasi" onclick="toggleNotifPanel()">
           <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.75 9v.704c0 .845.24 1.671.692 2.374l1.108 1.723c1.011 1.574.239 3.713-1.52 4.21a25.8 25.8 0 0 1-14.06 0c-1.759-.497-2.531-2.636-1.52-4.21l1.108-1.723a4.4 4.4 0 0 0 .693-2.374V9c0-3.866 3.022-7 6.749-7s6.75 3.134 6.75 7" opacity=".5"/><path fill="currentColor" d="M12.75 6a.75.75 0 0 0-1.5 0v4a.75.75 0 0 0 1.5 0zM7.243 18.545a5.002 5.002 0 0 0 9.513 0c-3.145.59-6.367.59-9.513 0"/></svg>
           <span class="hero-v2-bell-dot" id="heroBellDot" style="display:none;"></span>
@@ -7046,6 +7049,23 @@ function showUpdateBanner(){
 function dismissUpdateBanner(){
   const el = document.getElementById('updateBanner');
   if(el) el.classList.remove('show');
+}
+
+// Muat semula paksa — buang semua service worker dan cache, kemudian reload.
+async function forceHardRefresh(){
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  }catch(err){
+    console.warn('forceHardRefresh:', err);
+  }
+  window.location.reload();
 }
 
 // FAQ Modal Handlers
