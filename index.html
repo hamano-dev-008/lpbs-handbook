@@ -955,8 +955,29 @@
     padding-left:20px;
     font-size:13.5px;
     color:var(--ink);
+    display:grid;
+    grid-template-columns:1fr;
+    column-gap:24px;
+  }
+  @media (min-width:640px){
+    .kh-semak-list{grid-template-columns:repeat(2, 1fr);}
   }
   .kh-semak-list li{margin:4px 0;}
+  .kh-semak-toggle{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:pointer;
+    user-select:none;
+  }
+  .kh-semak-chevron{
+    flex-shrink:0;
+    color:var(--ink-soft);
+    transition:transform .2s ease;
+  }
+  .kh-semak-section.open .kh-semak-chevron{transform:rotate(180deg);}
+  .kh-semak-body{display:none;}
+  .kh-semak-section.open .kh-semak-body{display:block;}
   .kh-semak-jawatan{color:var(--ink-soft); font-size:12.5px;}
   .kh-mode-btn{
     display:inline-flex;
@@ -2425,18 +2446,23 @@
         </div>
       </div>
 
-      <div class="kehadiran-form" style="margin-bottom:16px;">
-        <h3 class="section-heading" style="margin:0 0 8px; font-size:15px;">Semak Staf Tidak Hadir</h3>
-        <label class="field-label">Tarikh</label>
-        <div class="kh-semak-bar">
-          <input type="date" id="khSemakTarikh">
-          <button class="save-btn" id="khSemakBtn">Semak</button>
-        </div>
-        <div id="khSemakResults"></div>
-      </div>
-
       <div class="kh-table-wrap" id="khTableWrap">
         <div class="empty-state"><div class="big">Memuatkan rekod...</div></div>
+      </div>
+
+      <div class="kehadiran-form kh-semak-section" id="khSemakSection" style="margin-top:16px;">
+        <div class="kh-semak-toggle" id="khSemakToggle" role="button" tabindex="0" aria-expanded="false" aria-controls="khSemakBody">
+          <h3 class="section-heading" style="margin:0; font-size:15px;">Semak Staf Tidak Hadir</h3>
+          <svg class="kh-semak-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="kh-semak-body" id="khSemakBody">
+          <label class="field-label" style="margin-top:8px;">Tarikh</label>
+          <div class="kh-semak-bar">
+            <input type="date" id="khSemakTarikh">
+            <button class="save-btn" id="khSemakBtn">Semak</button>
+          </div>
+          <div id="khSemakResults"></div>
+        </div>
       </div>
 
       <div class="print-controls" style="margin-top:20px;">
@@ -4497,6 +4523,15 @@ document.getElementById('khFilterTo').addEventListener('change', applyKhCustomRa
 document.getElementById('khSemakTarikh').value = fmtKey(new Date());
 document.getElementById('khSemakBtn').addEventListener('click', semakStafTidakHadir);
 document.getElementById('khSemakTarikh').addEventListener('change', semakStafTidakHadir);
+function toggleKhSemakSection(){
+  const sec = document.getElementById('khSemakSection');
+  const open = sec.classList.toggle('open');
+  document.getElementById('khSemakToggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+document.getElementById('khSemakToggle').addEventListener('click', toggleKhSemakSection);
+document.getElementById('khSemakToggle').addEventListener('keydown', e => {
+  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleKhSemakSection(); }
+});
 
 document.querySelectorAll('#khSelfStatusPills .kh-pill').forEach(b =>
   b.addEventListener('click', () => setSelfCheckinStatus(b.dataset.status)));
