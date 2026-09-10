@@ -7019,6 +7019,11 @@ window.addEventListener('load', async () => {
       // Semak sw.js baharu setiap minit supaya deploy pertengahan sesi
       // dikesan tanpa menunggu navigasi seterusnya.
       setInterval(() => reg.update().catch(()=>{}), 60 * 1000);
+      // Semak juga sebaik sahaja app kembali ke hadapan — setInterval
+      // terhenti semasa app di latar belakang / telefon tidur.
+      document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState === 'visible') reg.update().catch(()=>{});
+      });
     }).catch(err => {
       console.error('Service worker registration failed:', err);
     });
