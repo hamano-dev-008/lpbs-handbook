@@ -3299,6 +3299,28 @@ function fmtHours(h){
   return mins === 0 ? `${hrs} jam` : `${hrs} jam ${mins} min`;
 }
 
+// Sheets API boleh pulangkan masa dalam format paparan (cth. "8:13 AM");
+// <input type="time"> memerlukan "HH:MM" 24 jam. Pulangkan '' jika tidak boleh dihurai.
+function normalizeTimeString(raw){
+  if(raw == null) return '';
+  const str = String(raw).trim();
+  if(!str) return '';
+  const m = str.match(/^(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?\s*([AaPp]\.?[Mm]\.?)?$/);
+  if(!m) return '';
+  let h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  const ampm = m[3] ? m[3].replace(/\./g, '').toUpperCase() : '';
+  if(min > 59) return '';
+  if(ampm){
+    if(h < 1 || h > 12) return '';
+    if(ampm === 'AM' && h === 12) h = 0;
+    if(ampm === 'PM' && h !== 12) h += 12;
+  } else if(h > 23){
+    return '';
+  }
+  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
 async function loadKehadiranFromSheet(){
   const wrap = document.getElementById('khTableWrap');
   try{
@@ -3314,14 +3336,16 @@ async function loadKehadiranFromSheet(){
     const rows = data.values || [];
 
     kehadiranRecords = rows.map((row, idx) => {
-      const [tarikh, nama, masuk, keluar, status, remark] = row;
+      const [tarikh, nama, rawMasuk, rawKeluar, status, remark] = row;
       if(!nama && !tarikh) return null;
+      const masuk = normalizeTimeString(rawMasuk);
+      const keluar = normalizeTimeString(rawKeluar);
       return {
         rowIndex: idx + 2, // +2 because range starts at A2 and sheet rows are 1-indexed
         nama: nama || '',
         tarikh: tarikh || '',
-        masuk: masuk || '',
-        keluar: keluar || '',
+        masuk,
+        keluar,
         status: status || 'Hadir',
         remark: remark || '',
         jam: calcHours(masuk, keluar)
