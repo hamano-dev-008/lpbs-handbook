@@ -979,6 +979,25 @@
   .kh-collapse > .kh-collapse-body{display:none;}
   .kh-collapse.open > .kh-collapse-body{display:block;}
   .kh-semak-jawatan{color:var(--ink-soft); font-size:12.5px;}
+  .kh-lupa-list{list-style:none; padding-left:0;}
+  .kh-lupa-item{
+    width:100%;
+    text-align:left;
+    border:1px solid var(--line, #dfe3ea);
+    border-radius:8px;
+    background:none;
+    color:var(--ink);
+    font:inherit;
+    font-size:13.5px;
+    padding:8px 10px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .kh-lupa-item:hover, .kh-lupa-item:focus-visible{background:rgba(27,58,107,.06); border-color:var(--paddy);}
+  .kh-lupa-item .kh-lupa-edit{color:var(--paddy); font-size:12px; font-weight:600; flex-shrink:0;}
   .kh-mode-btn{
     display:inline-flex;
     align-items:center;
@@ -2480,6 +2499,21 @@
         </div>
       </div>
 
+      <div class="kehadiran-form kh-collapse" id="khLupaSection" style="margin-top:16px;">
+        <div class="kh-collapse-toggle" id="khLupaToggle" role="button" tabindex="0" aria-expanded="false" aria-controls="khLupaBody">
+          <h3 class="section-heading" style="margin:0; font-size:15px;">Staf Lupa Clock-Out</h3>
+          <svg class="kh-collapse-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="kh-collapse-body" id="khLupaBody">
+          <label class="field-label" style="margin-top:8px;">Tarikh</label>
+          <div class="kh-semak-bar">
+            <input type="date" id="khLupaTarikh">
+            <button class="save-btn" id="khLupaBtn">Semak</button>
+          </div>
+          <div id="khLupaResults"></div>
+        </div>
+      </div>
+
       <div class="print-controls" style="margin-top:20px;">
         <div class="kh-staff-filter-wrap" style="display:none;"><!-- disembunyikan sementara -->
           <label class="range-label" for="khExcludeStaff">Kecualikan staf (PDF)</label>
@@ -3384,6 +3418,47 @@ function semakStafTidakHadir(){
       ${missing.map(s => `<li>${escapeHtml(s.nama)}${s.jawatan ? ` <span class="kh-semak-jawatan">&mdash; ${escapeHtml(s.jawatan)}</span>` : ''}</li>`).join('')}
     </ul>
   `;
+}
+
+// Semak staf yang sudah clock-in tetapi belum clock-out pada tarikh dipilih.
+// Setiap entri boleh diklik untuk terus edit rekod berkenaan di Rekod Tersimpan.
+function semakStafLupaClockOut(){
+  const tarikh = document.getElementById('khLupaTarikh').value;
+  const out = document.getElementById('khLupaResults');
+  if(!tarikh){
+    out.innerHTML = `<p class="kh-note">Sila pilih tarikh dahulu.</p>`;
+    return;
+  }
+  const lupa = kehadiranRecords
+    .filter(r => r.tarikh === tarikh && r.status === 'Hadir' && r.masuk && !r.keluar)
+    .sort((a,b) => a.nama.localeCompare(b.nama));
+
+  const [y, m, d] = tarikh.split('-').map(Number);
+  const tarikhLabel = `${d} ${MONTH_NAMES[m - 1]} ${y}`;
+
+  if(lupa.length === 0){
+    out.innerHTML = `<p class="kh-semak-ok">&#10003; Tiada staf lupa clock-out pada ${tarikhLabel}.</p>`;
+    return;
+  }
+  out.innerHTML = `
+    <p class="kh-semak-count">${lupa.length} staf belum clock-out pada ${tarikhLabel} (klik untuk edit):</p>
+    <ul class="kh-semak-list kh-lupa-list">
+      ${lupa.map(r => `<li><button type="button" class="kh-lupa-item" onclick="jumpToEditKehadiranRow(${r.rowIndex})"><span>${escapeHtml(r.nama)} <span class="kh-semak-jawatan">&mdash; masuk ${escapeHtml(r.masuk)}</span></span><span class="kh-lupa-edit">Edit &rsaquo;</span></button></li>`).join('')}
+    </ul>
+  `;
+}
+
+function jumpToEditKehadiranRow(rowIndex){
+  const section = document.getElementById('khTersimpanSection');
+  const toggle = section.querySelector('.kh-collapse-toggle');
+  if(!section.classList.contains('open')) toggleKhCollapse(toggle);
+  const rec = kehadiranRecords.find(r => r.rowIndex === rowIndex);
+  const hiddenByFilter = rec && ((khFilterFrom && rec.tarikh < khFilterFrom) || (khFilterTo && rec.tarikh > khFilterTo));
+  if(hiddenByFilter) applyKhDatePreset('all');
+  startEditKehadiranRow(rowIndex);
+  const editInput = document.getElementById(`khEdit-keluar-${rowIndex}`);
+  const target = (editInput && editInput.closest('tr')) || document.getElementById('khTableWrap');
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function renderKehadiranTable(){
@@ -4538,6 +4613,9 @@ document.getElementById('khFilterTo').addEventListener('change', applyKhCustomRa
 document.getElementById('khSemakTarikh').value = fmtKey(new Date());
 document.getElementById('khSemakBtn').addEventListener('click', semakStafTidakHadir);
 document.getElementById('khSemakTarikh').addEventListener('change', semakStafTidakHadir);
+document.getElementById('khLupaTarikh').value = fmtKey(new Date());
+document.getElementById('khLupaBtn').addEventListener('click', semakStafLupaClockOut);
+document.getElementById('khLupaTarikh').addEventListener('change', semakStafLupaClockOut);
 function toggleKhCollapse(toggle){
   const open = toggle.closest('.kh-collapse').classList.toggle('open');
   toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
