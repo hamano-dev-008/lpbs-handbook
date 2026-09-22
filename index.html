@@ -2531,8 +2531,18 @@
           <button class="modal-close" id="khPdfModalClose">&times;</button>
         </div>
         <div class="modal-body">
-          <label class="field-label">Tarikh</label>
-          <input type="date" id="khPdfDate">
+          <div class="period-toggle" id="khPdfModeToggle" style="margin-bottom:10px;">
+            <button class="period-btn active" data-khpdfmode="harian">Harian</button>
+            <button class="period-btn" data-khpdfmode="bulanan">Bulanan</button>
+          </div>
+          <div id="khPdfDailyField">
+            <label class="field-label">Tarikh</label>
+            <input type="date" id="khPdfDate">
+          </div>
+          <div id="khPdfMonthlyField" style="display:none;">
+            <label class="field-label">Bulan</label>
+            <input type="month" id="khPdfMonth">
+          </div>
           <p class="kh-note" id="khPdfModalNote"></p>
         </div>
         <div class="modal-foot">
@@ -4495,9 +4505,23 @@ function applyKehadiranMode(){
   if(showSelf && appSection === 'kehadiran') verifySelfCheckinLocation();
 }
 
+let khPdfMode = 'harian';
+
+function setKhPdfMode(mode){
+  khPdfMode = mode;
+  document.querySelectorAll('#khPdfModeToggle .period-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.khpdfmode === mode)
+  );
+  document.getElementById('khPdfDailyField').style.display = mode === 'harian' ? '' : 'none';
+  document.getElementById('khPdfMonthlyField').style.display = mode === 'bulanan' ? '' : 'none';
+  document.getElementById('khPdfModalNote').textContent = '';
+}
+
 function openKhPdfModal(){
   const dateInput = document.getElementById('khPdfDate');
   if(!dateInput.value) dateInput.value = fmtKey(new Date());
+  const monthInput = document.getElementById('khPdfMonth');
+  if(!monthInput.value) monthInput.value = fmtKey(new Date()).slice(0, 7);
   document.getElementById('khPdfModalNote').textContent = '';
   document.getElementById('khPdfModalOverlay').classList.add('open');
 }
@@ -4507,11 +4531,31 @@ function closeKhPdfModal(){
 }
 
 function confirmKhPdfModal(){
-  const tarikh = document.getElementById('khPdfDate').value;
+  const isMonthly = khPdfMode === 'bulanan';
   const modalNote = document.getElementById('khPdfModalNote');
+  const excluded = new Set(Array.from(document.getElementById('khExcludeStaff').selectedOptions).map(o => o.value));
+
+  if(isMonthly){
+    const bulan = document.getElementById('khPdfMonth').value;
+    if(!bulan) return;
+
+    const recordsToPrint = kehadiranRecords
+      .filter(r => r.tarikh.slice(0, 7) === bulan && !excluded.has(r.nama))
+      .sort((a, b) => a.tarikh.localeCompare(b.tarikh) || a.nama.localeCompare(b.nama));
+
+    if(recordsToPrint.length === 0){
+      modalNote.textContent = 'Tiada rekod kehadiran pada bulan ini.';
+      return;
+    }
+
+    closeKhPdfModal();
+    generateKehadiranPDF(bulan, recordsToPrint, true);
+    return;
+  }
+
+  const tarikh = document.getElementById('khPdfDate').value;
   if(!tarikh) return;
 
-  const excluded = new Set(Array.from(document.getElementById('khExcludeStaff').selectedOptions).map(o => o.value));
   const recordsToPrint = kehadiranRecords.filter(r => r.tarikh === tarikh && !excluded.has(r.nama));
 
   if(recordsToPrint.length === 0){
@@ -4520,7 +4564,7 @@ function confirmKhPdfModal(){
   }
 
   closeKhPdfModal();
-  generateKehadiranPDF(tarikh, recordsToPrint);
+  generateKehadiranPDF(tarikh, recordsToPrint, false);
 }
 
 function fmtTarikhMalay(tarikh){
@@ -4528,7 +4572,12 @@ function fmtTarikhMalay(tarikh){
   return `${d} ${MONTH_NAMES[m - 1]} ${y}`;
 }
 
-function generateKehadiranPDF(tarikh, recordsToPrint){
+function fmtBulanMalay(bulan){
+  const [y, m] = bulan.split('-').map(Number);
+  return `${MONTH_NAMES[m - 1]} ${y}`;
+}
+
+function generateKehadiranPDF(label, recordsToPrint, isMonthly){
   const note = document.getElementById('khPrintNote');
   const btn = document.getElementById('khPrintBtn');
   note.textContent = '';
@@ -4550,7 +4599,8 @@ function generateKehadiranPDF(tarikh, recordsToPrint){
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     const todayStr = new Date().toLocaleDateString('en-GB');
-    doc.text(`Tarikh: ${fmtTarikhMalay(tarikh)} | Jumlah rekod: ${recordsToPrint.length} | Dicetak: ${todayStr}`, 40, 60);
+    const headerLabel = isMonthly ? `Bulan: ${fmtBulanMalay(label)}` : `Tarikh: ${fmtTarikhMalay(label)}`;
+    doc.text(`${headerLabel} | Jumlah rekod: ${recordsToPrint.length} | Dicetak: ${todayStr}`, 40, 60);
 
     const rows = recordsToPrint.map((r, i) => [i + 1, r.tarikh, r.nama, r.masuk, r.keluar, fmtHours(r.jam), r.status, r.remark]);
 
@@ -4599,7 +4649,7 @@ function generateKehadiranPDF(tarikh, recordsToPrint){
     sy += 13;
     doc.text('Lembaga Padi dan Beras Sabah', marginPt, sy);
 
-    doc.save(`LPBS_Kehadiran_${tarikh}.pdf`);
+    doc.save(`LPBS_Kehadiran_${label}.pdf`);
     note.textContent = `PDF berjaya dijana (${recordsToPrint.length} rekod).`;
   }catch(err){
     note.textContent = 'Ralat menjana PDF: ' + err.message;
@@ -4628,6 +4678,9 @@ document.getElementById('khPrintBtn').addEventListener('click', openKhPdfModal);
 document.getElementById('khPdfModalClose').addEventListener('click', closeKhPdfModal);
 document.getElementById('khPdfModalCancel').addEventListener('click', closeKhPdfModal);
 document.getElementById('khPdfModalConfirm').addEventListener('click', confirmKhPdfModal);
+document.querySelectorAll('#khPdfModeToggle .period-btn').forEach(b =>
+  b.addEventListener('click', () => setKhPdfMode(b.dataset.khpdfmode))
+);
 
 document.querySelectorAll('#khDateFilterPreset .period-btn').forEach(b =>
   b.addEventListener('click', () => applyKhDatePreset(b.dataset.preset))
