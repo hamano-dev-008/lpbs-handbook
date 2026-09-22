@@ -4116,6 +4116,7 @@ const STAFF_OFFICE_LOCATIONS = {
 };
 const KH_LOC_RADIUS_METERS = 500;
 const KOTA_BELUD_ALT_POINT = { lat: 6.356105625768095, lng: 116.42965984051783 };
+const KOTA_MARUDU_ALT_POINT = { lat: 6.499094, lng: 116.775818 };
 
 // Staf yang dikecualikan sepenuhnya daripada semakan lokasi GPS.
 const GEOFENCE_EXEMPT_STAFF = new Set([
@@ -4163,6 +4164,10 @@ function verifySelfCheckinLocation(){
       let dist = haversineMeters(pos.coords.latitude, pos.coords.longitude, office.lat, office.lng);
       if(office.name === "Kota Belud"){
         const altDist = haversineMeters(pos.coords.latitude, pos.coords.longitude, KOTA_BELUD_ALT_POINT.lat, KOTA_BELUD_ALT_POINT.lng);
+        dist = Math.min(dist, altDist);
+      }
+      if(office.name === "Kota Marudu"){
+        const altDist = haversineMeters(pos.coords.latitude, pos.coords.longitude, KOTA_MARUDU_ALT_POINT.lat, KOTA_MARUDU_ALT_POINT.lng);
         dist = Math.min(dist, altDist);
       }
       // Staff visiting HQ (meeting/training) can also clock in from Kota Kinabalu HQ,
