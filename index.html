@@ -19,6 +19,8 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js"></script>
 <style>
   :root{
     --bg:#F4EFE3;
@@ -2063,6 +2065,22 @@
     position:absolute;right:8px;top:50%;transform:translateY(-50%);
     background:none;border:none;color:rgba(255,255,255,.75);font-size:16px;cursor:pointer;padding:2px 6px;
   }
+  .push-banner{
+    position:fixed;top:0;left:0;right:0;z-index:9999;
+    display:none;align-items:center;justify-content:center;gap:10px;
+    background:#1B3A6B;color:#fff;font-size:12.5px;line-height:1.3;
+    padding:7px 34px 7px 12px;box-shadow:0 2px 8px rgba(0,0,0,.25);
+  }
+  .push-banner.show{display:flex;}
+  .push-banner .pb-enable{
+    background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.45);
+    border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  .push-banner .pb-enable:hover{background:rgba(255,255,255,.25);}
+  .push-banner .pb-close{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    background:none;border:none;color:rgba(255,255,255,.75);font-size:16px;cursor:pointer;padding:2px 6px;
+  }
   .gate{
     min-height:100vh;
     display:flex;
@@ -2197,6 +2215,11 @@
   <span>PadiApp telah dikemaskini. Muat semula untuk versi terbaru.</span>
   <button type="button" class="ub-reload" onclick="window.location.reload()">Muat Semula</button>
   <button type="button" class="ub-close" onclick="dismissUpdateBanner()" aria-label="Tutup">&times;</button>
+</div>
+<div class="push-banner" id="pushBanner">
+  <span>Dayakan notifikasi untuk terima makluman tugasan dan peringatan clock-out.</span>
+  <button type="button" class="pb-enable" onclick="enablePushNotifications()">Dayakan</button>
+  <button type="button" class="pb-close" onclick="dismissPushBanner()" aria-label="Tutup">&times;</button>
 </div>
 <div class="gate" id="gateScreen">
   <div class="gate-card">
@@ -3118,6 +3141,21 @@ const FAIL_SHEET_ID = "1o7S2umTuo9Njjt8AAqsK5F9cXafmkz_NzKlE7UQKjo4";
 const FAIL_SHEET_RANGE = "SistemFail!A2:F1000";
 const PAUTAN_SHEET_ID = "1hut5np1Vi34NEkRTNzrIm-IWH8QJtxAIdGDSqO2emXs";
 const PAUTAN_SHEET_RANGE = "Pautan!A2:B1000";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDh3KIYlJTzkQIka9J2z0sHk2NTCub3OHs",
+  authDomain: "lpbs-aktiviti-viewer-4e06b.firebaseapp.com",
+  projectId: "lpbs-aktiviti-viewer-4e06b",
+  storageBucket: "lpbs-aktiviti-viewer-4e06b.firebasestorage.app",
+  messagingSenderId: "204334510972",
+  appId: "1:204334510972:web:48e1db55698cd4b881aaf9",
+  measurementId: "G-N1XGDBBJ18"
+};
+const FCM_VAPID_KEY = "BNfIHAkxNP7WpczuqEVzVkq-RARTLbo4OAGpCrrdxTk029kf2VVD3ZgU6GRp64yJ_7QbbIJl8RHqHmhjCB2OdF4";
+const PUSH_TOKEN_SHEET_ID = "1uDo0TjPi1DUuI7L9oW-2oVYjp0NhSnWeSpvCkRQcezs";
+const PUSH_TOKEN_SHEET_RANGE = "Sheet1!A2:C1000";
+
+firebase.initializeApp(firebaseConfig);
 
 const LPBS_CLASSIFICATION_FOLDERS = {
   "100": { code: "100", name: "Pentadbiran", folderId: "placeholder-100" },
@@ -5561,6 +5599,87 @@ async function openNotifTask(rowIndex){
   });
 }
 
+// ============================================================
+// PEMBERITAHUAN TOLAK (FCM) — pendaftaran token push peranti untuk
+// makluman tugasan & peringatan clock-out.
+// Fasa 1 (ini): pendaftaran token sahaja + makluman semasa aplikasi
+// dibuka (foreground). Pengendalian push semasa aplikasi di latar/
+// ditutup memerlukan perubahan sw.js berasingan — Fasa 3.
+// ============================================================
+let fcmMessaging = null;
+try {
+  fcmMessaging = firebase.messaging();
+} catch(e) {
+  console.error('firebase.messaging() init failed:', e);
+}
+
+function maybeShowPushBanner(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'default') return;
+  if(localStorage.getItem('push_declined') === 'true') return;
+  document.getElementById('pushBanner').classList.add('show');
+}
+
+function dismissPushBanner(){
+  document.getElementById('pushBanner').classList.remove('show');
+  try { localStorage.setItem('push_declined', 'true'); } catch(e) {}
+}
+
+async function enablePushNotifications(){
+  document.getElementById('pushBanner').classList.remove('show');
+  try {
+    const permission = await Notification.requestPermission();
+    if(permission !== 'granted'){
+      try { localStorage.setItem('push_declined', 'true'); } catch(e) {}
+      return;
+    }
+    const swReg = await navigator.serviceWorker.ready;
+    const token = await fcmMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
+    if(token) await savePushTokenToSheet(token);
+  } catch(e) {
+    console.error('enablePushNotifications failed:', e);
+  }
+}
+
+async function savePushTokenToSheet(token){
+  try{
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_RANGE)}`;
+    const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if(!res.ok) throw new Error('status ' + res.status);
+    const data = await res.json();
+    const rows = data.values || [];
+    const rowIdx = rows.findIndex(r => (r[0] || '').toLowerCase() === (currentUser.email || '').toLowerCase());
+
+    if(rowIdx !== -1){
+      const sheetRow = rowIdx + 2; // PUSH_TOKEN_SHEET_RANGE starts at row 2
+      const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent('Sheet1!B' + sheetRow + ':C' + sheetRow)}?valueInputOption=USER_ENTERED`;
+      const updateRes = await apiFetch(updateUrl, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [[token, new Date().toISOString()]] })
+      });
+      if(!updateRes.ok) throw new Error('status ' + updateRes.status);
+    } else {
+      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent('Sheet1!A:C')}:append?valueInputOption=USER_ENTERED`;
+      const appendRes = await apiFetch(appendUrl, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [[currentUser.email, token, new Date().toISOString()]] })
+      });
+      if(!appendRes.ok) throw new Error('status ' + appendRes.status);
+    }
+  }catch(e){
+    console.error('savePushTokenToSheet failed:', e);
+  }
+}
+
+if(fcmMessaging){
+  fcmMessaging.onMessage((payload) => {
+    console.log('FCM message received (foreground):', payload);
+    if(typeof refreshNotifBell === 'function') refreshNotifBell();
+  });
+}
+
 let currentUser = null; // { email, name } once signed in
 
 function isAllowedViewer(email){
@@ -7077,6 +7196,7 @@ function attemptSignIn(email, name){
     document.getElementById('gateScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = '';
     syncSignInButtons();
+    maybeShowPushBanner();
     switchToView('day');
     loadEventsFromGoogleCalendar();
     // Loaded proactively (not gated by Task-editor access) so any tagged staff
