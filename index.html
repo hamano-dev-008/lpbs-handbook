@@ -2081,6 +2081,9 @@
     position:absolute;right:8px;top:50%;transform:translateY(-50%);
     background:none;border:none;color:rgba(255,255,255,.75);font-size:16px;cursor:pointer;padding:2px 6px;
   }
+  .push-banner-error{
+    background:#7A2E2E;
+  }
   .gate{
     min-height:100vh;
     display:flex;
@@ -2220,6 +2223,10 @@
   <span>Dayakan notifikasi untuk terima makluman tugasan dan peringatan clock-out.</span>
   <button type="button" class="pb-enable" onclick="enablePushNotifications()">Dayakan</button>
   <button type="button" class="pb-close" onclick="dismissPushBanner()" aria-label="Tutup">&times;</button>
+</div>
+<div class="push-banner push-banner-error" id="pushBannerError">
+  <span>Gagal mendaftar peranti untuk notifikasi. Sila cuba lagi.</span>
+  <button type="button" class="pb-close" onclick="document.getElementById('pushBannerError').classList.remove('show')" aria-label="Tutup">&times;</button>
 </div>
 <div class="gate" id="gateScreen">
   <div class="gate-card">
@@ -3153,7 +3160,8 @@ const firebaseConfig = {
 };
 const FCM_VAPID_KEY = "BNfIHAkxNP7WpczuqEVzVkq-RARTLbo4OAGpCrrdxTk029kf2VVD3ZgU6GRp64yJ_7QbbIJl8RHqHmhjCB2OdF4";
 const PUSH_TOKEN_SHEET_ID = "1uDo0TjPi1DUuI7L9oW-2oVYjp0NhSnWeSpvCkRQcezs";
-const PUSH_TOKEN_SHEET_RANGE = "Sheet1!A2:C1000";
+const PUSH_TOKEN_SHEET_TAB = "token-storage";
+const PUSH_TOKEN_SHEET_RANGE = `${PUSH_TOKEN_SHEET_TAB}!A2:C1000`;
 
 firebase.initializeApp(firebaseConfig);
 
@@ -5640,7 +5648,10 @@ async function enablePushNotifications(){
     }
     const swReg = await navigator.serviceWorker.ready;
     const token = await fcmMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
-    if(token) await savePushTokenToSheet(token);
+    if(token){
+      const saved = await savePushTokenToSheet(token);
+      if(!saved) document.getElementById('pushBannerError').classList.add('show');
+    }
   } catch(e) {
     console.error('enablePushNotifications failed:', e);
   }
@@ -5657,7 +5668,7 @@ async function savePushTokenToSheet(token){
 
     if(rowIdx !== -1){
       const sheetRow = rowIdx + 2; // PUSH_TOKEN_SHEET_RANGE starts at row 2
-      const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent('Sheet1!B' + sheetRow + ':C' + sheetRow)}?valueInputOption=USER_ENTERED`;
+      const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!B' + sheetRow + ':C' + sheetRow)}?valueInputOption=USER_ENTERED`;
       const updateRes = await apiFetch(updateUrl, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
@@ -5665,7 +5676,7 @@ async function savePushTokenToSheet(token){
       });
       if(!updateRes.ok) throw new Error('status ' + updateRes.status);
     } else {
-      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent('Sheet1!A:C')}:append?valueInputOption=USER_ENTERED`;
+      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!A:C')}:append?valueInputOption=USER_ENTERED`;
       const appendRes = await apiFetch(appendUrl, {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
@@ -5673,8 +5684,10 @@ async function savePushTokenToSheet(token){
       });
       if(!appendRes.ok) throw new Error('status ' + appendRes.status);
     }
+    return true;
   }catch(e){
     console.error('savePushTokenToSheet failed:', e);
+    return false;
   }
 }
 
