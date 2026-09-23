@@ -5636,6 +5636,19 @@ function maybeShowPushBanner(){
   document.getElementById('pushBanner').classList.add('show');
 }
 
+async function retryPushTokenRegistration(){
+  try {
+    if(!('Notification' in window) || !fcmMessaging) return;
+    if(Notification.permission !== 'granted') return;
+    if(localStorage.getItem('push_token_registered') === 'true') return;
+    const swReg = await navigator.serviceWorker.ready;
+    const token = await fcmMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
+    if(token) await savePushTokenToSheet(token);
+  } catch(e) {
+    console.error('retryPushTokenRegistration failed:', e);
+  }
+}
+
 function dismissPushBanner(){
   document.getElementById('pushBanner').classList.remove('show');
   try { localStorage.setItem('push_declined', 'true'); } catch(e) {}
@@ -5687,6 +5700,7 @@ async function savePushTokenToSheet(token){
       });
       if(!appendRes.ok) throw new Error('status ' + appendRes.status);
     }
+    try { localStorage.setItem('push_token_registered', 'true'); } catch(e) {}
     return true;
   }catch(e){
     console.error('savePushTokenToSheet failed:', e);
@@ -7218,6 +7232,7 @@ function attemptSignIn(email, name){
     document.getElementById('mainApp').style.display = '';
     syncSignInButtons();
     maybeShowPushBanner();
+    retryPushTokenRegistration();
     switchToView('day');
     loadEventsFromGoogleCalendar();
     // Loaded proactively (not gated by Task-editor access) so any tagged staff
