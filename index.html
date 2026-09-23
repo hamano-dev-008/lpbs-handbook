@@ -46,6 +46,7 @@
     color:var(--ink);
     font-family:'Inter',sans-serif;
     -webkit-font-smoothing:antialiased;
+    padding-top:env(safe-area-inset-top, 0px);
   }
   .app{
     max-width:880px;
@@ -2054,6 +2055,7 @@
     display:none;align-items:center;justify-content:center;gap:10px;
     background:#1B3A6B;color:#fff;font-size:12.5px;line-height:1.3;
     padding:7px 34px 7px 12px;box-shadow:0 2px 8px rgba(0,0,0,.25);
+    padding-top:calc(7px + env(safe-area-inset-top, 0px));
   }
   .update-banner.show{display:flex;}
   .update-banner .ub-reload{
@@ -2070,6 +2072,7 @@
     display:none;align-items:center;justify-content:center;gap:10px;
     background:#1B3A6B;color:#fff;font-size:12.5px;line-height:1.3;
     padding:7px 34px 7px 12px;box-shadow:0 2px 8px rgba(0,0,0,.25);
+    padding-top:calc(7px + env(safe-area-inset-top, 0px));
   }
   .push-banner.show{display:flex;}
   .push-banner .pb-enable{
