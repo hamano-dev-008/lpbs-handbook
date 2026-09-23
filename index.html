@@ -5636,17 +5636,39 @@ function maybeShowPushBanner(){
   document.getElementById('pushBanner').classList.add('show');
 }
 
+function errText(e){
+  return (e && e.message) || String(e);
+}
+
+function showPushError(msg){
+  const el = document.getElementById('pushBannerError');
+  el.querySelector('span').textContent = msg;
+  el.classList.add('show');
+}
+
+async function getPushToken(){
+  if(!fcmMessaging) throw new Error('Firebase Messaging tidak tersedia');
+  const swReg = await navigator.serviceWorker.ready;
+  const token = await fcmMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
+  if(!token) throw new Error('tiada token dikembalikan');
+  return token;
+}
+
 async function retryPushTokenRegistration(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
   try {
-    if(!('Notification' in window) || !fcmMessaging) return;
-    if(Notification.permission !== 'granted') return;
     if(localStorage.getItem('push_token_registered') === 'true') return;
-    const swReg = await navigator.serviceWorker.ready;
-    const token = await fcmMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
-    if(token) await savePushTokenToSheet(token);
+  } catch(e) {}
+  let token;
+  try {
+    token = await getPushToken();
   } catch(e) {
-    console.error('retryPushTokenRegistration failed:', e);
+    console.error('retryPushTokenRegistration failed (langkah: getToken):', errText(e), e);
+    return;
   }
+  const saved = await savePushTokenToSheet(token);
+  if(!saved) console.error('retryPushTokenRegistration failed (langkah: simpan token): lihat ralat savePushTokenToSheet di atas');
 }
 
 function dismissPushBanner(){
@@ -5656,21 +5678,29 @@ function dismissPushBanner(){
 
 async function enablePushNotifications(){
   document.getElementById('pushBanner').classList.remove('show');
+  let permission;
   try {
-    const permission = await Notification.requestPermission();
-    if(permission !== 'granted'){
-      try { localStorage.setItem('push_declined', 'true'); } catch(e) {}
-      return;
-    }
-    const swReg = await navigator.serviceWorker.ready;
-    const token = await fcmMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
-    if(token){
-      const saved = await savePushTokenToSheet(token);
-      if(!saved) document.getElementById('pushBannerError').classList.add('show');
-    }
+    permission = await Notification.requestPermission();
   } catch(e) {
-    console.error('enablePushNotifications failed:', e);
+    console.error('enablePushNotifications failed (langkah: kebenaran):', e);
+    showPushError('Gagal mendaftar peranti (langkah: kebenaran) - ' + errText(e));
+    return;
   }
+  if(permission !== 'granted'){
+    try { localStorage.setItem('push_declined', 'true'); } catch(e) {}
+    if(permission === 'denied') showPushError('Notifikasi tidak dibenarkan. Sila benarkan dalam tetapan telefon anda.');
+    return;
+  }
+  let token;
+  try {
+    token = await getPushToken();
+  } catch(e) {
+    console.error('enablePushNotifications failed (langkah: getToken):', e);
+    showPushError('Gagal mendaftar peranti (langkah: getToken) - ' + errText(e));
+    return;
+  }
+  const saved = await savePushTokenToSheet(token);
+  if(!saved) showPushError('Gagal menyimpan token ke Sheets — sila semak akses');
 }
 
 async function savePushTokenToSheet(token){
