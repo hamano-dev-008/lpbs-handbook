@@ -3,7 +3,7 @@
 // nama cache berversi memastikan cache lama dibuang bersih semasa activate.
 // Data Google API (Calendar/Sheets) TIDAK dicache — sentiasa live dari network.
 
-const APP_VERSION = '1.0.22';
+const APP_VERSION = '1.0.23';
 const CACHE_NAME = 'padiapp-v' + APP_VERSION;
 const APP_SHELL = [
   './',
@@ -94,19 +94,20 @@ self.addEventListener('fetch', (event) => {
 // bukan payload "notification" bawaan FCM, supaya paparan dikawal sepenuhnya di sini).
 self.addEventListener('push', (event) => {
   const payload = event.data ? event.data.json() : {};
+  const d = payload.data || payload;
   event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
+    self.registration.showNotification(d.title || 'PadiApp', {
+      body: d.body,
       icon: 'icons/icon-192.png',
       badge: 'icons/icon-192.png',
-      data: { url: payload.url || '/' }
+      data: { url: d.url || self.registration.scope }
     })
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data && event.notification.data.url || '/';
+  const url = event.notification.data && event.notification.data.url || self.registration.scope;
   event.waitUntil((async () => {
     const windowClients = await clients.matchAll({ type: 'window' });
     for (const client of windowClients) {
