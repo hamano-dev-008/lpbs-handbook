@@ -2568,6 +2568,7 @@
             <button class="period-btn active" data-khpdfmode="harian">Harian</button>
             <button class="period-btn" data-khpdfmode="bulanan">Bulanan</button>
           </div>
+          <label class="checkbox-row"><input type="checkbox" id="khPdfHqOnly"> Hanya staf HQ Kota Kinabalu</label>
           <div id="khPdfDailyField">
             <label class="field-label">Tarikh</label>
             <input type="date" id="khPdfDate">
@@ -3134,11 +3135,11 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.23";
+const APP_VERSION = "1.0.24";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
-const ALLOWLIST_SHEET_RANGE = "Senarai!A2:D1000";
+const ALLOWLIST_SHEET_RANGE = "Senarai!A2:E1000";
 // TODO: ganti dengan ID Sheet "LPBS Kehadiran Staf" sebenar selepas dicipta.
 const KEHADIRAN_SHEET_ID = "1lGD1XnlEuOGHHnfrUnaqaMPbYMgfnBvkFTXRsNYNkmg";
 const KEHADIRAN_SHEET_RANGE = "Kehadiran!A2:F1000";
@@ -3295,10 +3296,11 @@ async function loadAllowlistFromSheet(){
       const role = (row[1] || '').trim().toLowerCase();
       const nama = (row[2] || '').trim();
       const jawatan = (row[3] || '').trim();
+      const kategori = (row[4] || '').trim();
       if(!email) return;
       viewers.add(email);
       if(role === 'editor') editors.add(email);
-      directory.set(email, { nama, jawatan });
+      directory.set(email, { nama, jawatan, kategori });
     });
 
     if(viewers.size === 0) throw new Error('Sheet returned no valid rows');
@@ -4584,18 +4586,31 @@ function closeKhPdfModal(){
   document.getElementById('khPdfModalOverlay').classList.remove('open');
 }
 
+function isStaffStationedAtHQ(nama){
+  const target = (nama || '').trim().toLowerCase();
+  if(!target) return false;
+  for(const [, info] of STAFF_DIRECTORY){
+    if((info.nama || '').trim().toLowerCase() === target){
+      return (info.kategori || '').trim().toLowerCase().startsWith('hq');
+    }
+  }
+  return false;
+}
+
 function confirmKhPdfModal(){
   const isMonthly = khPdfMode === 'bulanan';
   const modalNote = document.getElementById('khPdfModalNote');
   const excluded = new Set(Array.from(document.getElementById('khExcludeStaff').selectedOptions).map(o => o.value));
+  const hqOnly = document.getElementById('khPdfHqOnly').checked;
 
   if(isMonthly){
     const bulan = document.getElementById('khPdfMonth').value;
     if(!bulan) return;
 
-    const recordsToPrint = kehadiranRecords
+    let recordsToPrint = kehadiranRecords
       .filter(r => r.tarikh.slice(0, 7) === bulan && !excluded.has(r.nama))
       .sort((a, b) => a.tarikh.localeCompare(b.tarikh) || a.nama.localeCompare(b.nama));
+    if(hqOnly) recordsToPrint = recordsToPrint.filter(r => isStaffStationedAtHQ(r.nama));
 
     if(recordsToPrint.length === 0){
       modalNote.textContent = 'Tiada rekod kehadiran pada bulan ini.';
@@ -4610,7 +4625,8 @@ function confirmKhPdfModal(){
   const tarikh = document.getElementById('khPdfDate').value;
   if(!tarikh) return;
 
-  const recordsToPrint = kehadiranRecords.filter(r => r.tarikh === tarikh && !excluded.has(r.nama));
+  let recordsToPrint = kehadiranRecords.filter(r => r.tarikh === tarikh && !excluded.has(r.nama));
+  if(hqOnly) recordsToPrint = recordsToPrint.filter(r => isStaffStationedAtHQ(r.nama));
 
   if(recordsToPrint.length === 0){
     modalNote.textContent = 'Tiada rekod kehadiran pada tarikh ini.';
