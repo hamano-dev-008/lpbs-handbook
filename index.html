@@ -433,6 +433,16 @@
     border-radius:0 0 10px 10px;
   }
   .toast{position:relative; overflow:hidden;}
+  .update-toast{
+    position:fixed;top:calc(12px + env(safe-area-inset-top, 0px));left:50%;
+    transform:translate(-50%,-8px);z-index:10000;pointer-events:none;
+    width:max-content;max-width:calc(100vw - 32px);text-align:center;
+    background:var(--ink);color:var(--bg);border-radius:18px;
+    padding:7px 14px;font-size:12.5px;line-height:1.35;
+    box-shadow:0 4px 14px rgba(0,0,0,.18);
+    opacity:0;transition:opacity .3s ease, transform .3s ease;
+  }
+  .update-toast.show{opacity:1;transform:translate(-50%,0);}
   .empty-state .big{
     font-family:'Space Grotesk',sans-serif;
     font-size:20px;
@@ -3113,7 +3123,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.26";
+const APP_VERSION = "1.0.27";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -7343,6 +7353,14 @@ function logout(){
 }
 
 window.addEventListener('load', async () => {
+  try {
+    const justUpdated = localStorage.getItem('padiapp_just_updated');
+    if(justUpdated){
+      localStorage.removeItem('padiapp_just_updated');
+      showUpdatedToast(APP_VERSION);
+    }
+  } catch(e) {}
+
   // Google Identity Services script loads async; wait for it. Started before the
   // session-restore block below so googleReadyPromise can resolve while it's awaited.
   const waitForGoogle = setInterval(() => {
@@ -7419,6 +7437,7 @@ window.addEventListener('load', async () => {
       if(e.data && e.data.type === 'UPDATE_AVAILABLE'){
         if(reloadingForUpdate) return;
         reloadingForUpdate = true;
+        try { localStorage.setItem('padiapp_just_updated', e.data.version); } catch(err) {}
         window.location.reload();
       }
     });
@@ -7438,6 +7457,20 @@ document.getElementById('gateSigninBtn').addEventListener('click', () => {
 
 // Muat semula automatik sekali sahaja apabila service worker mengesan versi baharu.
 let reloadingForUpdate = false;
+
+function showUpdatedToast(version){
+  const el = document.createElement('div');
+  el.className = 'update-toast';
+  el.setAttribute('role', 'status');
+  el.textContent = `PadiApp telah dikemaskini. Versi ${version} sedang digunakan.`;
+  document.body.appendChild(el);
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
+  }, 3500);
+}
 
 // Muat semula paksa — buang semua service worker dan cache, kemudian reload.
 async function forceHardRefresh(){
