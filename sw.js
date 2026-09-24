@@ -3,7 +3,7 @@
 // nama cache berversi memastikan cache lama dibuang bersih semasa activate.
 // Data Google API (Calendar/Sheets) TIDAK dicache — sentiasa live dari network.
 
-const APP_VERSION = '1.0.25';
+const APP_VERSION = '1.0.26';
 const CACHE_NAME = 'padiapp-v' + APP_VERSION;
 const APP_SHELL = [
   './',
@@ -69,7 +69,7 @@ self.addEventListener('fetch', (event) => {
       if (res && res.ok) {
         if (cached && request.mode === 'navigate') {
           // index.html berubah di network? Kemas kini cache & maklumkan klien —
-          // JANGAN ganggu sesi aktif; pengguna pilih bila untuk muat semula.
+          // klien akan muat semula secara automatik.
           const [oldText, newText] = await Promise.all([cached.clone().text(), res.clone().text()]);
           if (oldText !== newText) {
             await cache.put(request.url, res.clone());

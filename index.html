@@ -2050,23 +2050,6 @@
     width:1px;
     background:var(--sage-line);
   }
-  .update-banner{
-    position:fixed;top:0;left:0;right:0;z-index:10000;
-    display:none;align-items:center;justify-content:center;gap:10px;
-    background:#1B3A6B;color:#fff;font-size:12.5px;line-height:1.3;
-    padding:7px 34px 7px 12px;box-shadow:0 2px 8px rgba(0,0,0,.25);
-    padding-top:calc(7px + env(safe-area-inset-top, 0px));
-  }
-  .update-banner.show{display:flex;}
-  .update-banner .ub-reload{
-    background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.45);
-    border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
-  }
-  .update-banner .ub-reload:hover{background:rgba(255,255,255,.25);}
-  .update-banner .ub-close{
-    position:absolute;right:8px;top:50%;transform:translateY(-50%);
-    background:none;border:none;color:rgba(255,255,255,.75);font-size:16px;cursor:pointer;padding:2px 6px;
-  }
   .push-banner{
     position:fixed;top:0;left:0;right:0;z-index:9999;
     display:none;align-items:center;justify-content:center;gap:10px;
@@ -2217,11 +2200,6 @@
 </style>
 </head>
 <body>
-<div class="update-banner" id="updateBanner">
-  <span>PadiApp telah dikemaskini. Muat semula untuk versi terbaru.</span>
-  <button type="button" class="ub-reload" onclick="window.location.reload()">Muat Semula</button>
-  <button type="button" class="ub-close" onclick="dismissUpdateBanner()" aria-label="Tutup">&times;</button>
-</div>
 <div class="push-banner" id="pushBanner">
   <span>Dayakan notifikasi untuk terima makluman tugasan dan peringatan clock-out.</span>
   <button type="button" class="pb-enable" onclick="enablePushNotifications()">Dayakan</button>
@@ -3135,7 +3113,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.25";
+const APP_VERSION = "1.0.26";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -7423,7 +7401,7 @@ window.addEventListener('load', async () => {
     console.error('Error reading/parsing saved session:', e);
   }
 
-  // Register service worker (PWA installability + app-shell cache & update banner).
+  // Register service worker (PWA installability + app-shell cache & auto-reload on update).
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').then(reg => {
       // Semak sw.js baharu setiap minit supaya deploy pertengahan sesi
@@ -7439,7 +7417,9 @@ window.addEventListener('load', async () => {
     });
     navigator.serviceWorker.addEventListener('message', (e) => {
       if(e.data && e.data.type === 'UPDATE_AVAILABLE'){
-        showUpdateBanner();
+        if(reloadingForUpdate) return;
+        reloadingForUpdate = true;
+        window.location.reload();
       }
     });
     // Tanpa startMessages(), mesej yang tiba sebelum listener dipasang kekal beratur.
@@ -7456,15 +7436,8 @@ document.getElementById('gateSigninBtn').addEventListener('click', () => {
   tokenClient.requestAccessToken();
 });
 
-// Update banner — dipaparkan apabila service worker mengesan versi baharu.
-function showUpdateBanner(){
-  const el = document.getElementById('updateBanner');
-  if(el) el.classList.add('show');
-}
-function dismissUpdateBanner(){
-  const el = document.getElementById('updateBanner');
-  if(el) el.classList.remove('show');
-}
+// Muat semula automatik sekali sahaja apabila service worker mengesan versi baharu.
+let reloadingForUpdate = false;
 
 // Muat semula paksa — buang semua service worker dan cache, kemudian reload.
 async function forceHardRefresh(){
