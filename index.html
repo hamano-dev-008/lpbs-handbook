@@ -3123,7 +3123,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.27";
+const APP_VERSION = "1.0.28";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -7241,11 +7241,38 @@ function initGoogleAuth(){
     }
   });
 
+  try {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleIdentityCredential
+    });
+  } catch(e) {
+    console.warn('[Phase 1 identity test] initialize failed:', e);
+  }
+
   if(pendingSilentReauth){
     pendingSilentReauth = false;
     handleAuthExpired();
   }
 }
+
+// Sign In with Google (ID token) — Fasa 1: selari & tidak aktif, untuk ujian manual sahaja.
+let verifiedIdentity = null;
+
+function handleIdentityCredential(response){
+  try {
+    const b64 = response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
+    const bytes = Uint8Array.from(atob(padded), c => c.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder().decode(bytes));
+    verifiedIdentity = { email: payload.email, name: payload.name, picture: payload.picture };
+    console.log('[Phase 1 identity test]', verifiedIdentity);
+  } catch(e) {
+    console.warn('[Phase 1 identity test] decode failed:', e);
+  }
+}
+
+window.testIdentityLayer = () => google.accounts.id.prompt();
 
 function showGateError(msg, isInfo){
   const el = document.getElementById('gateNote');
