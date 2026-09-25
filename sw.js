@@ -3,7 +3,7 @@
 // nama cache berversi memastikan cache lama dibuang bersih semasa activate.
 // Data Google API (Calendar/Sheets) TIDAK dicache — sentiasa live dari network.
 
-const APP_VERSION = '1.0.31';
+const APP_VERSION = '1.0.32';
 const CACHE_NAME = 'padiapp-v' + APP_VERSION;
 const APP_SHELL = [
   './',
@@ -58,26 +58,40 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App shell: cache-first (paparan segera), semak network di latar belakang.
+  // Navigasi (index.html): network-first, sandaran cache jika network gagal atau
+  // lambat (>4s). Guna URL (bukan Request mod 'navigate' — Cache.put menolaknya)
+  // dan no-store supaya tidak dilayan oleh HTTP cache yang basi.
+  if (request.mode === 'navigate') {
+    const network = fetch(request.url, { cache: 'no-store' });
+    // Klon segera (sebelum halaman membaca body) & simpan untuk sandaran luar talian,
+    // termasuk jika network hanya selesai selepas tamat masa 4s.
+    event.waitUntil(network.then((res) => {
+      if (!res.ok) return;
+      const copy = res.clone();
+      return caches.open(CACHE_NAME).then((cache) => cache.put(request.url, copy));
+    }).catch(() => {}));
+
+    event.respondWith((async () => {
+      const timeout = new Promise((resolve) => setTimeout(resolve, 4000, null));
+      const res = await Promise.race([network, timeout]).catch(() => null);
+      if (res && res.ok) return res;
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(request, { ignoreSearch: true });
+      if (cached) return cached;
+      // Tiada cache (lawatan pertama): tunggu network — gagal secara semula jadi jika luar talian.
+      return res || network;
+    })());
+    return;
+  }
+
+  // manifest.json & ikon: cache-first (paparan segera), semak network di latar belakang.
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request, { ignoreSearch: request.mode === 'navigate' });
+    const cached = await cache.match(request, { ignoreSearch: false });
 
-    // Guna URL (bukan Request mod 'navigate' — Cache.put menolaknya) dan
-    // no-store supaya semakan tidak dilayan oleh HTTP cache yang basi.
     const networkUpdate = fetch(request.url, { cache: 'no-store' }).then(async (res) => {
       if (res && res.ok) {
-        if (cached && request.mode === 'navigate') {
-          // index.html berubah di network? Kemas kini cache & maklumkan klien —
-          // klien akan muat semula secara automatik.
-          const [oldText, newText] = await Promise.all([cached.clone().text(), res.clone().text()]);
-          if (oldText !== newText) {
-            await cache.put(request.url, res.clone());
-            notifyClientsUpdateAvailable();
-          }
-        } else {
-          await cache.put(request.url, res.clone());
-        }
+        await cache.put(request.url, res.clone());
       }
       return res;
     }).catch(() => null);
