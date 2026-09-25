@@ -2080,6 +2080,8 @@
   .push-banner-error{
     background:#7A2E2E;
   }
+  .reconnect-banner{z-index:10000;}
+  .reconnect-banner .pb-enable:disabled{opacity:.6;cursor:default;}
   .gate{
     min-height:100vh;
     display:flex;
@@ -2227,6 +2229,11 @@
 <div class="push-banner push-banner-error" id="pushBannerError">
   <span>Gagal mendaftar peranti untuk notifikasi. Sila cuba lagi.</span>
   <button type="button" class="pb-close" onclick="document.getElementById('pushBannerError').classList.remove('show')" aria-label="Tutup">&times;</button>
+</div>
+<div class="push-banner push-banner-error reconnect-banner" id="reconnectBanner">
+  <span id="reconnectMsg"></span>
+  <button type="button" class="pb-enable" id="reconnectBtn" onclick="reconnectSession()">Sambung Semula</button>
+  <button type="button" class="pb-close" onclick="hideReconnectPrompt()" aria-label="Tutup">&times;</button>
 </div>
 <div class="gate" id="gateScreen">
   <div class="gate-card">
@@ -3141,7 +3148,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.33";
+const APP_VERSION = "1.0.34";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -7049,17 +7056,11 @@ const googleReadyPromise = new Promise(res => { googleReadyResolve = res; });
 let pendingSilentReauth = false;
 
 // --- Silent token refresh (Google access token luput ~1 jam) ---
-const TOKEN_REFRESH_INTERVAL_MS = 45 * 60 * 1000; // refresh sebelum token luput
-const MAX_IDLE_MS = 8 * 60 * 60 * 1000;           // 8 jam tidak aktif -> log masuk semula
 let tokenIssuedAt = 0;
-let lastActivityAt = Date.now();
 let silentRefreshPromise = null;
 let silentRefreshResolve = null;
 let silentRefreshTimer = null;
-
-['pointerdown','keydown','touchstart'].forEach(ev => {
-  document.addEventListener(ev, () => { lastActivityAt = Date.now(); }, { passive: true });
-});
+let reconnectPending = false;
 
 function finishSilentRefresh(ok){
   if(silentRefreshTimer){ clearTimeout(silentRefreshTimer); silentRefreshTimer = null; }
@@ -7090,16 +7091,38 @@ function requestSilentToken(){
   return silentRefreshPromise;
 }
 
-function forceReLogin(msg){
-  hideWelcomeBack();
-  accessToken = null;
+// Sesi luput: papar banner kecil untuk sambung semula — tidak menetapkan semula
+// currentUser, tidak menyembunyikan mainApp dan tidak memaparkan gateScreen.
+function showReconnectPrompt(msg){
+  document.getElementById('reconnectMsg').textContent = msg || 'Sesi Google telah tamat.';
+  const btn = document.getElementById('reconnectBtn');
+  btn.disabled = reconnectPending;
+  btn.textContent = reconnectPending ? 'Menyambung...' : 'Sambung Semula';
+  document.getElementById('reconnectBanner').classList.add('show');
+}
+const forceReLogin = showReconnectPrompt;
+
+function hideReconnectPrompt(){
+  document.getElementById('reconnectBanner').classList.remove('show');
+}
+
+function reconnectSession(){
+  if(!tokenClient || reconnectPending) return;
+  reconnectPending = true;
+  const btn = document.getElementById('reconnectBtn');
+  btn.disabled = true;
+  btn.textContent = 'Menyambung...';
   try {
-    sessionStorage.removeItem('padi_app_token');
-    sessionStorage.removeItem('padi_app_token_timestamp');
-  } catch(e) {}
-  document.getElementById('gateScreen').style.display = '';
-  document.getElementById('mainApp').style.display = 'none';
-  showGateError(msg || 'Sesi telah tamat. Sila log masuk semula.');
+    tokenClient.requestAccessToken();
+  } catch(err) {
+    console.error('Reconnect token request failed:', err);
+    failReconnect();
+  }
+}
+
+function failReconnect(){
+  reconnectPending = false;
+  showReconnectPrompt('Gagal menyambung semula. Sila cuba lagi.');
 }
 
 // Wrapper untuk SEMUA panggilan Google API (Calendar/Sheets/Drive):
@@ -7115,23 +7138,11 @@ async function apiFetch(url, opts = {}){
     if(refreshed){
       res = await doFetch();
     } else if(currentUser){
-      forceReLogin('Sesi Google telah tamat. Sila log masuk semula.');
+      showReconnectPrompt('Sesi Google telah tamat.');
     }
   }
   return res;
 }
-
-// Refresh berkala setiap 45 minit supaya token tidak sempat luput semasa sesi aktif.
-setInterval(() => {
-  if(!accessToken || !currentUser) return;
-  if(Date.now() - lastActivityAt > MAX_IDLE_MS){
-    forceReLogin('Sesi tamat selepas 8 jam tidak aktif. Sila log masuk semula.');
-    return;
-  }
-  requestSilentToken().then(ok => {
-    if(!ok) forceReLogin('Sesi Google telah tamat. Sila log masuk semula.');
-  });
-}, TOKEN_REFRESH_INTERVAL_MS);
 
 // AUTOMATED MIDNIGHT SCHEDULE & HEALTH CHECK DISABLED:
 // 12:00 AM (00:00) timer triggers, cron schedules, and scheduled health checks/token refreshes have been removed.
@@ -7170,7 +7181,7 @@ function handleAuthExpired(){
   console.warn('Access token expired or unauthorized (401). Attempting silent OAuth re-authentication...');
   requestSilentToken().then(ok => {
     if(!ok && currentUser){
-      forceReLogin('Sesi Google telah tamat. Sila log masuk semula.');
+      showReconnectPrompt('Sesi Google telah tamat.');
     }
   });
 }
@@ -7236,6 +7247,11 @@ function initGoogleAuth(){
       pendingSilentReauth = false;
       if(tokenResponse.error){
         console.warn("Silent re-authentication returned error:", tokenResponse.error);
+        if(reconnectPending){
+          failReconnect();
+          if(silentRefreshResolve) finishSilentRefresh(false);
+          return;
+        }
         if(silentRefreshResolve){ finishSilentRefresh(false); return; }
         showGateError("Sesi Google memerlukan pengesahan semula.");
         return;
@@ -7248,6 +7264,12 @@ function initGoogleAuth(){
       } catch(e) {}
       // Refresh senyap pertengahan sesi: kemas kini token sahaja, jangan
       // ulang aliran log masuk penuh (allowlist/switch view) — tiada gangguan UI.
+      if(reconnectPending){
+        reconnectPending = false;
+        hideReconnectPrompt();
+        if(silentRefreshResolve) finishSilentRefresh(true);
+        return;
+      }
       if(silentRefreshResolve){ finishSilentRefresh(true); return; }
       fetchUserInfoAndProceed();
     },
@@ -7255,6 +7277,11 @@ function initGoogleAuth(){
       isRefreshingToken = false;
       pendingSilentReauth = false;
       console.warn("Google Auth error:", err);
+      if(reconnectPending){
+        failReconnect();
+        if(silentRefreshResolve) finishSilentRefresh(false);
+        return;
+      }
       if(silentRefreshResolve){ finishSilentRefresh(false); return; }
       showGateError("Log masuk dibatalkan atau gagal.");
     }
