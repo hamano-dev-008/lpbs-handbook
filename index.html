@@ -3148,7 +3148,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.38";
+const APP_VERSION = "1.0.39";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3178,7 +3178,7 @@ const firebaseConfig = {
 const FCM_VAPID_KEY = "BNfIHAkxNP7WpczuqEVzVkq-RARTLbo4OAGpCrrdxTk029kf2VVD3ZgU6GRp64yJ_7QbbIJl8RHqHmhjCB2OdF4";
 const PUSH_TOKEN_SHEET_ID = "1uDo0TjPi1DUuI7L9oW-2oVYjp0NhSnWeSpvCkRQcezs";
 const PUSH_TOKEN_SHEET_TAB = "token-storage";
-const PUSH_TOKEN_SHEET_RANGE = `${PUSH_TOKEN_SHEET_TAB}!A2:C1000`;
+const PUSH_TOKEN_SHEET_RANGE = `${PUSH_TOKEN_SHEET_TAB}!A2:D1000`;
 
 firebase.initializeApp(firebaseConfig);
 
@@ -5776,7 +5776,7 @@ async function retryPushTokenRegistration(){
   if(!('Notification' in window)) return;
   if(Notification.permission !== 'granted') return;
   try {
-    if(localStorage.getItem('push_token_registered') === 'true') return;
+    if(localStorage.getItem('push_token_registered') === 'true' && localStorage.getItem('push_token')) return;
   } catch(e) {}
   let token;
   try {
@@ -5828,32 +5828,75 @@ async function savePushTokenToSheet(token){
     if(!res.ok) throw new Error('status ' + res.status);
     const data = await res.json();
     const rows = data.values || [];
-    const rowIdx = rows.findIndex(r => (r[0] || '').toLowerCase() === (currentUser.email || '').toLowerCase());
+    // Satu baris setiap peranti: padan pada Token (lajur B), bukan Email.
+    const rowIdx = rows.findIndex(r => (r[1] || '') === token);
+    const deviceLabel = getDeviceLabel();
 
     if(rowIdx !== -1){
       const sheetRow = rowIdx + 2; // PUSH_TOKEN_SHEET_RANGE starts at row 2
-      const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!B' + sheetRow + ':C' + sheetRow)}?valueInputOption=USER_ENTERED`;
+      const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!A' + sheetRow + ':D' + sheetRow)}?valueInputOption=USER_ENTERED`;
       const updateRes = await apiFetch(updateUrl, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: [[token, new Date().toISOString()]] })
+        body: JSON.stringify({ values: [[currentUser.email, token, new Date().toISOString(), deviceLabel]] })
       });
       if(!updateRes.ok) throw new Error('status ' + updateRes.status);
     } else {
-      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!A:C')}:append?valueInputOption=USER_ENTERED`;
+      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!A:D')}:append?valueInputOption=USER_ENTERED`;
       const appendRes = await apiFetch(appendUrl, {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: [[currentUser.email, token, new Date().toISOString()]] })
+        body: JSON.stringify({ values: [[currentUser.email, token, new Date().toISOString(), deviceLabel]] })
       });
       if(!appendRes.ok) throw new Error('status ' + appendRes.status);
     }
-    try { localStorage.setItem('push_token_registered', 'true'); } catch(e) {}
+    try {
+      localStorage.setItem('push_token', token);
+      localStorage.setItem('push_token_registered', 'true');
+    } catch(e) {}
     return true;
   }catch(e){
     console.error('savePushTokenToSheet failed:', e);
     return false;
   }
+}
+
+// Label ringkas untuk lajur Peranti, cth. "iPhone · Safari", "Windows · Chrome".
+function getDeviceLabel(){
+  const ua = navigator.userAgent || '';
+  let os = 'Lain';
+  if(/iPhone/.test(ua)) os = 'iPhone';
+  else if(/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) os = 'iPad';
+  else if(/Android/.test(ua)) os = 'Android';
+  else if(/Windows/.test(ua)) os = 'Windows';
+  else if(/CrOS/.test(ua)) os = 'ChromeOS';
+  else if(/Macintosh/.test(ua)) os = 'Mac';
+  else if(/Linux/.test(ua)) os = 'Linux';
+
+  let browser = 'Pelayar';
+  if(/Edg(e|A|iOS)?\//.test(ua)) browser = 'Edge';
+  else if(/SamsungBrowser\//.test(ua)) browser = 'Samsung Internet';
+  else if(/OPR\/|Opera/.test(ua)) browser = 'Opera';
+  else if(/Firefox\/|FxiOS\//.test(ua)) browser = 'Firefox';
+  else if(/Chrome\/|CriOS\//.test(ua)) browser = 'Chrome';
+  else if(/Safari\//.test(ua)) browser = 'Safari';
+
+  return `${os} · ${browser}`;
+}
+
+// Kosongkan baris token peranti ini semasa log keluar (nilai sahaja — baris lain tidak beralih).
+// Guna fetch biasa dengan token yang ditangkap, kerana apiFetch membaca accessToken global yang sudah dikosongkan.
+async function clearPushTokenFromSheet(token, bearer){
+  const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_RANGE)}`;
+  const res = await fetch(readUrl, { headers: { Authorization: `Bearer ${bearer}` } });
+  if(!res.ok) throw new Error('status ' + res.status);
+  const data = await res.json();
+  const rowIdx = (data.values || []).findIndex(r => (r[1] || '') === token);
+  if(rowIdx === -1) return;
+  const sheetRow = rowIdx + 2; // PUSH_TOKEN_SHEET_RANGE starts at row 2
+  const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!A' + sheetRow + ':D' + sheetRow)}:clear`;
+  const clearRes = await fetch(clearUrl, { method: 'POST', headers: { Authorization: `Bearer ${bearer}` } });
+  if(!clearRes.ok) throw new Error('status ' + clearRes.status);
 }
 
 if(fcmMessaging){
@@ -7494,6 +7537,16 @@ function hideWelcomeBack(){
 }
 
 function logout(){
+  let pushToken = null;
+  try { pushToken = localStorage.getItem('push_token'); } catch(e) {}
+  if(pushToken && accessToken){
+    clearPushTokenFromSheet(pushToken, accessToken)
+      .catch(e => console.warn('clearPushTokenFromSheet failed:', e));
+  }
+  try {
+    localStorage.removeItem('push_token');
+    localStorage.removeItem('push_token_registered');
+  } catch(e) {}
   try {
     localStorage.removeItem('padi_app_user');
     sessionStorage.removeItem('padi_app_token');
