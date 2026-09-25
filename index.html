@@ -943,6 +943,36 @@
     color:var(--sage);
     min-height:16px;
   }
+  .kh-secondary-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;}
+  .save-btn.kh-btn-secondary{
+    background:transparent;
+    color:var(--paddy);
+    border:1px solid var(--paddy);
+  }
+  .save-btn.kh-btn-secondary:hover{background:var(--bg);}
+  .kh-more-actions{margin-top:14px; border-top:1px solid var(--line); padding-top:10px;}
+  .kh-more-actions > .kh-more-toggle{
+    justify-content:flex-start;
+    gap:6px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  .kh-more-actions > .kh-collapse-body{padding-top:10px;}
+  .kh-delete-summary{margin:0 0 10px; font-size:14px; font-weight:600; color:var(--ink);}
+  .kh-delete-warn{margin:0 0 10px; font-size:13px; color:var(--red-text);}
+  .kh-btn-danger{
+    border:none;
+    background:var(--red);
+    color:#fff;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 18px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .kh-btn-danger:disabled{opacity:0.45; cursor:not-allowed;}
   .kh-semak-bar{
     display:flex;
     align-items:center;
@@ -2490,12 +2520,22 @@
         <p class="kh-hours-preview" id="khHoursPreview"></p>
 
         <button class="save-btn" id="khSaveBtn" style="margin-top:14px;">Simpan Rekod</button>
-        <button class="save-btn" id="khBulkAddBtn" style="margin-top:8px;background:var(--paddy-light);">Tambah Semua Staf untuk Tarikh Ini</button>
-        <button class="delete-btn" id="khDeleteAllBtn" style="margin-top:8px;">Padam Semua Rekod</button>
-        <button class="save-btn" id="khBulkEditBtn" style="margin-top:8px;background:var(--paddy-light);">✏️ Edit Rekod Tarikh Ini</button>
+        <div class="kh-secondary-actions">
+          <button class="save-btn kh-btn-secondary" id="khBulkEditBtn">✏️ Edit Rekod Tarikh Ini</button>
+          <button class="save-btn kh-btn-secondary" id="khBulkAddBtn">Tambah Semua Staf untuk Tarikh Ini</button>
+        </div>
         <div id="khBulkEditPanel" style="display:none;margin-top:10px;">
           <label class="field-label">Pilih Tarikh</label>
           <input type="date" id="khBulkEditDate">
+        </div>
+        <div class="kh-collapse kh-more-actions">
+          <div class="kh-collapse-toggle kh-more-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="khMoreActionsBody">
+            <span>⋯ Tindakan Lain</span>
+            <svg class="kh-collapse-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="kh-collapse-body" id="khMoreActionsBody">
+            <button class="delete-btn" id="khDeleteDateBtn">Padam Rekod Tarikh Ini</button>
+          </div>
         </div>
         <p class="kh-note" id="khNote"></p>
       </div>
@@ -2595,6 +2635,25 @@
         <div class="modal-foot">
           <button class="cancel-btn" id="khPdfModalCancel">Batal</button>
           <button class="save-btn" id="khPdfModalConfirm">Jana PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="khDeleteDateModalOverlay">
+      <div class="modal" style="max-width:380px;">
+        <div class="modal-head">
+          <h3>Padam Rekod Tarikh Ini</h3>
+          <button class="modal-close" id="khDeleteDateModalClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="kh-delete-summary" id="khDeleteDateSummary"></p>
+          <p class="kh-delete-warn">Tindakan ini tidak boleh dibatalkan. Taip <b>PADAM</b> untuk mengesahkan.</p>
+          <input type="text" id="khDeleteDateConfirmInput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="PADAM">
+          <p class="kh-note" id="khDeleteDateModalNote"></p>
+        </div>
+        <div class="modal-foot">
+          <button class="cancel-btn" id="khDeleteDateModalCancel">Batal</button>
+          <button class="kh-btn-danger" id="khDeleteDateModalConfirm" disabled>Padam</button>
         </div>
       </div>
     </div>
@@ -3148,7 +3207,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.39";
+const APP_VERSION = "1.0.40";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3429,9 +3488,11 @@ async function loadKehadiranFromSheet(){
     kehadiranRecords.sort((a,b) => b.tarikh.localeCompare(a.tarikh) || a.nama.localeCompare(b.nama));
     kehadiranLoaded = true;
     renderKehadiranTable();
+    return true;
   }catch(e){
     console.error('loadKehadiranFromSheet failed:', e);
     wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan rekod</div>Sila semak sambungan atau cuba semula.</div>`;
+    return false;
   }
 }
 
@@ -4028,32 +4089,96 @@ async function deleteKehadiranRow(rowIndex){
   }
 }
 
-async function deleteAllKehadiranRecords(){
-  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
-  const confirmed = window.confirm('Adakah anda pasti mahu memadam SEMUA rekod kehadiran? Tindakan ini tidak boleh dibatalkan.');
-  if(!confirmed) return;
+let khPendingDelete = null; // { tarikh, rowIndexes }
 
-  const btn = document.getElementById('khDeleteAllBtn');
+function fmtTarikhPanjang(tarikh){
+  const [y, m, d] = tarikh.split('-').map(Number);
+  return `${d} ${MONTH_NAMES[m - 1]} ${y}`;
+}
+
+async function openKhDeleteDateModal(){
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+  const tarikh = document.getElementById('kh-tarikh').value;
   const note = document.getElementById('khNote');
+  const btn = document.getElementById('khDeleteDateBtn');
+
+  if(!tarikh){
+    note.textContent = 'Sila pilih Tarikh dahulu sebelum memadam rekod.';
+    return;
+  }
+
   note.textContent = '';
   btn.disabled = true;
+  btn.textContent = 'Memuatkan...';
+  const loaded = await loadKehadiranFromSheet();
+  btn.disabled = false;
+  btn.textContent = 'Padam Rekod Tarikh Ini';
+  if(!loaded){
+    note.textContent = 'Gagal memuatkan rekod terkini. Sila cuba semula.';
+    return;
+  }
+
+  const rowIndexes = kehadiranRecords.filter(r => r.tarikh === tarikh).map(r => r.rowIndex);
+  if(rowIndexes.length === 0){
+    note.textContent = `Tiada rekod pada ${fmtTarikhPanjang(tarikh)}.`;
+    return;
+  }
+
+  khPendingDelete = { tarikh, rowIndexes };
+  document.getElementById('khDeleteDateSummary').textContent =
+    `${rowIndexes.length} rekod pada ${fmtTarikhPanjang(tarikh)} akan dipadam.`;
+  const input = document.getElementById('khDeleteDateConfirmInput');
+  input.value = '';
+  document.getElementById('khDeleteDateModalConfirm').disabled = true;
+  document.getElementById('khDeleteDateModalNote').textContent = '';
+  document.getElementById('khDeleteDateModalOverlay').classList.add('open');
+  input.focus();
+}
+
+function closeKhDeleteDateModal(){
+  document.getElementById('khDeleteDateModalOverlay').classList.remove('open');
+  khPendingDelete = null;
+}
+
+function updateKhDeleteDateConfirm(){
+  const typed = document.getElementById('khDeleteDateConfirmInput').value.trim();
+  document.getElementById('khDeleteDateModalConfirm').disabled = typed !== 'PADAM';
+}
+
+async function confirmKhDeleteDate(){
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+  if(!khPendingDelete) return;
+  if(document.getElementById('khDeleteDateConfirmInput').value.trim() !== 'PADAM') return;
+
+  const { tarikh, rowIndexes } = khPendingDelete;
+  const btn = document.getElementById('khDeleteDateModalConfirm');
+  const modalNote = document.getElementById('khDeleteDateModalNote');
+  btn.disabled = true;
   btn.textContent = 'Memadam...';
+  modalNote.textContent = '';
 
   try{
     accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}:clear`;
+    // Kosongkan nilai setiap baris sahaja (seperti padam satu baris) supaya baris lain tidak beralih.
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values:batchClear`;
     const res = await apiFetch(url, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ranges: rowIndexes.map(i => `Kehadiran!A${i}:F${i}`) })
     });
-    if(!res.ok) throw new Error('status ' + res.status);
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.error?.message || ('status ' + res.status));
+    }
+    closeKhDeleteDateModal();
     await loadKehadiranFromSheet();
-    note.textContent = 'Semua rekod kehadiran telah dipadam.';
+    document.getElementById('khNote').textContent =
+      `${rowIndexes.length} rekod pada ${fmtTarikhPanjang(tarikh)} telah dipadam.`;
   }catch(e){
-    alert('Ralat memadam semua rekod: ' + e.message);
+    modalNote.textContent = 'Ralat memadam rekod: ' + e.message;
   }finally{
-    btn.disabled = false;
-    btn.textContent = 'Padam Semua Rekod';
+    btn.textContent = 'Padam';
+    updateKhDeleteDateConfirm();
   }
 }
 
@@ -4843,7 +4968,11 @@ document.getElementById('kh-masuk').addEventListener('input', updateHoursPreview
 document.getElementById('kh-keluar').addEventListener('input', updateHoursPreview);
 document.getElementById('khSaveBtn').addEventListener('click', saveKehadiranRecord);
 document.getElementById('khBulkAddBtn').addEventListener('click', bulkAddAllStaff);
-document.getElementById('khDeleteAllBtn').addEventListener('click', deleteAllKehadiranRecords);
+document.getElementById('khDeleteDateBtn').addEventListener('click', openKhDeleteDateModal);
+document.getElementById('khDeleteDateModalClose').addEventListener('click', closeKhDeleteDateModal);
+document.getElementById('khDeleteDateModalCancel').addEventListener('click', closeKhDeleteDateModal);
+document.getElementById('khDeleteDateModalConfirm').addEventListener('click', confirmKhDeleteDate);
+document.getElementById('khDeleteDateConfirmInput').addEventListener('input', updateKhDeleteDateConfirm);
 document.getElementById('khBulkEditBtn').addEventListener('click', toggleBulkEditPanel);
 document.getElementById('khBulkEditDate').addEventListener('change', changeBulkEditDate);
 document.getElementById('khPrintBtn').addEventListener('click', openKhPdfModal);
