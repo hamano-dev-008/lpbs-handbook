@@ -3148,7 +3148,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.36";
+const APP_VERSION = "1.0.37";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -4412,14 +4412,13 @@ async function selfDaftarMasuk(){
 
   try{
     accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
-    if(!accessToken){
-      handleAttendanceAuthError(401, 'Tiada token akses', note, btn, isLate ? 'Late Clock-In' : 'Clock In');
-      return;
-    }
     // Semak semula dengan data terkini — mungkin sudah clock in dari peranti/tab lain.
     const staleRecords = kehadiranRecords;
     await loadKehadiranFromSheet();
-    if(kehadiranRecords === staleRecords) throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+    if(kehadiranRecords === staleRecords){
+      if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', note, btn, isLate ? 'Late Clock-In' : 'Clock In'); return; }
+      throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+    }
     if(kehadiranRecords.find(isMine)){
       renderSelfCheckinCard();
       return;
@@ -4483,10 +4482,6 @@ async function selfSubmitStatus(){
 
   try{
     accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
-    if(!accessToken){
-      handleAttendanceAuthError(401, 'Tiada token akses', note, btn, 'Submit');
-      return;
-    }
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
     const res = await apiFetch(url, {
       method: 'POST',
@@ -4544,14 +4539,13 @@ async function selfDaftarKeluar(){
 
   try{
     accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
-    if(!accessToken){
-      handleAttendanceAuthError(401, 'Tiada token akses', note, btn, 'Clock Out');
-      return;
-    }
     // Cari semula rekod dengan data terkini — rowIndex lama mungkin sudah berubah.
     const staleRecords = kehadiranRecords;
     await loadKehadiranFromSheet();
-    if(kehadiranRecords === staleRecords) throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+    if(kehadiranRecords === staleRecords){
+      if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', note, btn, 'Clock Out'); return; }
+      throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+    }
     rec = kehadiranRecords.find(isMine);
     if(!rec || rec.keluar){
       renderSelfCheckinCard();
@@ -7228,18 +7222,16 @@ function handleAuthExpired(){
   });
 }
 
+// Hanya dipanggil dari butang "Sahkan Semula Akses Google" — paparkan semula kotak
+// kebenaran untuk OAUTH_SCOPE penuh. Kejayaan/kegagalan melalui laluan reconnect.
 function requestAttendanceAuth(){
-  if(tokenClient){
-    try {
-      tokenClient.requestAccessToken({
-        scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile'
-      });
-    } catch(err) {
-      console.error('Failed to request attendance access token:', err);
-      handleAuthExpired();
-    }
-  } else {
-    handleAuthExpired();
+  if(!tokenClient || reconnectPending) return;
+  reconnectPending = true;
+  try {
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  } catch(err) {
+    console.error('Failed to request attendance access token:', err);
+    failReconnect();
   }
 }
 
@@ -7267,10 +7259,16 @@ function handleAttendanceAuthError(resStatus, errMsg, noteEl, btnEl, originalBtn
     if(noteEl){
       noteEl.innerHTML = `<span class="kh-auth-msg" style="color: var(--danger-color, #dc2626);">Akaun anda tidak mempunyai akses Editor pada helaian Google Sheets ini. Sila hubungi pentadbir untuk menambah akses anda.</span>`;
     }
-  } else {
-    requestAttendanceAuth();
+  } else if(resStatus === 401){
+    if(!document.getElementById('reconnectBanner').classList.contains('show')){
+      showReconnectPrompt('Sesi Google telah tamat.');
+    }
     if(noteEl){
-      noteEl.innerHTML = `<span class="kh-auth-msg" style="color: var(--danger-color, #dc2626);">Kebenaran Google Sheets tidak mencukupi (${resStatus} / insufficient_scope). Sila sahkan semula akses akaun Google anda.</span><br><button type="button" class="btn btn-sm btn-outline-primary" style="margin-top: 8px; padding: 6px 12px; cursor: pointer; border-radius: 6px;" onclick="requestAttendanceAuth()">Sahkan Semula Akses Google</button>`;
+      noteEl.innerHTML = `<span class="kh-auth-msg" style="color: var(--danger-color, #dc2626);">Sesi Google telah tamat. Tekan “Sambung Semula” di atas, kemudian cuba lagi.</span>`;
+    }
+  } else {
+    if(noteEl){
+      noteEl.innerHTML = `<span class="kh-auth-msg" style="color: var(--danger-color, #dc2626);">Akses Google Sheets belum diberikan. Tekan butang di bawah dan pastikan semua kotak kebenaran ditanda, kemudian cuba lagi.</span><br><button type="button" class="btn btn-sm btn-outline-primary" style="margin-top: 8px; padding: 6px 12px; cursor: pointer; border-radius: 6px;" onclick="requestAttendanceAuth()">Sahkan Semula Akses Google</button>`;
     }
   }
   if(btnEl){
@@ -7309,6 +7307,8 @@ function initGoogleAuth(){
       if(reconnectPending){
         reconnectPending = false;
         hideReconnectPrompt();
+        const khNote = document.getElementById('khSelfNote');
+        if(khNote && khNote.querySelector('.kh-auth-msg')) khNote.textContent = 'Akses Google dipulihkan. Sila cuba lagi.';
         if(silentRefreshResolve) finishSilentRefresh(true);
         return;
       }
