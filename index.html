@@ -3148,7 +3148,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.35";
+const APP_VERSION = "1.0.36";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -4371,7 +4371,12 @@ function renderSelfCheckinCard(){
   applySelfCheckinLock();
 }
 
+const KH_SELF_UNVERIFIED_MSG = 'Rekod mungkin telah disimpan tetapi tidak dapat disahkan. Jangan tekan semula — sila hubungi pentadbir.';
+let khSelfWriting = false;
+let khSelfMasukUnverified = null;
+
 async function selfDaftarMasuk(){
+  if(khSelfWriting) return;
   const isLate = isPastSelfCheckinCutoff();
   const reasonInput = document.getElementById('kh-self-late-reason');
   let reasonVal = isLate ? (reasonInput?.value.trim() || '') : '';
@@ -4388,9 +4393,14 @@ async function selfDaftarMasuk(){
   const tarikh = fmtKey(new Date());
   const note = document.getElementById('khSelfNote');
   const btn = document.getElementById('khSelfMasukBtn');
+  const isMine = r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh;
 
-  const dup = kehadiranRecords.find(r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh);
-  if(dup){
+  if(khSelfMasukUnverified === tarikh){
+    btn.disabled = true;
+    note.textContent = KH_SELF_UNVERIFIED_MSG;
+    return;
+  }
+  if(kehadiranRecords.find(isMine)){
     renderSelfCheckinCard();
     return;
   }
@@ -4398,11 +4408,20 @@ async function selfDaftarMasuk(){
   btn.disabled = true;
   btn.textContent = 'Merekod...';
   note.textContent = '';
+  khSelfWriting = true;
 
   try{
     accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     if(!accessToken){
       handleAttendanceAuthError(401, 'Tiada token akses', note, btn, isLate ? 'Late Clock-In' : 'Clock In');
+      return;
+    }
+    // Semak semula dengan data terkini — mungkin sudah clock in dari peranti/tab lain.
+    const staleRecords = kehadiranRecords;
+    await loadKehadiranFromSheet();
+    if(kehadiranRecords === staleRecords) throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+    if(kehadiranRecords.find(isMine)){
+      renderSelfCheckinCard();
       return;
     }
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
@@ -4424,13 +4443,22 @@ async function selfDaftarMasuk(){
     if(reasonInput) reasonInput.value = '';
     await loadKehadiranFromSheet();
     renderSelfCheckinCard();
-    document.getElementById('khSelfNote').textContent = 'Masa masuk berjaya direkodkan.';
+    if(kehadiranRecords.find(isMine)){
+      document.getElementById('khSelfNote').textContent = 'Masa masuk berjaya direkodkan.';
+    } else {
+      khSelfMasukUnverified = tarikh;
+      document.getElementById('khSelfNote').textContent = KH_SELF_UNVERIFIED_MSG;
+      const masukBtn = document.getElementById('khSelfMasukBtn');
+      if(masukBtn) masukBtn.disabled = true;
+    }
   }catch(e){
     if(!note.querySelector('.kh-auth-msg')){
       note.textContent = 'Ralat: ' + e.message;
     }
     btn.disabled = false;
     btn.textContent = isLate ? 'Late Clock-In' : 'Clock In';
+  }finally{
+    khSelfWriting = false;
   }
 }
 
@@ -4492,6 +4520,7 @@ async function selfSubmitStatus(){
 }
 
 async function selfDaftarKeluar(){
+  if(khSelfWriting) return;
   if(isPastSelfKeluarEnd() || khLocationState !== 'ok'){
     applySelfCheckinLock();
     return;
@@ -4500,8 +4529,9 @@ async function selfDaftarKeluar(){
   const tarikh = fmtKey(new Date());
   const note = document.getElementById('khSelfNote');
   const btn = document.getElementById('khSelfKeluarBtn');
+  const isMine = r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh;
 
-  const rec = kehadiranRecords.find(r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh);
+  let rec = kehadiranRecords.find(isMine);
   if(!rec || rec.keluar){
     renderSelfCheckinCard();
     return;
@@ -4510,11 +4540,21 @@ async function selfDaftarKeluar(){
   btn.disabled = true;
   btn.textContent = 'Merekod...';
   note.textContent = '';
+  khSelfWriting = true;
 
   try{
     accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     if(!accessToken){
       handleAttendanceAuthError(401, 'Tiada token akses', note, btn, 'Clock Out');
+      return;
+    }
+    // Cari semula rekod dengan data terkini — rowIndex lama mungkin sudah berubah.
+    const staleRecords = kehadiranRecords;
+    await loadKehadiranFromSheet();
+    if(kehadiranRecords === staleRecords) throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+    rec = kehadiranRecords.find(isMine);
+    if(!rec || rec.keluar){
+      renderSelfCheckinCard();
       return;
     }
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!D' + rec.rowIndex)}?valueInputOption=USER_ENTERED`;
@@ -4542,6 +4582,8 @@ async function selfDaftarKeluar(){
     }
     btn.disabled = false;
     btn.textContent = 'Clock Out';
+  }finally{
+    khSelfWriting = false;
   }
 }
 
