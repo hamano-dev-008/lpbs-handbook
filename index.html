@@ -3141,7 +3141,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.32";
+const APP_VERSION = "1.0.33";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3283,7 +3283,7 @@ function buildFallbackSets(){
 
 async function loadAllowlistFromSheet(){
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${ALLOWLIST_SHEET_ID}/values/${encodeURIComponent(ALLOWLIST_SHEET_RANGE)}`;
     const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(res.status === 401){
@@ -3391,7 +3391,7 @@ function normalizeTimeString(raw){
 async function loadKehadiranFromSheet(){
   const wrap = document.getElementById('khTableWrap');
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}`;
     const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(res.status === 401){
@@ -3684,7 +3684,7 @@ async function saveEditKehadiranRow(rowIndex){
   }
 
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A'+rowIndex+':F'+rowIndex)}?valueInputOption=USER_ENTERED`;
     const res = await apiFetch(url, {
       method: 'PUT',
@@ -3830,7 +3830,7 @@ async function saveAllBulkEdit(){
   note.textContent = '';
 
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values:batchUpdate`;
     const body = {
       valueInputOption: 'USER_ENTERED',
@@ -3902,7 +3902,7 @@ async function saveKehadiranRecord(){
   note.textContent = '';
 
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
     const res = await apiFetch(url, {
       method: 'POST',
@@ -3979,7 +3979,7 @@ async function bulkAddAllStaff(){
   note.textContent = '';
 
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A:F')}:append?valueInputOption=USER_ENTERED`;
     const res = await apiFetch(url, {
       method: 'POST',
@@ -4007,7 +4007,7 @@ async function deleteKehadiranRow(rowIndex){
   if(!confirmed) return;
 
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     // Clear the row's values (keeps row structure stable) via a batch update.
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A'+rowIndex+':F'+rowIndex)}:clear`;
     const res = await apiFetch(url, {
@@ -4033,7 +4033,7 @@ async function deleteAllKehadiranRecords(){
   btn.textContent = 'Memadam...';
 
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}:clear`;
     const res = await apiFetch(url, {
       method: 'POST',
@@ -4393,7 +4393,7 @@ async function selfDaftarMasuk(){
   note.textContent = '';
 
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     if(!accessToken){
       handleAttendanceAuthError(401, 'Tiada token akses', note, btn, isLate ? 'Late Clock-In' : 'Clock In');
       return;
@@ -4447,7 +4447,7 @@ async function selfSubmitStatus(){
   note.textContent = '';
 
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     if(!accessToken){
       handleAttendanceAuthError(401, 'Tiada token akses', note, btn, 'Submit');
       return;
@@ -4505,7 +4505,7 @@ async function selfDaftarKeluar(){
   note.textContent = '';
 
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     if(!accessToken){
       handleAttendanceAuthError(401, 'Tiada token akses', note, btn, 'Clock Out');
       return;
@@ -5149,7 +5149,7 @@ function taskPrioritySlug(priority){
 async function loadTaskFromSheet(){
   const wrap = document.getElementById('taskListWrap');
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${TASK_SHEET_ID}/values/${encodeURIComponent(TASK_SHEET_RANGE)}`;
     const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(res.status === 401){
@@ -5551,7 +5551,7 @@ let currentUserReadIds = new Set(); // Set<string> of task rowIndex values alrea
 
 async function loadNotifReadFromSheet(){
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${NOTIF_READ_SHEET_ID}/values/${encodeURIComponent(NOTIF_READ_SHEET_RANGE)}`;
     const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(res.status === 401){
@@ -5951,7 +5951,7 @@ function dateKeysSpannedByGoogleEvent(gEvent){
 }
 
 async function loadEventsFromGoogleCalendar(){
-  accessToken = localStorage.getItem('padi_app_token') || accessToken;
+  accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
   if(!accessToken) return;
   calendarLoadError = null;
   try{
@@ -6217,7 +6217,7 @@ async function loadPautanFromSheet(){
   const wrap = document.getElementById('pautanListWrap');
   wrap.innerHTML = `<div class="empty-state"><div class="big">Memuatkan pautan...</div></div>`;
   try{
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${PAUTAN_SHEET_ID}/values/${encodeURIComponent(PAUTAN_SHEET_RANGE)}`;
     const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if(res.status === 401){
@@ -7094,8 +7094,8 @@ function forceReLogin(msg){
   hideWelcomeBack();
   accessToken = null;
   try {
-    localStorage.removeItem('padi_app_token');
-    localStorage.removeItem('padi_app_token_timestamp');
+    sessionStorage.removeItem('padi_app_token');
+    sessionStorage.removeItem('padi_app_token_timestamp');
   } catch(e) {}
   document.getElementById('gateScreen').style.display = '';
   document.getElementById('mainApp').style.display = 'none';
@@ -7243,8 +7243,8 @@ function initGoogleAuth(){
       accessToken = tokenResponse.access_token;
       tokenIssuedAt = Date.now();
       try {
-        localStorage.setItem('padi_app_token', accessToken);
-        localStorage.setItem('padi_app_token_timestamp', Date.now().toString());
+        sessionStorage.setItem('padi_app_token', accessToken);
+        sessionStorage.setItem('padi_app_token_timestamp', Date.now().toString());
       } catch(e) {}
       // Refresh senyap pertengahan sesi: kemas kini token sahaja, jangan
       // ulang aliran log masuk penuh (allowlist/switch view) — tiada gangguan UI.
@@ -7365,8 +7365,8 @@ function attemptSignIn(email, name, picture){
     currentUser = { email, name: displayName, picture: picture || cachedPicture || '' };
     try {
       localStorage.setItem('padi_app_user', JSON.stringify(currentUser));
-      localStorage.setItem('padi_app_token', accessToken);
-      localStorage.setItem('padi_app_token_timestamp', Date.now().toString());
+      sessionStorage.setItem('padi_app_token', accessToken);
+      sessionStorage.setItem('padi_app_token_timestamp', Date.now().toString());
     } catch(e) {
       console.warn('Failed to save session to localStorage:', e);
     }
@@ -7385,8 +7385,8 @@ function attemptSignIn(email, name, picture){
     accessToken = null;
     try {
       localStorage.removeItem('padi_app_user');
-      localStorage.removeItem('padi_app_token');
-      localStorage.removeItem('padi_app_token_timestamp');
+      sessionStorage.removeItem('padi_app_token');
+      sessionStorage.removeItem('padi_app_token_timestamp');
     } catch(e) {}
   }
 }
@@ -7421,8 +7421,8 @@ function hideWelcomeBack(){
 function logout(){
   try {
     localStorage.removeItem('padi_app_user');
-    localStorage.removeItem('padi_app_token');
-    localStorage.removeItem('padi_app_token_timestamp');
+    sessionStorage.removeItem('padi_app_token');
+    sessionStorage.removeItem('padi_app_token_timestamp');
   } catch(e) {
     console.warn('Failed to clear session from localStorage:', e);
   }
@@ -7456,10 +7456,10 @@ window.addEventListener('load', async () => {
   // Restore persistent login from localStorage if present
   try {
     const savedUser = localStorage.getItem('padi_app_user');
-    const savedToken = localStorage.getItem('padi_app_token');
-    const savedTokenTimestamp = localStorage.getItem('padi_app_token_timestamp');
+    const savedToken = sessionStorage.getItem('padi_app_token');
+    const savedTokenTimestamp = sessionStorage.getItem('padi_app_token_timestamp');
 
-    if(savedUser && savedToken){
+    if(savedUser){
       currentUser = JSON.parse(savedUser);
       accessToken = savedToken;
       if(currentUser) showWelcomeBack(currentUser);
@@ -7470,14 +7470,14 @@ window.addEventListener('load', async () => {
 
       let tokenValid = await verifyToken(savedToken);
       // Token lama tidak sah — cuba dapatkan token baharu secara senyap sekali sebelum
-      // membuang sesi. Callback tokenClient mengemas kini accessToken & localStorage.
+      // membuang sesi. Callback tokenClient mengemas kini accessToken & sessionStorage.
       if(!tokenValid) tokenValid = await requestSilentToken();
       if(!tokenValid){
         currentUser = null;
         accessToken = null;
         try {
-          localStorage.removeItem('padi_app_token');
-          localStorage.removeItem('padi_app_token_timestamp');
+          sessionStorage.removeItem('padi_app_token');
+          sessionStorage.removeItem('padi_app_token_timestamp');
           localStorage.removeItem('padi_app_user');
         } catch(e) {}
         showGateError("");
@@ -7683,7 +7683,7 @@ function toggleMultiDayFields(uid){
 }
 
 async function saveNewEventToGoogleCalendar(){
-  accessToken = localStorage.getItem('padi_app_token') || accessToken;
+  accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
   const saveBtn = document.getElementById('modalSave');
   const title = document.getElementById('f-title').value.trim();
   const multiDay = document.getElementById('f-multiday').checked;
@@ -7898,7 +7898,7 @@ function cancelEdit(uid){
 }
 
 async function saveEditedEvent(uid){
-  accessToken = localStorage.getItem('padi_app_token') || accessToken;
+  accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
   const e = eventDataByUid[uid];
   if(!e || !e.id) return;
 
@@ -8023,7 +8023,7 @@ function showUndoToast(uid, eventTitle, onExpire){
 }
 
 async function deleteEventPrompt(eventId, uid){
-  accessToken = localStorage.getItem('padi_app_token') || accessToken;
+  accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
   if(!currentUser || !isAllowedEditor(currentUser.email)){
     return; // safety net; button shouldn't render for non-editors anyway
   }
@@ -8381,7 +8381,7 @@ async function loadFailsFromSheet() {
   }
   
   try {
-    accessToken = localStorage.getItem('padi_app_token') || accessToken;
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/SistemFail!A2:F1000`;
     const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (res.status === 401) {
