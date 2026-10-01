@@ -499,6 +499,12 @@
   .tab-icon svg{width:21px; height:21px;}
   .tab-add-center svg{width:24px; height:24px;}
   .tab-label{font-size:11px; font-weight:600; letter-spacing:0.01em;}
+  @media (max-width:400px){
+    .bottom-tabs{padding-left:6px; padding-right:6px; gap:2px;}
+    .tab-btn{min-width:0; padding:6px 2px;}
+    .tab-label{font-size:10.5px; white-space:nowrap;}
+    .bottom-tabs .tab-add-center{width:46px; height:46px; margin-top:-23px;}
+  }
   .lagi-overlay{
     display:none;
     position:fixed;
@@ -722,6 +728,63 @@
     color:var(--sage);
   }
   .notif-push-note.err{color:var(--red-text);}
+  .utama-grid{display:grid; grid-template-columns:1fr; gap:14px; margin-top:14px; align-items:start;}
+  @media (min-width:720px){
+    .utama-grid{grid-template-columns:1fr 1fr;}
+  }
+  .utama-card{
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.04);
+    min-width:0;
+  }
+  .utama-card-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+  .utama-card-title{font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; color:var(--ink); margin:0;}
+  .utama-link{background:none; border:none; padding:2px 0; font-size:12.5px; font-weight:600; color:var(--paddy-light); cursor:pointer; white-space:nowrap; font-family:'Inter',sans-serif;}
+  .utama-muted{font-size:13px; color:var(--sage); margin:0;}
+  .utama-error{font-size:13px; color:var(--red-text); margin:0;}
+  .utama-sub{font-size:11px; font-weight:600; letter-spacing:0.03em; text-transform:uppercase; color:var(--sage); margin:14px 0 6px;}
+  .utama-today{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; background:var(--bg); border-radius:10px;}
+  .utama-today-text{font-size:14px; font-weight:600; color:var(--ink);}
+  .utama-today-text small{display:block; font-size:12px; font-weight:500; color:var(--ink-soft); margin-top:2px;}
+  .utama-btn{
+    border:none; border-radius:8px; background:var(--paddy); color:#fff;
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+    padding:8px 14px; cursor:pointer; white-space:nowrap; flex:none;
+  }
+  .utama-stats{display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;}
+  .utama-stat{background:var(--bg); border-radius:10px; padding:8px 10px; min-width:0;}
+  .utama-stat b{display:block; font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:600; color:var(--ink); line-height:1.3;}
+  .utama-stat span{font-size:11.5px; color:var(--ink-soft);}
+  .utama-stat.warn b{color:var(--red-text);}
+  button.utama-stat{border:none; text-align:left; cursor:pointer; font-family:'Inter',sans-serif;}
+  .utama-attn-list{list-style:none; margin:8px 0 0; padding:0; font-size:12.5px; color:var(--ink-soft);}
+  .utama-attn-list li{padding:5px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:10px;}
+  .utama-attn-list li:last-child{border-bottom:none;}
+  .utama-attn-list .why{color:var(--red-text); font-weight:600;}
+  .utama-list{display:flex; flex-direction:column;}
+  .utama-item{display:block; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:9px 0; font-family:'Inter',sans-serif; color:var(--ink);}
+  .utama-item:last-child{border-bottom:none;}
+  button.utama-item{cursor:pointer;}
+  .utama-item-top{display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:600; color:var(--paddy-light);}
+  .utama-item-title{font-size:13.5px; font-weight:600; margin-top:2px;}
+  .utama-item-meta{font-size:12px; color:var(--ink-soft); margin-top:1px;}
+  .utama-item.overdue .utama-item-meta{color:var(--red-text); font-weight:600;}
+  .utama-task-counts{display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:6px;}
+  .utama-notif-btn{display:flex; align-items:center; justify-content:space-between; width:100%; padding:10px 12px; background:var(--bg); border:none; border-radius:10px; cursor:pointer; font-family:'Inter',sans-serif; font-size:13.5px; color:var(--ink);}
+  .utama-notif-btn b{font-family:'Space Grotesk',sans-serif; font-size:17px;}
+  .utama-notif-btn b.unread{color:var(--red-text);}
+  .utama-push{margin-top:12px; font-size:12.5px; color:var(--ink-soft);}
+  .utama-chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .utama-chip{
+    display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    padding:6px 12px; border-radius:999px; border:1px solid var(--sage-line);
+    background:var(--bg); color:var(--paddy); font-size:12.5px; font-weight:600; text-decoration:none;
+  }
+  .utama-task-sheet h3{font-family:'Space Grotesk',sans-serif; font-size:17px; margin:0 6px 10px; color:var(--ink);}
+  .utama-task-sheet .detail-row{padding:0 6px;}
   .staff-info-name{
     font-size:13.5px;
     font-weight:600;
@@ -2382,7 +2445,31 @@
 
   <div class="app-content">
 
-  <div id="sectionAktiviti">
+  <div id="sectionUtama">
+  <section class="analytics no-border-top">
+    <div class="print-head">
+      <p class="eyebrow">PAPAN PEMUKA</p>
+      <h2 class="ana-title" id="utamaTarikh"></h2>
+    </div>
+    <div class="utama-grid">
+      <div class="utama-card" id="utamaKehadiran"></div>
+      <div class="utama-card" id="utamaAktiviti"></div>
+      <div class="utama-card" id="utamaTugasan"></div>
+      <div class="utama-card" id="utamaPautan">
+        <div class="utama-card-head"><h3 class="utama-card-title">Pautan &amp; Notifikasi</h3></div>
+        <button type="button" class="utama-notif-btn" id="utamaNotifBtn" onclick="event.stopPropagation(); openNotifFromUtama()"></button>
+        <div class="utama-push" id="utamaPushStatus" data-push-status></div>
+        <div class="utama-card-head" style="margin:14px 0 8px;">
+          <p class="utama-sub" style="margin:0;">Pautan Pantas</p>
+          <button type="button" class="utama-link" onclick="switchSection('pautan')">Lihat semua</button>
+        </div>
+        <div id="utamaPautanChips"></div>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <div id="sectionAktiviti" style="display:none;">
 
   <div class="stat-card-row" id="statCardRow">
     <div class="stat-card stat-card-primary">
@@ -2857,13 +2944,17 @@
   </div>
 
   <nav class="bottom-tabs" id="bottomTabs">
-    <button class="tab-btn active" id="tabAktiviti" onclick="switchSection('aktiviti')">
+    <button class="tab-btn active" id="tabUtama" onclick="switchSection('utama')">
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12.204c0-2.289 0-3.433.52-4.381c.518-.949 1.467-1.537 3.364-2.715l2-1.241C9.889 2.622 10.892 2 12 2s2.11.622 4.116 1.867l2 1.241c1.897 1.178 2.846 1.766 3.365 2.715S22 9.915 22 12.203v1.522c0 3.9 0 5.851-1.172 7.063S17.771 22 14 22h-4c-3.771 0-5.657 0-6.828-1.212S2 17.626 2 13.725z"/><path stroke-linecap="round" d="M15 18H9"/></g></svg></span>
+      <span class="tab-label">Utama</span>
+    </button>
+    <button class="tab-btn" id="tabAktiviti" onclick="switchSection('aktiviti')">
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c0-3.771 0-5.657 1.172-6.828S6.229 4 10 4h4c3.771 0 5.657 0 6.828 1.172S22 8.229 22 12v2c0 3.771 0 5.657-1.172 6.828S17.771 22 14 22h-4c-3.771 0-5.657 0-6.828-1.172S2 17.771 2 14z"/><path stroke-linecap="round" d="M7 4V2.5M17 4V2.5M2.5 9h19"/><path fill="currentColor" stroke="none" d="M18 17a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-5 4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-5 4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></g></svg></span>
       <span class="tab-label">Aktiviti</span>
     </button>
     <button class="tab-btn" id="tabKehadiran" onclick="switchSection('kehadiran')">
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="6" r="4"/><path stroke-linecap="round" d="M15 9a3 3 0 1 0 0-6"/><ellipse cx="9" cy="17" rx="7" ry="4"/><path stroke-linecap="round" d="M18 14c1.754.385 3 1.359 3 2.5c0 1.03-1.014 1.923-2.5 2.37"/></g></svg></span>
-      <span class="tab-label">Kehadiran Staf</span>
+      <span class="tab-label">Kehadiran</span>
     </button>
     <button class="tab-add-center" id="tabAddCenter" style="display:none;" onclick="openModal()" aria-label="Tambah aktiviti">
       <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 13H6q-.425 0-.712-.288T5 12t.288-.712T6 11h5V6q0-.425.288-.712T12 5t.713.288T13 6v5h5q.425 0 .713.288T19 12t-.288.713T18 13h-5v5q0 .425-.288.713T12 19t-.712-.288T11 18z"/></svg>
@@ -2877,6 +2968,12 @@
       <span class="tab-label">More</span>
     </button>
   </nav>
+
+  <div class="lagi-overlay" id="utamaTaskOverlay" onclick="closeUtamaTask()"></div>
+  <div class="lagi-sheet utama-task-sheet" id="utamaTaskSheet" role="dialog" aria-modal="true" aria-labelledby="utamaTaskTitle">
+    <div class="lagi-sheet-handle"></div>
+    <div id="utamaTaskBody"></div>
+  </div>
 
   <div class="lagi-overlay" id="lagiOverlay" onclick="closeLagiMenu()"></div>
   <div class="lagi-sheet" id="lagiSheet">
@@ -3297,7 +3394,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.44";
+const APP_VERSION = "1.0.45";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3505,6 +3602,7 @@ function hasStaffNama(email){
 // ============================================================
 let kehadiranRecords = []; // { rowIndex, nama, tarikh, masuk, keluar, jam }
 let kehadiranLoaded = false;
+let kehadiranLoadFailed = false;
 
 function calcHours(masuk, keluar){
   if(!masuk || !keluar) return null;
@@ -3579,11 +3677,15 @@ async function loadKehadiranFromSheet(){
 
     kehadiranRecords.sort((a,b) => b.tarikh.localeCompare(a.tarikh) || a.nama.localeCompare(b.nama));
     kehadiranLoaded = true;
+    kehadiranLoadFailed = false;
     renderKehadiranTable();
+    refreshUtama('kehadiran');
     return true;
   }catch(e){
     console.error('loadKehadiranFromSheet failed:', e);
     wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan rekod</div>Sila semak sambungan atau cuba semula.</div>`;
+    kehadiranLoadFailed = true;
+    refreshUtama('kehadiran');
     return false;
   }
 }
@@ -5521,6 +5623,7 @@ document.getElementById('minitGenerateBtn').addEventListener('click', generateMi
 // ============================================================
 let taskRecords = []; // { rowIndex, tajuk, keterangan, bahagian, keutamaan, status, tarikhAkhir, tagStaf }
 let taskLoaded = false;
+let taskLoadFailed = false;
 let taskStatusFilter = 'semua'; // 'semua' | 'Belum Mula' | 'Sedang Dijalankan' | 'Selesai'
 const TASK_STATUS_CYCLE = ['Belum Mula', 'Sedang Dijalankan', 'Selesai'];
 let newTaskTags = []; // emails picked in the "Tambah Tugasan" modal, before save
@@ -5564,11 +5667,15 @@ async function loadTaskFromSheet(){
     }).filter(Boolean);
 
     taskLoaded = true;
+    taskLoadFailed = false;
     renderTaskList();
     refreshNotifBell();
+    refreshUtama('task');
   }catch(e){
     console.error('loadTaskFromSheet failed:', e);
     wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan tugasan</div>Sila semak sambungan atau cuba semula.</div>`;
+    taskLoadFailed = true;
+    refreshUtama('task');
   }
 }
 
@@ -5990,6 +6097,7 @@ function refreshNotifBell(){
   const tagged = getTaggedTasksForCurrentUser();
   const hasUnread = tagged.some(t => !isTaskReadByCurrentUser(t.rowIndex));
   dot.style.display = hasUnread ? '' : 'none';
+  refreshUtama('notif');
 }
 
 function renderNotifPanel(){
@@ -6013,7 +6121,7 @@ function renderNotifPanel(){
     }).join('');
   }
 
-  panel.innerHTML = body + '<div class="notif-push" id="pushStatusSection"></div>';
+  panel.innerHTML = body + '<div class="notif-push" id="pushStatusSection" data-push-status></div>';
   refreshPushStatus();
 }
 
@@ -6247,15 +6355,13 @@ async function isPushTokenInSheet(){
   return rows.some(r => (r[1] || '') === token && (r[0] || '').toLowerCase() === email);
 }
 
-let pushStatusSeq = 0;
-
-// Bahagian "Notifikasi telefon" di bawah panel loceng. note = { text, error } selepas Daftar semula.
-async function refreshPushStatus(note){
-  const el = document.getElementById('pushStatusSection');
+// Bahagian "Notifikasi telefon" (panel loceng & kad Utama). note = { text, error } selepas Daftar semula.
+async function refreshPushStatus(note, el){
+  el = el || document.getElementById('pushStatusSection');
   if(!el) return;
-  const seq = ++pushStatusSeq;
+  const seq = el._pushSeq = (el._pushSeq || 0) + 1;
   const render = (line, btnHtml) => {
-    if(seq !== pushStatusSeq) return;
+    if(seq !== el._pushSeq) return;
     const noteHtml = note ? `<div class="notif-push-note${note.error ? ' err' : ''}">${escapeHtml(note.text)}</div>` : '';
     el.innerHTML = `<div class="notif-push-title">Notifikasi telefon</div><div class="notif-push-row"><span>${line}</span>${btnHtml || ''}</div>${noteHtml}`;
   };
@@ -6287,12 +6393,14 @@ async function refreshPushStatus(note){
 }
 
 async function enablePushFromPanel(btn){
+  const el = btn.closest('[data-push-status]');
   btn.disabled = true;
   await enablePushNotifications();
-  refreshPushStatus();
+  refreshPushStatus(null, el);
 }
 
 async function reregisterPushFromPanel(btn){
+  const el = btn.closest('[data-push-status]');
   btn.disabled = true;
   btn.textContent = 'Mendaftar…';
   let note;
@@ -6303,7 +6411,7 @@ async function reregisterPushFromPanel(btn){
     console.error('reregisterPushFromPanel failed:', e);
     note = { text: errText(e), error: true };
   }
-  refreshPushStatus(note);
+  refreshPushStatus(note, el);
 }
 
 // Label ringkas untuk lajur Peranti, cth. "iPhone · Safari", "Windows · Chrome".
@@ -6538,11 +6646,13 @@ async function loadEventsFromGoogleCalendar(){
     if(currentView === 'month') renderMonthView();
     if(currentView === 'day') renderRangeView();
     refreshAnalytics();
+    refreshUtama('aktiviti');
   }catch(e){
     calendarLoadError = e.message === 'PERMISSION'
       ? 'Akaun anda tidak mempunyai kebenaran untuk melihat kalendar ini. Sila hubungi pentadbir LPBS.'
       : 'Gagal memuatkan data kalendar. Sila muat semula halaman.';
     document.getElementById('rangeView').innerHTML = `<div class="empty-state"><div class="big">Ralat memuatkan data</div>${calendarLoadError}</div>`;
+    refreshUtama('aktiviti');
   }
 }
 
@@ -6739,11 +6849,14 @@ function toggleEvent(uid){
   if(el) el.classList.toggle('open');
 }
 
-let appSection = 'aktiviti'; // 'aktiviti' | 'analitik' | 'kehadiran' | 'minit' | 'task' | 'fail' | 'pautan'
+let appSection = 'utama'; // 'utama' | 'aktiviti' | 'analitik' | 'kehadiran' | 'minit' | 'task' | 'fail' | 'pautan'
 
 // ============================================================
 // PAUTAN — Pautan Berguna (Sheet-backed links list)
 // ============================================================
+let pautanLinks = null; // null = belum dimuatkan
+let pautanLoadFailed = false;
+
 async function loadPautanFromSheet(){
   const wrap = document.getElementById('pautanListWrap');
   wrap.innerHTML = `<div class="empty-state"><div class="big">Memuatkan pautan...</div></div>`;
@@ -6765,9 +6878,14 @@ async function loadPautanFromSheet(){
       return { namaPautan, url };
     }).filter(Boolean);
 
+    pautanLinks = links;
+    pautanLoadFailed = false;
     renderPautanList(links);
+    refreshUtama('pautan');
   }catch(e){
     console.error('loadPautanFromSheet failed:', e);
+    pautanLoadFailed = true;
+    refreshUtama('pautan');
     wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan pautan</div>Sila cuba semula.<br><button type="button" class="save-btn" style="margin-top:14px; padding:8px 20px; font-size:13px;" onclick="loadPautanFromSheet()">Cuba Semula</button></div>`;
   }
 }
@@ -6788,6 +6906,329 @@ function renderPautanList(links){
     </a>`).join('');
 }
 
+// ============================================================
+// UTAMA — papan pemuka peribadi. Baca sahaja: setiap kad dikira daripada
+// data modul sedia ada dan dirender sendiri (muat / kosong / ralat).
+// ============================================================
+const utamaInFlight = {}; // part -> Promise yang sedang berjalan
+let utamaAttnOpen = false;
+
+const UTAMA_LOADERS = {
+  kehadiran: () => loadKehadiranFromSheet(),
+  aktiviti: () => loadEventsFromGoogleCalendar(),
+  task: () => loadTaskFromSheet().then(() => loadNotifReadFromSheet()),
+  pautan: () => loadPautanFromSheet()
+};
+
+function trackUtamaLoad(part, promise){
+  utamaInFlight[part] = promise;
+  promise.catch(() => {}).finally(() => {
+    if(utamaInFlight[part] === promise) utamaInFlight[part] = null;
+    refreshUtama(part);
+  });
+  return promise;
+}
+
+function ensureUtamaLoad(part){
+  if(!utamaInFlight[part]) trackUtamaLoad(part, UTAMA_LOADERS[part]());
+}
+
+function retryUtama(part){
+  ensureUtamaLoad(part);
+  refreshUtama(part);
+}
+
+function openUtama(){
+  document.getElementById('utamaTarikh').textContent = fmtTarikhMelayu(new Date());
+  if(accessToken){
+    if(!kehadiranLoaded) ensureUtamaLoad('kehadiran');
+    if(!calendarLoaded) ensureUtamaLoad('aktiviti');
+    if(!taskLoaded) ensureUtamaLoad('task');
+    if(!pautanLinks) ensureUtamaLoad('pautan');
+  }
+  renderUtamaKehadiran();
+  renderUtamaAktiviti();
+  renderUtamaTugasan();
+  renderUtamaNotifCount();
+  renderUtamaPautan();
+  const pushEl = document.getElementById('utamaPushStatus');
+  if(accessToken) refreshPushStatus(null, pushEl);
+  else pushEl.innerHTML = '';
+}
+
+function refreshUtama(part){
+  if(appSection !== 'utama') return;
+  if(part === 'kehadiran') renderUtamaKehadiran();
+  else if(part === 'aktiviti') renderUtamaAktiviti();
+  else if(part === 'task' || part === 'notif'){
+    renderUtamaTugasan();
+    renderUtamaNotifCount();
+  }
+  else if(part === 'pautan') renderUtamaPautan();
+}
+
+function utamaState(part, loaded, failed){
+  if(loaded) return 'ok';
+  if(!accessToken) return 'offline';
+  if(failed && !utamaInFlight[part]) return 'error';
+  return 'loading';
+}
+
+function utamaStateHtml(state, part){
+  if(state === 'offline') return '<p class="utama-muted">Sila sambung semula untuk memuatkan data.</p>';
+  if(state === 'error') return `<p class="utama-error">Gagal memuatkan data.</p><button type="button" class="utama-link" onclick="retryUtama('${part}')">Cuba semula</button>`;
+  return '<p class="utama-muted">Memuatkan...</p>';
+}
+
+function utamaCardHtml(title, linkHtml, bodyHtml){
+  return `<div class="utama-card-head"><h3 class="utama-card-title">${title}</h3>${linkHtml || ''}</div>${bodyHtml}`;
+}
+
+function isKhLewat(masuk){
+  if(!masuk) return false;
+  const [h, m] = masuk.split(':').map(Number);
+  return h * 60 + m > KH_SELF_CUTOFF_HOUR * 60 + KH_SELF_CUTOFF_MINUTE;
+}
+
+function fmtTarikhPendek(date){
+  const dayName = DAY_NAMES[date.getDay()];
+  return `${dayName.charAt(0)}${dayName.slice(1).toLowerCase()}, ${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`;
+}
+
+function renderUtamaKehadiran(){
+  const el = document.getElementById('utamaKehadiran');
+  const state = utamaState('kehadiran', kehadiranLoaded, kehadiranLoadFailed);
+  if(state !== 'ok'){
+    el.innerHTML = utamaCardHtml('Kehadiran', '', utamaStateHtml(state, 'kehadiran'));
+    return;
+  }
+
+  const nama = getSelfCheckinName().toLowerCase();
+  const mine = nama ? kehadiranRecords.filter(r => r.nama.toLowerCase() === nama && r.tarikh) : [];
+  const byDate = new Map();
+  mine.forEach(r => { if(!byDate.has(r.tarikh)) byDate.set(r.tarikh, r); });
+  const firstKey = mine.reduce((min, r) => (!min || r.tarikh < min) ? r.tarikh : min, '');
+
+  const now = new Date();
+  const todayKey = fmtKey(now);
+  const weekend = now.getDay() === 0 || now.getDay() === 6;
+  const goBtn = label => `<button type="button" class="utama-btn" onclick="switchSection('kehadiran')">${label}</button>`;
+
+  const rec = byDate.get(todayKey);
+  let todayText, todayBtn = '';
+  if(!rec){
+    if(weekend){
+      todayText = 'Hujung minggu';
+    } else {
+      todayText = 'Belum clock in';
+      todayBtn = goBtn('Clock In');
+    }
+  } else if((rec.status || 'Hadir') !== 'Hadir'){
+    todayText = escapeHtml(rec.status) + (rec.tajuk ? `<small>${escapeHtml(rec.tajuk)}</small>` : '');
+  } else if(!rec.keluar){
+    todayText = `Clock in ${rec.masuk || '--:--'} &middot; belum clock out`;
+    if(!isBeforeSelfKeluarStart() && !isPastSelfKeluarEnd()) todayBtn = goBtn('Clock Out');
+  } else {
+    todayText = `${rec.masuk} &ndash; ${rec.keluar} &middot; ${fmtHours(rec.jam)}`;
+  }
+
+  const monthPrefix = todayKey.slice(0, 7);
+  let hadir = 0, lewat = 0;
+  const counts = { Cuti: 0, MC: 0, Outstation: 0, Kursus: 0 };
+  byDate.forEach((r, key) => {
+    if(!key.startsWith(monthPrefix)) return;
+    if(r.status === 'Hadir' && r.masuk){
+      hadir++;
+      if(isKhLewat(r.masuk)) lewat++;
+    }
+    if(r.status in counts) counts[r.status]++;
+  });
+
+  const attn = [];
+  for(let d = now.getDate() - 1; d >= 1; d--){
+    const date = new Date(now.getFullYear(), now.getMonth(), d);
+    const key = fmtKey(date);
+    const r = byDate.get(key);
+    if(!r){
+      const weekday = date.getDay() !== 0 && date.getDay() !== 6;
+      if(weekday && firstKey && key >= firstKey) attn.push({ date, why: 'Tiada rekod' });
+    } else if(r.status === 'Hadir' && !r.keluar){
+      attn.push({ date, why: 'Tiada clock-out' });
+    }
+  }
+
+  const attnList = (utamaAttnOpen && attn.length)
+    ? `<ul class="utama-attn-list">${attn.map(a => `<li><span>${fmtTarikhPendek(a.date)}</span><span class="why">${a.why}</span></li>`).join('')}</ul>`
+    : '';
+
+  el.innerHTML = utamaCardHtml('Kehadiran', '', `
+    <div class="utama-today">
+      <span class="utama-today-text">${todayText}</span>
+      ${todayBtn}
+    </div>
+    <p class="utama-sub">Bulan ini &middot; ${MONTH_NAMES[now.getMonth()]}</p>
+    <div class="utama-stats">
+      <div class="utama-stat"><b>${hadir}</b><span>Hadir</span></div>
+      <div class="utama-stat"><b>${lewat}</b><span>Lewat</span></div>
+      <div class="utama-stat"><b>${counts.Cuti} Cuti &middot; ${counts.MC} MC</b><span>Cuti / MC</span></div>
+      <div class="utama-stat"><b>${counts.Outstation} Outstation &middot; ${counts.Kursus} Kursus</b><span>Outstation / Kursus</span></div>
+      <button type="button" class="utama-stat${attn.length ? ' warn' : ''}" style="grid-column:1 / -1;" onclick="toggleUtamaAttn()" aria-expanded="${utamaAttnOpen && attn.length ? 'true' : 'false'}" ${attn.length ? '' : 'disabled'}>
+        <b>${attn.length}</b><span>Perlu perhatian${attn.length ? (utamaAttnOpen ? ' &middot; tutup senarai' : ' &middot; lihat tarikh') : ''}</span>
+      </button>
+    </div>
+    ${attnList}
+  `);
+}
+
+function toggleUtamaAttn(){
+  utamaAttnOpen = !utamaAttnOpen;
+  renderUtamaKehadiran();
+}
+
+function renderUtamaAktiviti(){
+  const el = document.getElementById('utamaAktiviti');
+  const link = `<button type="button" class="utama-link" onclick="switchSection('aktiviti')">Lihat semua</button>`;
+  const state = utamaState('aktiviti', calendarLoaded, !!calendarLoadError);
+  if(state !== 'ok'){
+    el.innerHTML = utamaCardHtml('Aktiviti Hari Ini', link, utamaStateHtml(state, 'aktiviti'));
+    return;
+  }
+
+  const sortEvents = list => dedupeEventsById(list).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  const evItem = (e, dateLabel) => `
+    <div class="utama-item">
+      <div class="utama-item-top"><span>${dateLabel ? dateLabel + ' &middot; ' : ''}${e.allDay ? 'Sepanjang hari' : e.time}</span>${e.protocol ? `<span class="protocol-tag ${e.protocol}">${e.protocol.toUpperCase()}</span>` : ''}</div>
+      <div class="utama-item-title">${escapeHtml(e.title)}</div>
+      ${e.location ? `<div class="utama-item-meta">${escapeHtml(e.location)}</div>` : ''}
+    </div>`;
+
+  const todayKey = fmtKey(new Date());
+  const today = sortEvents(SAMPLE_EVENTS[todayKey] || []);
+  let body;
+  if(today.length){
+    body = `<div class="utama-list">${today.slice(0, 3).map(e => evItem(e)).join('')}</div>` +
+      (today.length > 3 ? `<p class="utama-muted" style="margin-top:6px;">+${today.length - 3} lagi aktiviti hari ini</p>` : '');
+  } else {
+    const nextKey = Object.keys(SAMPLE_EVENTS).filter(k => k > todayKey && SAMPLE_EVENTS[k].length).sort()[0];
+    body = nextKey
+      ? `<p class="utama-muted">Tiada aktiviti hari ini. Aktiviti seterusnya:</p><div class="utama-list">${evItem(sortEvents(SAMPLE_EVENTS[nextKey])[0], fmtTarikhPendek(new Date(nextKey + 'T00:00:00')))}</div>`
+      : '<p class="utama-muted">Tiada aktiviti hari ini atau akan datang.</p>';
+  }
+  el.innerHTML = utamaCardHtml('Aktiviti Hari Ini', link, body);
+}
+
+// TarikhAkhir dari Sheet: "YYYY-MM-DD", atau "D/M/YYYY" jika Sheet memformatnya semula.
+function taskDueKey(raw){
+  const str = String(raw || '').trim();
+  let m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return '';
+}
+
+function renderUtamaTugasan(){
+  const el = document.getElementById('utamaTugasan');
+  const canSeeTasks = currentUser && isAllowedTaskEditor(currentUser.email);
+  const link = canSeeTasks ? `<button type="button" class="utama-link" onclick="switchSection('task')">Lihat semua</button>` : '';
+  const state = utamaState('task', taskLoaded, taskLoadFailed);
+  if(state !== 'ok'){
+    el.innerHTML = utamaCardHtml('Tugasan Saya', link, utamaStateHtml(state, 'task'));
+    return;
+  }
+
+  const tasks = getTaggedTasksForCurrentUser();
+  if(tasks.length === 0){
+    el.innerHTML = utamaCardHtml('Tugasan Saya', link, '<p class="utama-muted">Tiada tugasan ditugaskan kepada anda.</p>');
+    return;
+  }
+
+  const count = s => tasks.filter(t => t.status === s).length;
+  const todayKey = fmtKey(new Date());
+  const open = tasks
+    .filter(t => t.status !== 'Selesai')
+    .map(t => ({ t, due: taskDueKey(t.tarikhAkhir) }))
+    .sort((a, b) => (a.due || '9999-99-99').localeCompare(b.due || '9999-99-99'))
+    .slice(0, 5);
+
+  const items = open.map(({ t, due }) => {
+    const overdue = due && due < todayKey;
+    const dueText = t.tarikhAkhir
+      ? (overdue ? `Lewat tarikh &middot; ${escapeHtml(t.tarikhAkhir)}` : `Tarikh akhir: ${escapeHtml(t.tarikhAkhir)}`)
+      : 'Tiada tarikh akhir';
+    const unread = !isTaskReadByCurrentUser(t.rowIndex);
+    return `
+      <button type="button" class="utama-item${overdue ? ' overdue' : ''}" onclick="openUtamaTask(${t.rowIndex})">
+        <div class="utama-item-top">${unread ? '<span class="notif-dot"></span>' : ''}<span>${escapeHtml(t.status)}</span></div>
+        <div class="utama-item-title">${escapeHtml(t.tajuk)}</div>
+        <div class="utama-item-meta">${dueText}</div>
+      </button>`;
+  }).join('');
+
+  el.innerHTML = utamaCardHtml('Tugasan Saya', link, `
+    <div class="utama-task-counts">
+      <div class="utama-stat"><b>${count('Belum Mula')}</b><span>Belum Mula</span></div>
+      <div class="utama-stat"><b>${count('Sedang Dijalankan')}</b><span>Sedang Dijalankan</span></div>
+      <div class="utama-stat"><b>${count('Selesai')}</b><span>Selesai</span></div>
+    </div>
+    ${items ? `<div class="utama-list">${items}</div>` : '<p class="utama-muted">Semua tugasan anda telah selesai.</p>'}
+  `);
+}
+
+function openUtamaTask(rowIndex){
+  const t = taskRecords.find(x => x.rowIndex === rowIndex);
+  if(!t) return;
+  const row = (label, val) => `<div class="detail-row"><span class="label">${label}</span><span class="value">${escapeHtml(val || '-')}</span></div>`;
+  document.getElementById('utamaTaskBody').innerHTML = `
+    <h3 id="utamaTaskTitle">${escapeHtml(t.tajuk)}</h3>
+    ${row('Keterangan', t.keterangan)}
+    ${row('Bahagian', t.bahagian)}
+    ${row('Keutamaan', t.keutamaan)}
+    ${row('Status', t.status)}
+    ${row('Tarikh akhir', t.tarikhAkhir)}
+    <button type="button" class="utama-btn" style="margin:14px 6px 0;" onclick="closeUtamaTask()">Tutup</button>
+  `;
+  document.getElementById('utamaTaskOverlay').classList.add('open');
+  document.getElementById('utamaTaskSheet').classList.add('open');
+  markTaskAsRead(rowIndex);
+}
+
+function closeUtamaTask(){
+  document.getElementById('utamaTaskOverlay').classList.remove('open');
+  document.getElementById('utamaTaskSheet').classList.remove('open');
+}
+
+function renderUtamaNotifCount(){
+  const btn = document.getElementById('utamaNotifBtn');
+  if(!btn) return;
+  let num = '&hellip;', cls = '';
+  if(taskLoaded){
+    const unread = getTaggedTasksForCurrentUser().filter(t => !isTaskReadByCurrentUser(t.rowIndex)).length;
+    num = unread;
+    cls = unread ? 'unread' : '';
+  } else if(!accessToken || (taskLoadFailed && !utamaInFlight.task)){
+    num = '-';
+  }
+  btn.innerHTML = `<span>Notifikasi belum dibaca</span><b class="${cls}">${num}</b>`;
+}
+
+function openNotifFromUtama(){
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if(document.getElementById('notifPanel').style.display === 'none') toggleNotifPanel();
+}
+
+function renderUtamaPautan(){
+  const el = document.getElementById('utamaPautanChips');
+  const state = utamaState('pautan', !!pautanLinks, pautanLoadFailed);
+  if(state !== 'ok'){
+    el.innerHTML = utamaStateHtml(state, 'pautan');
+    return;
+  }
+  el.innerHTML = pautanLinks.length
+    ? `<div class="utama-chips">${pautanLinks.slice(0, 6).map(l => `<a class="utama-chip" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.namaPautan)}</a>`).join('')}</div>`
+    : '<p class="utama-muted">Tiada pautan tersedia.</p>';
+}
+
 const SECTION_TITLES = {
   aktiviti: { title: 'Papar Aktiviti' },
   analitik: { title: 'Analitik' },
@@ -6798,11 +7239,11 @@ const SECTION_TITLES = {
 
 function switchSection(section){
   appSection = section;
-  ['Aktiviti','Analitik','Kehadiran','Minit','Task','Fail','Pautan'].forEach(name=>{
+  ['Utama','Aktiviti','Analitik','Kehadiran','Minit','Task','Fail','Pautan'].forEach(name=>{
     const el = document.getElementById('section'+name);
     if(el) el.style.display = (name.toLowerCase() === section) ? '' : 'none';
   });
-  ['tabAktiviti','tabKehadiran','tabTask'].forEach(id=>{
+  ['tabUtama','tabAktiviti','tabKehadiran','tabTask'].forEach(id=>{
     const tab = document.getElementById(id);
     if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
   });
@@ -6815,7 +7256,9 @@ function switchSection(section){
   if(section !== 'aktiviti') document.getElementById('searchResults').style.display = 'none';
 
   // Lazily trigger the right render when entering a section, so data is fresh.
-  if(section === 'aktiviti'){
+  if(section === 'utama'){
+    openUtama();
+  } else if(section === 'aktiviti'){
     render();
     switchToView(currentView);
   } else if(section === 'analitik'){
@@ -7942,10 +8385,11 @@ function attemptSignIn(email, name, picture){
     maybeShowPushBanner();
     retryPushTokenRegistration();
     switchToView('day');
-    loadEventsFromGoogleCalendar();
+    trackUtamaLoad('aktiviti', loadEventsFromGoogleCalendar());
     // Loaded proactively (not gated by Task-editor access) so any tagged staff
     // member sees their notification dot, even if they never open the Task section.
-    loadTaskFromSheet().then(() => loadNotifReadFromSheet());
+    trackUtamaLoad('task', loadTaskFromSheet().then(() => loadNotifReadFromSheet()));
+    switchSection('utama');
   } else {
     showGateError(`Akaun "${email}" tidak dibenarkan mengakses sistem ini. Sila hubungi pentadbir LPBS.`);
     accessToken = null;
@@ -8032,6 +8476,7 @@ function enterAppWithCachedIdentity(){
   restoreSignInPending = true;
   showReconnectPrompt(RESTORE_RECONNECT_MSG);
   switchToView('day');
+  switchSection('utama');
   // STAFF_DIRECTORY belum dimuatkan — guna nama cache dari log masuk terakhir
   // (selepas switchToView, kerana ia memanggil syncSignInButtons sekali lagi).
   if(currentUser.name){
