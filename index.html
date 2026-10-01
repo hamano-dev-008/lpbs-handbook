@@ -682,13 +682,46 @@
     margin-right:5px;
     vertical-align:middle;
   }
-  .notif-panel-footer{
-    padding:10px 16px;
-    font-size:11px;
-    color:var(--sage);
-    text-align:center;
+  .notif-push{
+    position:sticky;
+    bottom:0;
+    padding:10px 16px 12px;
+    background:var(--bg-card);
     border-top:1px solid var(--line);
+    font-size:12.5px;
+    color:var(--ink-soft);
   }
+  .notif-push-title{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--sage);
+    margin-bottom:3px;
+  }
+  .notif-push-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .notif-push-btn{
+    background:none;
+    border:none;
+    padding:2px 0;
+    font-size:12px;
+    font-weight:600;
+    color:var(--paddy-light);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .notif-push-btn:disabled{opacity:.6;cursor:default;}
+  .notif-push-note{
+    margin-top:4px;
+    font-size:11.5px;
+    color:var(--sage);
+  }
+  .notif-push-note.err{color:var(--red-text);}
   .staff-info-name{
     font-size:13.5px;
     font-weight:600;
@@ -3264,7 +3297,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.43";
+const APP_VERSION = "1.0.44";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -5892,10 +5925,9 @@ const taskModalOverlay = document.getElementById('taskModalOverlay');
 taskModalOverlay.onclick = (e) => { if(e.target === taskModalOverlay) closeTaskModal(); };
 
 // ============================================================
-// NOTIFIKASI TUGASAN — kesedaran dalam aplikasi sahaja.
-// Ini BUKAN push notification peranti (PWA ini tidak mendaftar
-// sebarang perkhidmatan push); ia hanya memaparkan loceng/panel
-// dalam aplikasi apabila pengguna log masuk dan melayari semula.
+// NOTIFIKASI TUGASAN — loceng/panel dalam aplikasi apabila pengguna
+// log masuk dan melayari semula. Status push peranti (FCM) dipaparkan
+// di bahagian bawah panel — lihat refreshPushStatus().
 // Status "telah dibaca" disimpan di Google Sheet (bukan localStorage)
 // supaya konsisten merentasi peranti yang sama bagi satu akaun.
 // ============================================================
@@ -5981,7 +6013,8 @@ function renderNotifPanel(){
     }).join('');
   }
 
-  panel.innerHTML = body + '<div class="notif-panel-footer">Makluman dalam aplikasi sahaja &middot; bukan push notification peranti.</div>';
+  panel.innerHTML = body + '<div class="notif-push" id="pushStatusSection"></div>';
+  refreshPushStatus();
 }
 
 function toggleNotifPanel(){
@@ -6135,42 +6168,142 @@ async function enablePushNotifications(){
 
 async function savePushTokenToSheet(token){
   try{
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_RANGE)}`;
-    const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-    if(!res.ok) throw new Error('status ' + res.status);
-    const data = await res.json();
-    const rows = data.values || [];
-    // Satu baris setiap peranti: padan pada Token (lajur B), bukan Email.
-    const rowIdx = rows.findIndex(r => (r[1] || '') === token);
-    const deviceLabel = getDeviceLabel();
-
-    if(rowIdx !== -1){
-      const sheetRow = rowIdx + 2; // PUSH_TOKEN_SHEET_RANGE starts at row 2
-      const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!A' + sheetRow + ':D' + sheetRow)}?valueInputOption=USER_ENTERED`;
-      const updateRes = await apiFetch(updateUrl, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: [[currentUser.email, token, new Date().toISOString(), deviceLabel]] })
-      });
-      if(!updateRes.ok) throw new Error('status ' + updateRes.status);
-    } else {
-      const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!A:D')}:append?valueInputOption=USER_ENTERED`;
-      const appendRes = await apiFetch(appendUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: [[currentUser.email, token, new Date().toISOString(), deviceLabel]] })
-      });
-      if(!appendRes.ok) throw new Error('status ' + appendRes.status);
-    }
-    try {
-      localStorage.setItem('push_token', token);
-      localStorage.setItem('push_token_registered', 'true');
-    } catch(e) {}
+    await writePushTokenRow(token);
     return true;
   }catch(e){
     console.error('savePushTokenToSheet failed:', e);
     return false;
   }
+}
+
+async function readPushTokenRows(){
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_RANGE)}`;
+  const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if(!res.ok) throw new Error('status ' + res.status);
+  const data = await res.json();
+  return data.values || [];
+}
+
+async function writePushTokenRow(token){
+  const rows = await readPushTokenRows();
+  // Satu baris setiap peranti: padan pada Token (lajur B), bukan Email.
+  const rowIdx = rows.findIndex(r => (r[1] || '') === token);
+  const deviceLabel = getDeviceLabel();
+
+  if(rowIdx !== -1){
+    const sheetRow = rowIdx + 2; // PUSH_TOKEN_SHEET_RANGE starts at row 2
+    const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!A' + sheetRow + ':D' + sheetRow)}?valueInputOption=USER_ENTERED`;
+    const updateRes = await apiFetch(updateUrl, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[currentUser.email, token, new Date().toISOString(), deviceLabel]] })
+    });
+    if(!updateRes.ok) throw new Error('status ' + updateRes.status);
+  } else {
+    const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!A:D')}:append?valueInputOption=USER_ENTERED`;
+    const appendRes = await apiFetch(appendUrl, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [[currentUser.email, token, new Date().toISOString(), deviceLabel]] })
+    });
+    if(!appendRes.ok) throw new Error('status ' + appendRes.status);
+  }
+  try {
+    localStorage.setItem('push_token', token);
+    localStorage.setItem('push_token_registered', 'true');
+  } catch(e) {}
+}
+
+// Daftar token peranti serta-merta (tanpa semakan push_token_registered); ralat dilabel mengikut langkah.
+async function registerPushTokenNow(){
+  let token;
+  try {
+    token = await getPushToken();
+  } catch(e) {
+    throw new Error('Gagal mendaftar peranti (langkah: getToken) - ' + errText(e));
+  }
+  try {
+    await writePushTokenRow(token);
+  } catch(e) {
+    throw new Error('Gagal menyimpan token ke Sheets - ' + errText(e));
+  }
+}
+
+function isPushSupported(){
+  return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+}
+
+function isIOSDevice(){
+  const ua = navigator.userAgent || '';
+  return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+}
+
+async function isPushTokenInSheet(){
+  let token = null;
+  try { token = localStorage.getItem('push_token'); } catch(e) {}
+  if(!token) return false;
+  const rows = await readPushTokenRows();
+  const email = ((currentUser && currentUser.email) || '').toLowerCase();
+  return rows.some(r => (r[1] || '') === token && (r[0] || '').toLowerCase() === email);
+}
+
+let pushStatusSeq = 0;
+
+// Bahagian "Notifikasi telefon" di bawah panel loceng. note = { text, error } selepas Daftar semula.
+async function refreshPushStatus(note){
+  const el = document.getElementById('pushStatusSection');
+  if(!el) return;
+  const seq = ++pushStatusSeq;
+  const render = (line, btnHtml) => {
+    if(seq !== pushStatusSeq) return;
+    const noteHtml = note ? `<div class="notif-push-note${note.error ? ' err' : ''}">${escapeHtml(note.text)}</div>` : '';
+    el.innerHTML = `<div class="notif-push-title">Notifikasi telefon</div><div class="notif-push-row"><span>${line}</span>${btnHtml || ''}</div>${noteHtml}`;
+  };
+  const daftarBtn = '<button type="button" class="notif-push-btn" onclick="event.stopPropagation(); reregisterPushFromPanel(this)">Daftar semula</button>';
+
+  if(!isPushSupported()){
+    render(isIOSDevice()
+      ? 'Tambah PadiApp ke Skrin Utama dahulu untuk menerima notifikasi.'
+      : 'Pelayar ini tidak menyokong notifikasi telefon.');
+    return;
+  }
+  const permission = Notification.permission;
+  if(permission === 'denied'){
+    render('Disekat dalam tetapan peranti. Benarkan notifikasi dalam tetapan telefon atau pelayar.');
+    return;
+  }
+  if(permission === 'default'){
+    render('Belum diaktifkan', '<button type="button" class="notif-push-btn" onclick="event.stopPropagation(); enablePushFromPanel(this)">Dayakan</button>');
+    return;
+  }
+  render('Menyemak&hellip;');
+  try {
+    const registered = await isPushTokenInSheet();
+    render(registered ? '&#10003; Aktif pada peranti ini' : 'Belum didaftarkan pada peranti ini', daftarBtn);
+  } catch(e) {
+    console.error('refreshPushStatus failed:', e);
+    render('Tidak dapat menyemak status pendaftaran.', daftarBtn);
+  }
+}
+
+async function enablePushFromPanel(btn){
+  btn.disabled = true;
+  await enablePushNotifications();
+  refreshPushStatus();
+}
+
+async function reregisterPushFromPanel(btn){
+  btn.disabled = true;
+  btn.textContent = 'Mendaftar…';
+  let note;
+  try {
+    await registerPushTokenNow();
+    note = { text: 'Peranti didaftarkan.' };
+  } catch(e) {
+    console.error('reregisterPushFromPanel failed:', e);
+    note = { text: errText(e), error: true };
+  }
+  refreshPushStatus(note);
 }
 
 // Label ringkas untuk lajur Peranti, cth. "iPhone · Safari", "Windows · Chrome".
