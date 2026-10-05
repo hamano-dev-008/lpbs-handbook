@@ -1237,7 +1237,8 @@
   .kh-pg-status{ font-size:13px; font-weight:600; color:var(--ink-soft); margin:-4px 0 14px; }
   .kh-pg-actions{ display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:stretch; }
   .kh-pg-actions .kh-self-alt-btn{ margin-top:0; }
-  .kh-pg-active{ border:1.5px solid var(--paddy); border-radius:12px; padding:14px; margin:0 0 14px; background:var(--bg); }
+  .kh-pg-active{ border:2px solid var(--amber); border-radius:12px; padding:14px; margin:0 0 14px; background:var(--amber-bg); }
+  .kh-pg-flag{ display:block; margin:0 0 10px; font-size:14px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--amber-text); }
   .kh-pg-type{ display:inline-block; padding:3px 10px; border-radius:6px; background:var(--paddy); color:#fff; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
   .kh-pg-since{ font-size:15px; color:var(--ink); margin:10px 0 2px; }
   .kh-pg-since b{ font-family:'Space Grotesk',sans-serif; color:var(--paddy); }
@@ -1253,6 +1254,14 @@
   .kh-table td.kh-pg-cell{ white-space:normal; padding-top:0; }
   .kh-table td.kh-pg-cell .kh-pg-timeline{ margin:0 0 0 12px; font-size:12.5px; }
   #khPgModalOverlay .save-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  #khPgKembaliToggle .period-btn{ flex:1; }
+  .kh-pg-skp{ margin:14px 0 0; padding:12px; border-radius:10px; background:var(--amber-bg); color:var(--amber-text); font-size:13px; }
+  .kh-pg-skp p{ margin:0 0 8px; }
+  a.kh-self-alt-btn{ box-sizing:border-box; text-align:center; text-decoration:none; }
+  .kh-pg-history{ margin-top:14px; border-top:1px solid var(--line); padding-top:10px; text-align:left; }
+  .kh-pg-history > .kh-collapse-toggle{ font-size:13px; font-weight:600; color:var(--ink-soft); padding:4px 0; }
+  .kh-pg-history > .kh-collapse-body{ padding-top:8px; }
+  .kh-pg-history .kh-pg-timeline{ margin:0; }
   .kh-table-wrap{
     margin-top:14px;
     overflow-x:auto;
@@ -2846,27 +2855,40 @@
         </div>
         <div class="modal-body">
           <label class="field-label">Jenis Pergerakan</label>
-          <select id="khPgJenis">
+          <select id="khPgJenis" onchange="updatePergerakanForm()">
             <option value="OUTSTATION">Outstation</option>
             <option value="URUSAN_RASMI">Urusan Rasmi</option>
             <option value="MESYUARAT_LUAR">Mesyuarat Luar</option>
             <option value="PROGRAM_LAWATAN">Program / Lawatan</option>
+            <option value="LAIN_LAIN">Lain-lain</option>
+            <option value="URUSAN_PERIBADI">Urusan Luar Pejabat Peribadi</option>
           </select>
-          <label class="field-label">Lokasi / Tujuan</label>
+          <div id="khPgLainWrap" style="display:none;">
+            <label class="field-label">Nyatakan jenis *</label>
+            <input type="text" id="khPgLain" maxlength="60" placeholder="Contoh: Serahan dokumen" oninput="updatePergerakanForm()">
+          </div>
+          <label class="field-label" id="khPgLokasiLabel">Lokasi / Tujuan *</label>
           <input type="text" id="khPgLokasi" placeholder="Contoh: Pejabat Daerah Papar" oninput="updatePergerakanForm()">
           <label class="field-label">Catatan (pilihan)</label>
           <input type="text" id="khPgCatatan" placeholder="Contoh: Menghadiri mesyuarat rasmi">
-          <label class="field-label" style="text-transform:none; letter-spacing:0; font-size:13px;">Adakah anda akan kembali ke pejabat hari ini?</label>
-          <div class="period-toggle" id="khPgKembaliToggle" style="width:max-content;">
-            <button type="button" class="period-btn" data-kembali="Ya" onclick="setPergerakanKembali('Ya')">Ya</button>
-            <button type="button" class="period-btn" data-kembali="Tidak" onclick="setPergerakanKembali('Tidak')">Tidak</button>
+          <div id="khPgKembaliWrap">
+            <label class="field-label" style="text-transform:none; letter-spacing:0; font-size:13px;">Adakah anda akan kembali ke pejabat hari ini?</label>
+            <div class="period-toggle" id="khPgKembaliToggle">
+              <button type="button" class="period-btn" data-kembali="Ya" onclick="setPergerakanKembali('Ya')">Ya, akan kembali</button>
+              <button type="button" class="period-btn" data-kembali="Tidak" onclick="setPergerakanKembali('Tidak')">Tidak</button>
+            </div>
+            <p class="kh-self-dates" id="khPgTidakHint" style="display:none;">Anda boleh Tamat Bertugas dari luar pejabat selepas 4:30 petang. Lokasi GPS anda akan direkodkan.</p>
+          </div>
+          <div class="kh-pg-skp" id="khPgSkpWrap" style="display:none;">
+            <p>Sila rekod juga dalam Sistem Keluar Pejabat.</p>
+            <a class="kh-self-alt-btn" id="khPgSkpLink" target="_blank" rel="noopener noreferrer">Buka Sistem Keluar Pejabat</a>
           </div>
           <p class="kh-self-dates" id="khPgMasa"></p>
           <p class="kh-note" id="khPgNote"></p>
         </div>
         <div class="modal-foot">
           <button class="cancel-btn" onclick="closePergerakanModal()">Batal</button>
-          <button class="save-btn" id="khPgConfirmBtn" onclick="selfKeluarBertugas()" disabled>Sahkan Keluar</button>
+          <button class="save-btn" id="khPgConfirmBtn" onclick="selfKeluarBertugas()" disabled>Sahkan Keluar Bertugas</button>
         </div>
       </div>
     </div>
@@ -3446,7 +3468,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.46";
+const APP_VERSION = "1.0.47";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3754,7 +3776,10 @@ const PG_KELUAR_JENIS = {
   OUTSTATION: 'Outstation',
   URUSAN_RASMI: 'Urusan Rasmi',
   MESYUARAT_LUAR: 'Mesyuarat Luar',
-  PROGRAM_LAWATAN: 'Program / Lawatan'
+  PROGRAM_LAWATAN: 'Program / Lawatan',
+  LAIN_LAIN: 'Lain-lain',
+  // Urusan peribadi, bukan tugas rasmi — tiada Tamat Bertugas / pengecualian geofence, tiada GPS.
+  URUSAN_PERIBADI: 'Urusan Luar Pejabat Peribadi'
 };
 let pergerakanRecords = []; // { rowIndex, tarikh, email, nama, jenis, masa, lokasi, catatan, kembali, gps }
 let pergerakanLoaded = false;
@@ -3806,22 +3831,72 @@ function getActivePergerakan(events){
   return last && PG_KELUAR_JENIS[last.jenis] ? last : null;
 }
 
-function pgEventLabel(p){
+// LAIN_LAIN menyimpan jenis yang ditaip di awal Catatan: "Jenis: <teks>; <catatan>".
+function pgSplitCatatan(p){
+  if(p.jenis !== 'LAIN_LAIN') return { lain: '', catatan: p.catatan };
+  const m = p.catatan.match(/^Jenis:\s*([^;]*)(?:;\s*([\s\S]*))?$/);
+  return m ? { lain: m[1].trim(), catatan: (m[2] || '').trim() } : { lain: '', catatan: p.catatan };
+}
+
+function pgJenisLabel(p){
+  if(p.jenis === 'URUSAN_PERIBADI') return 'Urusan Peribadi';
+  if(p.jenis === 'LAIN_LAIN'){
+    const lain = pgSplitCatatan(p).lain;
+    return lain ? `Lain-lain: ${lain}` : 'Lain-lain';
+  }
+  return PG_KELUAR_JENIS[p.jenis] || p.jenis;
+}
+
+function fmtDurasiMinit(mins){
+  const hrs = Math.floor(mins / 60), m = mins % 60;
+  if(!hrs) return `${m} min`;
+  return m ? `${hrs} jam ${m} min` : `${hrs} jam`;
+}
+
+function pgEventLabel(p, next){
   if(p.jenis === 'KEMBALI') return 'Kembali Pejabat';
-  const base = p.jenis === 'TAMAT_BERTUGAS' ? 'Tamat Bertugas' : (PG_KELUAR_JENIS[p.jenis] || p.jenis);
+  let base = p.jenis === 'TAMAT_BERTUGAS' ? 'Tamat Bertugas' : pgJenisLabel(p);
+  if(p.jenis === 'URUSAN_PERIBADI' && next && next.jenis === 'KEMBALI'){
+    const h = calcHours(p.masa, next.masa);
+    if(h !== null) base += ` (${fmtDurasiMinit(Math.round(h * 60))})`;
+  }
   return p.lokasi ? `${base} — ${p.lokasi}` : base;
 }
 
 function renderPergerakanTimeline(rec, events, showGps){
   const items = [];
   if(rec.masuk) items.push({ masa: rec.masuk, label: 'Masuk Pejabat' });
-  events.forEach(p => items.push({ masa: p.masa, label: pgEventLabel(p), catatan: p.catatan, gps: p.gps }));
+  events.forEach((p, i) => items.push({ masa: p.masa, label: pgEventLabel(p, events[i + 1]), catatan: pgSplitCatatan(p).catatan, gps: p.gps }));
   if(rec.keluar && !events.some(p => p.jenis === 'TAMAT_BERTUGAS')) items.push({ masa: rec.keluar, label: 'Clock-Out' });
   return `<ul class="kh-pg-timeline">${items.map(i => {
     const m = showGps && i.gps ? i.gps.match(/^(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/) : null;
     const gpsLink = m ? `<a href="https://www.google.com/maps?q=${m[1]},${m[2]}" target="_blank" rel="noopener noreferrer">Peta</a>` : '';
     return `<li><b>${escapeHtml(i.masa || '--:--')}</b><span>${escapeHtml(i.label)}${gpsLink}${i.catatan ? `<small>${escapeHtml(i.catatan)}</small>` : ''}</span></li>`;
   }).join('')}</ul>`;
+}
+
+// Garis masa hari ini di kad staf — boleh dilipat, tertutup secara lalai.
+function renderPergerakanHistory(rec, events){
+  if(!events.length) return '';
+  return `
+    <div class="kh-collapse kh-pg-history${khPgHistoryOpen ? ' open' : ''}">
+      <div class="kh-collapse-toggle" role="button" tabindex="0" aria-expanded="${khPgHistoryOpen}" onclick="toggleKhPgHistory(this)" onkeydown="if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); toggleKhPgHistory(this); }">
+        <span>Pergerakan Hari Ini</span>
+        <svg class="kh-collapse-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="kh-collapse-body">${renderPergerakanTimeline(rec, events)}</div>
+    </div>`;
+}
+
+function toggleKhPgHistory(toggle){
+  toggleKhCollapse(toggle);
+  khPgHistoryOpen = toggle.closest('.kh-collapse').classList.contains('open');
+}
+
+// Pautan "Sistem Keluar Pejabat" daripada Pautan Pegawai (nama mengandungi "keluar pejabat").
+function getSistemKeluarPejabatUrl(){
+  const link = (pautanLinks || []).find(l => String(l.namaPautan).toLowerCase().includes('keluar pejabat'));
+  return link && /^https?:\/\//i.test(String(link.url).trim()) ? String(link.url).trim() : '';
 }
 
 let editingKehadiranRow = null;
@@ -4594,6 +4669,8 @@ let khSelfPickerOpen = false; // pemilih status tersembunyi secara lalai; "Not c
 const KH_SELF_MAX_DAYS = 90;
 let khPgKembali = null; // Keluar Bertugas: 'Ya' | 'Tidak' — tiada lalai, staf mesti pilih
 let khPgShowTamat = false; // staf yang pilih "Ya" boleh bertukar ke Tamat Bertugas
+let khPgHistoryOpen = false; // "Pergerakan Hari Ini" di kad staf
+let khPgPautanRequested = false; // muat pautan Sistem Keluar Pejabat sekali sahaja dari kad
 
 function resetSelfStatusForm(){
   khSelfOption = null;
@@ -4965,41 +5042,55 @@ function renderSelfCheckinCard(){
       const last = events[events.length - 1];
       if(!active) khPgShowTamat = false;
       if(active){
-        const willReturn = active.kembali !== 'Tidak';
+        const peribadi = active.jenis === 'URUSAN_PERIBADI';
+        const willReturn = peribadi || active.kembali !== 'Tidak';
         const kembaliBtn = cls => `<button class="${cls}" id="khSelfKembaliBtn" data-pg="1" onclick="selfKembaliPejabat()">Kembali Ke Pejabat</button>`;
         const tamatBtn = cls => `<button class="${cls}" id="khSelfTamatBtn" data-pg="1" onclick="selfTamatBertugas()">Tamat Bertugas</button>`;
         let buttons;
-        if(!willReturn) buttons = tamatBtn('kh-self-action-btn') + kembaliBtn('kh-self-alt-btn');
+        if(peribadi){
+          const skpUrl = getSistemKeluarPejabatUrl();
+          if(!skpUrl && !pautanLinks && !khPgPautanRequested && accessToken){
+            khPgPautanRequested = true;
+            loadPautanFromSheet().then(() => {
+              if(pautanLinks && !khSelfWriting && document.getElementById('khSelfCheckinCard').style.display !== 'none') renderSelfCheckinCard();
+            });
+          }
+          buttons = kembaliBtn('kh-self-action-btn')
+            + (skpUrl ? `<a class="kh-self-alt-btn" href="${escapeHtml(skpUrl)}" target="_blank" rel="noopener noreferrer">Buka Sistem Keluar Pejabat</a>` : '');
+        }
+        else if(!willReturn) buttons = tamatBtn('kh-self-action-btn') + kembaliBtn('kh-self-alt-btn');
         else if(khPgShowTamat) buttons = kembaliBtn('kh-self-action-btn') + tamatBtn('kh-self-alt-btn');
         else buttons = kembaliBtn('kh-self-action-btn') + `<button type="button" class="kh-pg-link" data-pg="1" onclick="showPergerakanTamat()">Tidak dapat kembali ke pejabat hari ini?</button>`;
         action.innerHTML = `
           <p class="kh-self-confirm">&#10003; Clocked in at <b>${rec.masuk}</b></p>
           <div class="kh-pg-active">
-            <span class="kh-pg-type">${escapeHtml(PG_KELUAR_JENIS[active.jenis])}</span>
-            <p class="kh-pg-since">Bermula <b>${escapeHtml(active.masa)}</b></p>
+            <span class="kh-pg-flag">${peribadi ? 'Keluar Pejabat &middot; Urusan Peribadi' : 'Keluar Bertugas'}</span>
+            ${peribadi ? '' : `<span class="kh-pg-type">${escapeHtml(pgJenisLabel(active))}</span>`}
+            <p class="kh-pg-since">Sejak <b>${escapeHtml(active.masa)}</b></p>
             ${active.lokasi ? `<p class="kh-pg-loc">${escapeHtml(active.lokasi)}</p>` : ''}
             <p class="kh-self-done">${willReturn ? 'Akan kembali ke pejabat hari ini' : 'Tidak kembali ke pejabat hari ini'}</p>
           </div>
           ${buttons}
           <p class="kh-self-done" id="khPgTamatHint" style="display:none;"></p>
+          ${renderPergerakanHistory(rec, events)}
         `;
       } else if(last && last.jenis === 'TAMAT_BERTUGAS'){
         // Tamat Bertugas sudah direkod tetapi masa keluar belum tersimpan — cuba semula.
         action.innerHTML = `
           <p class="kh-self-confirm">&#10003; Clocked in at <b>${rec.masuk}</b></p>
-          ${renderPergerakanTimeline(rec, events)}
           <button class="kh-self-action-btn" id="khSelfTamatBtn" data-pg="1" onclick="selfTamatBertugas()">Tamat Bertugas</button>
           <p class="kh-self-done" id="khPgTamatHint" style="display:none;"></p>
+          ${renderPergerakanHistory(rec, events)}
         `;
       } else {
         action.innerHTML = `
           <p class="kh-self-confirm">&#10003; Clocked in at <b>${rec.masuk}</b></p>
           ${pergerakanLoaded ? '<p class="kh-pg-status">Status: Sedang Bertugas</p>' : ''}
-          ${events.length ? renderPergerakanTimeline(rec, events) : ''}
           <div class="${pergerakanLoaded ? 'kh-pg-actions' : ''}">
             ${pergerakanLoaded ? '<button class="kh-self-alt-btn" id="khSelfPgBtn" data-pg="1" onclick="openPergerakanModal()">Keluar Bertugas</button>' : ''}
             <button class="kh-self-action-btn" id="khSelfKeluarBtn" onclick="selfDaftarKeluar()">Clock Out</button>
           </div>
+          ${renderPergerakanHistory(rec, events)}
         `;
       }
     } else {
@@ -5008,8 +5099,8 @@ function renderSelfCheckinCard(){
       const events = getMyPergerakan(todayKey);
       action.innerHTML = `
         <p class="kh-self-confirm">&#10003; Clocked in: <b>${rec.masuk}</b> &nbsp;&middot;&nbsp; Clocked out: <b>${rec.keluar}</b></p>
-        ${events.length ? renderPergerakanTimeline(rec, events) : ''}
         <p class="kh-self-done">Selesai — rekod hari ini lengkap. Hubungi pentadbir untuk pembetulan.</p>
+        ${renderPergerakanHistory(rec, events)}
       `;
     }
   }
@@ -5244,12 +5335,13 @@ function openPergerakanModal(){
   if(khSelfWriting || !pergerakanLoaded) return;
   khPgKembali = null;
   document.getElementById('khPgJenis').value = 'OUTSTATION';
-  ['khPgLokasi', 'khPgCatatan'].forEach(id => { document.getElementById(id).value = ''; });
+  ['khPgLain', 'khPgLokasi', 'khPgCatatan'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('khPgNote').textContent = '';
   const btn = document.getElementById('khPgConfirmBtn');
-  btn.textContent = 'Sahkan Keluar';
+  btn.textContent = 'Sahkan Keluar Bertugas';
   updatePergerakanForm();
   document.getElementById('khPgModalOverlay').classList.add('open');
+  if(!pautanLinks) loadPautanFromSheet().then(updatePergerakanForm);
 }
 
 function closePergerakanModal(){
@@ -5263,10 +5355,21 @@ function setPergerakanKembali(value){
 }
 
 function updatePergerakanForm(){
+  const jenis = document.getElementById('khPgJenis').value;
+  const peribadi = jenis === 'URUSAN_PERIBADI';
+  const lain = jenis === 'LAIN_LAIN';
+  document.getElementById('khPgLainWrap').style.display = lain ? '' : 'none';
+  document.getElementById('khPgLokasiLabel').textContent = peribadi ? 'Tujuan (pilihan)' : 'Lokasi / Tujuan *';
+  document.getElementById('khPgKembaliWrap').style.display = peribadi ? 'none' : '';
   document.querySelectorAll('#khPgKembaliToggle .period-btn').forEach(b => b.classList.toggle('active', b.dataset.kembali === khPgKembali));
+  document.getElementById('khPgTidakHint').style.display = khPgKembali === 'Tidak' ? '' : 'none';
+  const skpUrl = peribadi ? getSistemKeluarPejabatUrl() : '';
+  document.getElementById('khPgSkpWrap').style.display = skpUrl ? '' : 'none';
+  if(skpUrl) document.getElementById('khPgSkpLink').href = skpUrl;
   document.getElementById('khPgMasa').textContent = `Masa keluar direkod secara automatik semasa pengesahan (kini ${nowHHMM()}).`;
-  document.getElementById('khPgConfirmBtn').disabled =
-    khSelfWriting || !khPgKembali || !document.getElementById('khPgLokasi').value.trim();
+  const valid = peribadi
+    || (!!khPgKembali && !!document.getElementById('khPgLokasi').value.trim() && (!lain || !!document.getElementById('khPgLain').value.trim()));
+  document.getElementById('khPgConfirmBtn').disabled = khSelfWriting || !valid;
 }
 
 function showPergerakanTamat(){
@@ -5337,25 +5440,28 @@ async function runSelfPergerakanWrite({ noteEl, btn, btnText, precheck, write })
 async function selfKeluarBertugas(){
   const jenis = document.getElementById('khPgJenis').value;
   const lokasi = document.getElementById('khPgLokasi').value.trim();
-  const catatan = document.getElementById('khPgCatatan').value.trim();
-  const kembali = khPgKembali;
-  if(!PG_KELUAR_JENIS[jenis] || !lokasi || !kembali) return;
+  const peribadi = jenis === 'URUSAN_PERIBADI';
+  const lain = jenis === 'LAIN_LAIN' ? document.getElementById('khPgLain').value.trim().replace(/;/g, ',') : '';
+  const catatanInput = document.getElementById('khPgCatatan').value.trim();
+  const catatan = jenis === 'LAIN_LAIN' ? `Jenis: ${lain}` + (catatanInput ? `; ${catatanInput}` : '') : catatanInput;
+  const kembali = peribadi ? 'Ya' : khPgKembali;
+  if(!PG_KELUAR_JENIS[jenis] || !kembali || (!peribadi && !lokasi) || (jenis === 'LAIN_LAIN' && !lain)) return;
   let masa = '';
   const result = await runSelfPergerakanWrite({
     noteEl: document.getElementById('khPgNote'),
     btn: document.getElementById('khPgConfirmBtn'),
-    btnText: 'Sahkan Keluar',
-    // Lokasi GPS direkod jika ada, tetapi tidak diwajibkan untuk keluar.
-    precheck: async () => { await verifySelfCheckinLocation(); return ''; },
+    btnText: 'Sahkan Keluar Bertugas',
+    // Lokasi GPS direkod jika ada (tidak diwajibkan); urusan peribadi tidak merekod GPS.
+    precheck: peribadi ? null : async () => { await verifySelfCheckinLocation(); return ''; },
     write: ({ tarikh, nama, email, rec, events }) => {
       if(!rec || (rec.status || 'Hadir') !== 'Hadir' || !rec.masuk || rec.keluar || getActivePergerakan(events)) return null;
       masa = nowHHMM();
-      return appendPergerakanRows([[tarikh, email, nama, jenis, masa, lokasi, catatan, kembali, fmtLocationCoords()]]);
+      return appendPergerakanRows([[tarikh, email, nama, jenis, masa, lokasi, catatan, kembali, peribadi ? '' : fmtLocationCoords()]]);
     }
   });
   if(result === 'error') return;
   document.getElementById('khPgModalOverlay').classList.remove('open');
-  if(result === 'ok') document.getElementById('khSelfNote').textContent = `Keluar Bertugas direkodkan pada ${masa}.`;
+  if(result === 'ok') document.getElementById('khSelfNote').textContent = `${peribadi ? 'Keluar pejabat (urusan peribadi)' : 'Keluar Bertugas'} direkodkan pada ${masa}.`;
 }
 
 async function selfKembaliPejabat(){
@@ -5382,6 +5488,8 @@ async function selfKembaliPejabat(){
   if(result === 'ok') document.getElementById('khSelfNote').textContent = `Kembali ke pejabat direkodkan pada ${masa}.`;
 }
 
+const PG_TAMAT_PERIBADI_MSG = 'Tamat Bertugas tidak dibenarkan untuk urusan peribadi. Sila Kembali Ke Pejabat, kemudian Clock Out.';
+
 // Tamat hari bekerja di luar pejabat: dikecualikan daripada geofence (hanya dengan pergerakan aktif),
 // tetapi koordinat GPS sebenar mesti direkod. Status utama kekal Hadir — hanya Masa Keluar diisi.
 async function selfTamatBertugas(){
@@ -5391,6 +5499,8 @@ async function selfTamatBertugas(){
     btn: document.getElementById('khSelfTamatBtn'),
     btnText: 'Tamat Bertugas',
     precheck: async () => {
+      const active = getActivePergerakan(getMyPergerakan(fmtKey(new Date())));
+      if(active && active.jenis === 'URUSAN_PERIBADI') return PG_TAMAT_PERIBADI_MSG;
       if(isBeforeSelfKeluarStart() || isPastSelfKeluarEnd()) return 'Tamat Bertugas hanya boleh direkod dari 4:30 PM hingga 9:00 PM.';
       await verifySelfCheckinLocation();
       if(!khLocationCoords && !isGeofenceExempt()) return 'Lokasi GPS diperlukan untuk Tamat Bertugas. Sila benarkan akses lokasi dan cuba semula.';
@@ -5403,7 +5513,8 @@ async function selfTamatBertugas(){
         masa = last.masa || nowHHMM();
       } else {
         const active = getActivePergerakan(events);
-        if(!active) return null;
+        // Pengecualian geofence hanya untuk tugas rasmi.
+        if(!active || active.jenis === 'URUSAN_PERIBADI') return null;
         masa = nowHHMM();
         const catatan = active.kembali === 'Tidak' ? '' : 'Tidak dapat kembali ke pejabat';
         const res = await appendPergerakanRows([[tarikh, email, nama, 'TAMAT_BERTUGAS', masa, active.lokasi, catatan, '', fmtLocationCoords()]]);
@@ -7428,7 +7539,7 @@ function renderUtamaKehadiran(){
   } else if(!rec.keluar){
     const pgActive = getActivePergerakan(getMyPergerakan(todayKey));
     todayText = `Clock in ${rec.masuk || '--:--'} &middot; belum clock out`
-      + (pgActive ? `<small>Keluar Bertugas: ${escapeHtml(PG_KELUAR_JENIS[pgActive.jenis])}${pgActive.lokasi ? ' — ' + escapeHtml(pgActive.lokasi) : ''}</small>` : '');
+      + (pgActive ? `<small>${pgActive.jenis === 'URUSAN_PERIBADI' ? 'Keluar Pejabat' : 'Keluar Bertugas'}: ${escapeHtml(pgJenisLabel(pgActive))}${pgActive.lokasi ? ' — ' + escapeHtml(pgActive.lokasi) : ''}</small>` : '');
     if(pgActive && pgActive.kembali !== 'Tidak') todayBtn = goBtn('Kembali Ke Pejabat');
     else if(!isBeforeSelfKeluarStart() && !isPastSelfKeluarEnd()) todayBtn = goBtn(pgActive ? 'Tamat Bertugas' : 'Clock Out');
   } else {
