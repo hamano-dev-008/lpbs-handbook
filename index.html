@@ -1262,6 +1262,28 @@
   .kh-pg-history > .kh-collapse-toggle{ font-size:13px; font-weight:600; color:var(--ink-soft); padding:4px 0; }
   .kh-pg-history > .kh-collapse-body{ padding-top:8px; }
   .kh-pg-history .kh-pg-timeline{ margin:0; }
+  .kh-my-card{ max-width:420px; margin:18px auto 0; scroll-margin-top:16px; }
+  .kh-my-nav{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:14px 0 10px; }
+  .kh-my-nav b{ font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; color:var(--ink); }
+  .kh-my-nav button{ width:34px; height:34px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); font-size:18px; line-height:1; cursor:pointer; }
+  .kh-my-nav button:disabled{ opacity:.35; cursor:default; }
+  .kh-my-list{ list-style:none; margin:14px 0 0; padding:0; }
+  .kh-my-day{ border-bottom:1px solid var(--line); }
+  .kh-my-day:last-child{ border-bottom:none; }
+  .kh-my-row{ display:block; width:100%; text-align:left; background:none; border:none; padding:9px 0; font-family:'Inter',sans-serif; color:var(--ink); }
+  button.kh-my-row{ cursor:pointer; }
+  .kh-my-top{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:13.5px; }
+  .kh-my-date{ font-weight:600; }
+  .kh-my-status{ font-weight:600; color:var(--ink-soft); white-space:nowrap; }
+  .kh-my-status.warn{ color:var(--red-text); }
+  .kh-my-future{ display:inline-block; margin-left:6px; padding:1px 6px; border-radius:5px; background:var(--bg); font-size:10.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); vertical-align:1px; }
+  .kh-my-meta{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:2px; font-size:12.5px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .kh-my-pg{ display:inline-flex; align-items:center; gap:2px; color:var(--paddy); font-weight:600; }
+  .kh-my-row[aria-expanded="true"] .kh-collapse-chevron{ transform:rotate(180deg); }
+  .kh-my-row small{ display:block; margin-top:2px; font-size:12px; color:var(--ink-soft); }
+  .kh-my-day .kh-pg-timeline{ margin:0 0 10px; font-size:12.5px; }
+  .kh-my-foot{ margin:12px 0 0; font-size:12.5px; color:var(--ink-soft); }
+  .kh-my-pdf{ width:100%; margin-top:14px; }
   .kh-table-wrap{
     margin-top:14px;
     overflow-x:auto;
@@ -2662,6 +2684,20 @@
       </div>
     </div>
 
+    <!-- Rekod Kehadiran Saya: baca sahaja, dipaparkan bersama kad daftar sendiri -->
+    <div class="kehadiran-form kh-collapse open kh-my-card" id="khMyRecordSection" style="display:none;">
+      <div class="kh-collapse-toggle" role="button" tabindex="0" aria-expanded="true" aria-controls="khMyRecordBody" onclick="toggleKhCollapse(this)" onkeydown="if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); toggleKhCollapse(this); }">
+        <h3 class="section-heading" style="margin:0; font-size:15px;">Rekod Kehadiran Saya</h3>
+        <svg class="kh-collapse-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="kh-collapse-body" id="khMyRecordBody">
+        <div id="khMyRecordContent"></div>
+        <p class="kh-my-foot">Rekod salah atau tertinggal? Hubungi pentadbir kehadiran.</p>
+        <button type="button" class="print-btn kh-my-pdf" id="khMyPdfBtn" onclick="downloadMyKehadiranPDF()">&#128190; Muat turun PDF</button>
+        <p class="print-note" id="khMyPdfNote"></p>
+      </div>
+    </div>
+
     <!-- Editor-only block: full admin form, full table, PDF export -->
     <div id="kehadiranEditorBlock" style="display:none;">
       <div class="kh-collapse open" id="khRekodSection">
@@ -3468,7 +3504,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.47";
+const APP_VERSION = "1.0.48";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3757,12 +3793,14 @@ async function loadKehadiranFromSheet(){
     kehadiranLoaded = true;
     kehadiranLoadFailed = false;
     renderKehadiranTable();
+    renderMyKehadiranRecord();
     refreshUtama('kehadiran');
     return true;
   }catch(e){
     console.error('loadKehadiranFromSheet failed:', e);
     wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan rekod</div>Sila semak sambungan atau cuba semula.</div>`;
     kehadiranLoadFailed = true;
+    renderMyKehadiranRecord();
     refreshUtama('kehadiran');
     return false;
   }
@@ -5550,7 +5588,9 @@ function applyKehadiranMode(){
   document.getElementById('khEditorBadge').style.display = (isEditor && mode === 'pentadbir') ? '' : 'none';
   const showSelf = !isEditor || mode === 'peribadi';
   document.getElementById('khSelfCheckinCard').style.display = showSelf ? '' : 'none';
+  document.getElementById('khMyRecordSection').style.display = showSelf ? '' : 'none';
   if(showSelf && kehadiranLoaded) renderSelfCheckinCard();
+  if(showSelf) renderMyKehadiranRecord();
   // Semakan lokasi terpakai kepada sesiapa sahaja yang melihat kad daftar sendiri —
   // tetapi hanya minta lokasi apabila seksyen Kehadiran sebenarnya dibuka.
   if(showSelf && appSection === 'kehadiran') verifySelfCheckinLocation();
@@ -5687,9 +5727,10 @@ function fmtBulanMalay(bulan){
   return `${MONTH_NAMES[m - 1]} ${y}`;
 }
 
-function generateKehadiranPDF(label, recordsToPrint, isMonthly){
-  const note = document.getElementById('khPrintNote');
-  const btn = document.getElementById('khPrintBtn');
+// opts (pilihan): { btn, note, filename } — lalai kepada butang/nota eksport editor.
+function generateKehadiranPDF(label, recordsToPrint, isMonthly, opts = {}){
+  const note = opts.note || document.getElementById('khPrintNote');
+  const btn = opts.btn || document.getElementById('khPrintBtn');
   note.textContent = '';
 
   btn.disabled = true;
@@ -5767,7 +5808,7 @@ function generateKehadiranPDF(label, recordsToPrint, isMonthly){
     sy += 13;
     doc.text('Lembaga Padi dan Beras Sabah', marginPt, sy);
 
-    doc.save(`LPBS_Kehadiran_${label}.pdf`);
+    doc.save(opts.filename || `LPBS_Kehadiran_${label}.pdf`);
     note.textContent = `PDF berjaya dijana (${recordsToPrint.length} rekod).`;
   }catch(err){
     note.textContent = 'Ralat menjana PDF: ' + err.message;
@@ -5775,6 +5816,185 @@ function generateKehadiranPDF(label, recordsToPrint, isMonthly){
     btn.disabled = false;
     btn.textContent = '\u{1F4BE} Muat turun PDF';
   }
+}
+
+// ============================================================
+// REKOD KEHADIRAN SAYA — sejarah peribadi, baca sahaja. Kiraan bulanan
+// dikongsi dengan kad Kehadiran di Utama melalui getMyAttendanceMonth().
+// ============================================================
+let khMyMonth = null; // 'YYYY-MM'; null = bulan semasa
+const khMyOpenDays = new Set();
+
+// month: 0-11. "Perlu perhatian" = hari bekerja tanpa rekod (sejak rekod pertama)
+// atau Hadir tanpa clock-out, sebelum hari ini.
+function getMyAttendanceMonth(year, month){
+  const nama = getSelfCheckinName().toLowerCase();
+  const mine = nama ? kehadiranRecords.filter(r => r.nama.toLowerCase() === nama && r.tarikh) : [];
+  const byDate = new Map();
+  mine.forEach(r => { if(!byDate.has(r.tarikh)) byDate.set(r.tarikh, r); });
+  const firstKey = mine.reduce((min, r) => (!min || r.tarikh < min) ? r.tarikh : min, '');
+
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+  let hadir = 0, lewat = 0, jamTotal = 0, jamDays = 0;
+  const counts = { Cuti: 0, MC: 0, Outstation: 0, Kursus: 0 };
+  byDate.forEach((r, key) => {
+    if(!key.startsWith(monthPrefix)) return;
+    if(r.status === 'Hadir' && r.masuk){
+      hadir++;
+      if(isKhLewat(r.masuk)) lewat++;
+    }
+    if(r.status in counts) counts[r.status]++;
+    if(r.status === 'Hadir' && r.jam !== null){
+      jamTotal += r.jam;
+      jamDays++;
+    }
+  });
+
+  const now = new Date();
+  const isCurrent = year === now.getFullYear() && month === now.getMonth();
+  const lastDay = isCurrent ? now.getDate() - 1 : new Date(year, month + 1, 0).getDate();
+  const attn = [];
+  for(let d = lastDay; d >= 1; d--){
+    const date = new Date(year, month, d);
+    const key = fmtKey(date);
+    const r = byDate.get(key);
+    if(!r){
+      const weekday = date.getDay() !== 0 && date.getDay() !== 6;
+      if(weekday && firstKey && key >= firstKey) attn.push({ date, key, why: 'Tiada rekod' });
+    } else if(r.status === 'Hadir' && !r.keluar){
+      attn.push({ date, key, why: 'Tiada clock-out' });
+    }
+  }
+
+  return { mine, byDate, firstKey, hadir, lewat, counts, attn, purataJam: jamDays ? jamTotal / jamDays : null };
+}
+
+function khMyCurrentMonth(){
+  return fmtKey(new Date()).slice(0, 7);
+}
+
+function stepKhMyMonth(delta){
+  const [y, m] = (khMyMonth || khMyCurrentMonth()).split('-').map(Number);
+  const next = fmtKey(new Date(y, m - 1 + delta, 1)).slice(0, 7);
+  if(next > khMyCurrentMonth()) return;
+  khMyMonth = next === khMyCurrentMonth() ? null : next;
+  khMyOpenDays.clear();
+  document.getElementById('khMyPdfNote').textContent = '';
+  renderMyKehadiranRecord();
+}
+
+function toggleKhMyDay(key){
+  if(khMyOpenDays.has(key)) khMyOpenDays.delete(key);
+  else khMyOpenDays.add(key);
+  renderMyKehadiranRecord();
+}
+
+function renderMyKehadiranRecord(){
+  const el = document.getElementById('khMyRecordContent');
+  if(!kehadiranLoaded){
+    el.innerHTML = `<p class="kh-note">${kehadiranLoadFailed ? 'Gagal memuatkan rekod. Sila cuba semula.' : 'Memuatkan...'}</p>`;
+    return;
+  }
+
+  const current = khMyCurrentMonth();
+  const bulan = khMyMonth || current;
+  const [y, m] = bulan.split('-').map(Number);
+  const my = getMyAttendanceMonth(y, m - 1);
+  const todayKey = fmtKey(new Date());
+  const attnWhy = new Map(my.attn.map(a => [a.key, a.why]));
+
+  const keys = new Set();
+  const daysInMonth = new Date(y, m, 0).getDate();
+  for(let d = 1; d <= daysInMonth; d++){
+    const date = new Date(y, m - 1, d);
+    const key = fmtKey(date);
+    if(key > todayKey) break;
+    if(date.getDay() !== 0 && date.getDay() !== 6) keys.add(key);
+  }
+  my.byDate.forEach((r, key) => { if(key.startsWith(bulan)) keys.add(key); });
+
+  const chevron = '<svg class="kh-collapse-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  const items = [...keys].sort().reverse().map(key => {
+    const r = my.byDate.get(key);
+    const why = attnWhy.get(key);
+    let status;
+    if(why) status = why;
+    else if(!r) status = key === todayKey ? 'Belum clock in' : 'Tiada rekod';
+    else if(r.status === 'Hadir') status = isKhLewat(r.masuk) ? 'Hadir · Lewat' : 'Hadir';
+    else status = r.status;
+
+    const times = r && (r.masuk || r.keluar) ? `${r.masuk || '--:--'} &ndash; ${r.keluar || '--:--'}` : '';
+    const hours = r && r.jam !== null ? ` &middot; ${fmtHours(r.jam)}` : '';
+    const remark = r ? fmtKehadiranRemark(r) : '';
+    const events = getMyPergerakan(key);
+    const open = events.length > 0 && khMyOpenDays.has(key);
+    const inner = `
+      <div class="kh-my-top">
+        <span class="kh-my-date">${fmtTarikhPendek(new Date(key + 'T00:00:00'))}${key > todayKey ? '<span class="kh-my-future">Akan datang</span>' : ''}</span>
+        <span class="kh-my-status${why ? ' warn' : ''}">${escapeHtml(status)}</span>
+      </div>
+      ${times || events.length ? `<div class="kh-my-meta"><span>${times}${hours}</span>${events.length ? `<span class="kh-my-pg">Pergerakan ${chevron}</span>` : ''}</div>` : ''}
+      ${remark ? `<small>${escapeHtml(remark)}</small>` : ''}`;
+    return `<li class="kh-my-day">${events.length
+      ? `<button type="button" class="kh-my-row" data-key="${escapeHtml(key)}" aria-expanded="${open}" onclick="toggleKhMyDay(this.dataset.key)">${inner}</button>${open ? renderPergerakanTimeline(r || { masuk: '', keluar: '' }, events) : ''}`
+      : `<div class="kh-my-row">${inner}</div>`}</li>`;
+  }).join('');
+
+  const c = my.counts;
+  const canPrev = !!my.firstKey && my.firstKey.slice(0, 7) < bulan;
+  el.innerHTML = `
+    <div class="kh-my-nav">
+      <button type="button" aria-label="Bulan sebelumnya" onclick="stepKhMyMonth(-1)" ${canPrev ? '' : 'disabled'}>&lsaquo;</button>
+      <b>${fmtBulanMalay(bulan)}</b>
+      <button type="button" aria-label="Bulan seterusnya" onclick="stepKhMyMonth(1)" ${bulan < current ? '' : 'disabled'}>&rsaquo;</button>
+    </div>
+    <div class="utama-stats">
+      <div class="utama-stat"><b>${my.hadir}</b><span>Hadir</span></div>
+      <div class="utama-stat"><b>${my.lewat}</b><span>Lewat</span></div>
+      <div class="utama-stat"><b>${c.Cuti} Cuti &middot; ${c.MC} MC</b><span>Cuti / MC</span></div>
+      <div class="utama-stat"><b>${c.Outstation} Outstation &middot; ${c.Kursus} Kursus</b><span>Outstation / Kursus</span></div>
+      <div class="utama-stat"><b>${my.purataJam !== null ? fmtHours(my.purataJam) : '-'}</b><span>Purata jam</span></div>
+      <div class="utama-stat${my.attn.length ? ' warn' : ''}"><b>${my.attn.length}</b><span>Perlu perhatian</span></div>
+    </div>
+    ${items ? `<ul class="kh-my-list">${items}</ul>` : '<p class="kh-note">Tiada rekod untuk bulan ini.</p>'}
+  `;
+}
+
+function downloadMyKehadiranPDF(){
+  const note = document.getElementById('khMyPdfNote');
+  if(!kehadiranLoaded){
+    note.textContent = 'Rekod belum dimuatkan.';
+    return;
+  }
+  const bulan = khMyMonth || khMyCurrentMonth();
+  const [y, m] = bulan.split('-').map(Number);
+  const my = getMyAttendanceMonth(y, m - 1);
+  const nama = getSelfCheckinName();
+  const missing = my.attn
+    .filter(a => a.why === 'Tiada rekod')
+    .map(a => ({ tarikh: a.key, nama, masuk: '', keluar: '', jam: 0, status: 'Tiada Rekod', remark: '', missing: true }));
+  const recordsToPrint = my.mine
+    .filter(r => r.tarikh.startsWith(bulan))
+    .concat(missing)
+    .sort(sortKhRecords);
+  if(recordsToPrint.length === 0){
+    note.textContent = 'Tiada rekod kehadiran pada bulan ini.';
+    return;
+  }
+  const safeNama = nama.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'Staf';
+  generateKehadiranPDF(bulan, recordsToPrint, true, {
+    btn: document.getElementById('khMyPdfBtn'),
+    note,
+    filename: `LPBS_Kehadiran_${safeNama}_${bulan}.pdf`
+  });
+}
+
+function openMyKehadiranRecord(){
+  if(currentUser && isAllowedKehadiranEditor(currentUser.email) && getKehadiranMode() !== 'peribadi') setKehadiranMode('peribadi');
+  switchSection('kehadiran');
+  const section = document.getElementById('khMyRecordSection');
+  if(!section.classList.contains('open')) toggleKhCollapse(section.querySelector('.kh-collapse-toggle'));
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function updateHoursPreview(){
@@ -7508,19 +7728,15 @@ function fmtTarikhPendek(date){
 
 function renderUtamaKehadiran(){
   const el = document.getElementById('utamaKehadiran');
+  const link = `<button type="button" class="utama-link" onclick="openMyKehadiranRecord()">Lihat rekod penuh</button>`;
   const state = utamaState('kehadiran', kehadiranLoaded, kehadiranLoadFailed);
   if(state !== 'ok'){
-    el.innerHTML = utamaCardHtml('Kehadiran', '', utamaStateHtml(state, 'kehadiran'));
+    el.innerHTML = utamaCardHtml('Kehadiran', link, utamaStateHtml(state, 'kehadiran'));
     return;
   }
 
-  const nama = getSelfCheckinName().toLowerCase();
-  const mine = nama ? kehadiranRecords.filter(r => r.nama.toLowerCase() === nama && r.tarikh) : [];
-  const byDate = new Map();
-  mine.forEach(r => { if(!byDate.has(r.tarikh)) byDate.set(r.tarikh, r); });
-  const firstKey = mine.reduce((min, r) => (!min || r.tarikh < min) ? r.tarikh : min, '');
-
   const now = new Date();
+  const { byDate, hadir, lewat, counts, attn } = getMyAttendanceMonth(now.getFullYear(), now.getMonth());
   const todayKey = fmtKey(now);
   const weekend = now.getDay() === 0 || now.getDay() === 6;
   const goBtn = label => `<button type="button" class="utama-btn" onclick="switchSection('kehadiran')">${label}</button>`;
@@ -7546,36 +7762,11 @@ function renderUtamaKehadiran(){
     todayText = `${rec.masuk} &ndash; ${rec.keluar} &middot; ${fmtHours(rec.jam)}`;
   }
 
-  const monthPrefix = todayKey.slice(0, 7);
-  let hadir = 0, lewat = 0;
-  const counts = { Cuti: 0, MC: 0, Outstation: 0, Kursus: 0 };
-  byDate.forEach((r, key) => {
-    if(!key.startsWith(monthPrefix)) return;
-    if(r.status === 'Hadir' && r.masuk){
-      hadir++;
-      if(isKhLewat(r.masuk)) lewat++;
-    }
-    if(r.status in counts) counts[r.status]++;
-  });
-
-  const attn = [];
-  for(let d = now.getDate() - 1; d >= 1; d--){
-    const date = new Date(now.getFullYear(), now.getMonth(), d);
-    const key = fmtKey(date);
-    const r = byDate.get(key);
-    if(!r){
-      const weekday = date.getDay() !== 0 && date.getDay() !== 6;
-      if(weekday && firstKey && key >= firstKey) attn.push({ date, why: 'Tiada rekod' });
-    } else if(r.status === 'Hadir' && !r.keluar){
-      attn.push({ date, why: 'Tiada clock-out' });
-    }
-  }
-
   const attnList = (utamaAttnOpen && attn.length)
     ? `<ul class="utama-attn-list">${attn.map(a => `<li><span>${fmtTarikhPendek(a.date)}</span><span class="why">${a.why}</span></li>`).join('')}</ul>`
     : '';
 
-  el.innerHTML = utamaCardHtml('Kehadiran', '', `
+  el.innerHTML = utamaCardHtml('Kehadiran', link, `
     <div class="utama-today">
       <span class="utama-today-text">${todayText}</span>
       ${todayBtn}
