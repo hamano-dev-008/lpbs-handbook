@@ -1253,7 +1253,7 @@
   .kh-table tr.kh-pg-parent td{ border-bottom:none; }
   .kh-table td.kh-pg-cell{ white-space:normal; padding-top:0; }
   .kh-table td.kh-pg-cell .kh-pg-timeline{ margin:0 0 0 12px; font-size:12.5px; }
-  #khPgModalOverlay .save-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  #khPgModalOverlay .save-btn:disabled, #khFillModalOverlay .save-btn:disabled{ opacity:.45; cursor:not-allowed; }
   #khPgKembaliToggle .period-btn{ flex:1; }
   .kh-pg-skp{ margin:14px 0 0; padding:12px; border-radius:10px; background:var(--amber-bg); color:var(--amber-text); font-size:13px; }
   .kh-pg-skp p{ margin:0 0 8px; }
@@ -1283,6 +1283,9 @@
   .kh-my-row small{ display:block; margin-top:2px; font-size:12px; color:var(--ink-soft); }
   .kh-my-day .kh-pg-timeline{ margin:0 0 10px; font-size:12.5px; }
   .kh-my-foot{ margin:12px 0 0; font-size:12.5px; color:var(--ink-soft); }
+  .kh-my-fill-banner{ margin:14px 0 0; padding:10px 12px; border-radius:10px; background:var(--amber-bg); color:var(--amber-text); font-size:13px; line-height:1.5; }
+  .kh-my-fill{ margin:0 0 9px; padding:6px 12px; border:1.5px solid var(--paddy); border-radius:8px; background:transparent; color:var(--paddy); font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .kh-my-fill:disabled{ opacity:.45; cursor:not-allowed; }
   .kh-my-pdf{ width:100%; margin-top:14px; }
   .kh-table-wrap{
     margin-top:14px;
@@ -2692,6 +2695,7 @@
       </div>
       <div class="kh-collapse-body" id="khMyRecordBody">
         <div id="khMyRecordContent"></div>
+        <p class="kh-note" id="khMyFillNote"></p>
         <p class="kh-my-foot">Rekod salah atau tertinggal? Hubungi pentadbir kehadiran.</p>
         <button type="button" class="print-btn kh-my-pdf" id="khMyPdfBtn" onclick="downloadMyKehadiranPDF()">&#128190; Muat turun PDF</button>
         <p class="print-note" id="khMyPdfNote"></p>
@@ -2925,6 +2929,57 @@
         <div class="modal-foot">
           <button class="cancel-btn" onclick="closePergerakanModal()">Batal</button>
           <button class="save-btn" id="khPgConfirmBtn" onclick="selfKeluarBertugas()" disabled>Sahkan Keluar Bertugas</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="khFillModalOverlay">
+      <div class="modal" style="max-width:380px;">
+        <div class="modal-head">
+          <h3 id="khFillTitle">Isi rekod</h3>
+          <button class="modal-close" onclick="closeKhFillModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="kh-self-dates" id="khFillTarikh" style="margin-top:0;"></p>
+          <div id="khFillRekodWrap">
+            <label class="field-label">Status *</label>
+            <select id="khFillStatus" onchange="updateKhFillForm()">
+              <option value="Hadir">Hadir</option>
+              <option value="Cuti">Cuti</option>
+              <option value="MC">MC</option>
+              <option value="Outstation">Outstation</option>
+              <option value="Kursus">Kursus</option>
+            </select>
+            <div class="field-row" id="khFillMasaWrap">
+              <div>
+                <label class="field-label">Masa Masuk *</label>
+                <input type="time" id="khFillMasuk" oninput="updateKhFillForm()">
+              </div>
+              <div>
+                <label class="field-label">Masa Keluar *</label>
+                <input type="time" id="khFillKeluar" oninput="updateKhFillForm()">
+              </div>
+            </div>
+            <div id="khFillTripWrap">
+              <label class="field-label">Tajuk *</label>
+              <input type="text" id="khFillTajuk" oninput="updateKhFillForm()">
+              <label class="field-label">Lokasi *</label>
+              <input type="text" id="khFillLokasi" oninput="updateKhFillForm()">
+            </div>
+          </div>
+          <div id="khFillKeluarWrap">
+            <p class="kh-self-dates" id="khFillMasukInfo"></p>
+            <label class="field-label">Masa Keluar *</label>
+            <input type="time" id="khFillKeluarOnly" oninput="updateKhFillForm()">
+          </div>
+          <label class="field-label">Sebab *</label>
+          <input type="text" id="khFillSebab" maxlength="200" placeholder="Contoh: Terlupa clock out" oninput="updateKhFillForm()">
+          <p class="kh-self-dates" id="khFillHint"></p>
+          <p class="kh-note" id="khFillNote"></p>
+        </div>
+        <div class="modal-foot">
+          <button class="cancel-btn" onclick="closeKhFillModal()">Batal</button>
+          <button class="save-btn" id="khFillConfirmBtn" onclick="submitKhFill()" disabled>Simpan</button>
         </div>
       </div>
     </div>
@@ -3504,7 +3559,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.48";
+const APP_VERSION = "1.0.49";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -5368,6 +5423,16 @@ function putKehadiranKeluar(rowIndex, masa){
   });
 }
 
+// RAW supaya teks staf tidak ditafsir sebagai formula.
+function putKehadiranRemark(rowIndex, remark){
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!F' + rowIndex)}?valueInputOption=RAW`;
+  return apiFetch(url, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values: [[remark]] })
+  });
+}
+
 // ---- Keluar Bertugas / Kembali Ke Pejabat / Tamat Bertugas ----
 function openPergerakanModal(){
   if(khSelfWriting || !pergerakanLoaded) return;
@@ -5935,14 +6000,17 @@ function renderMyKehadiranRecord(){
       </div>
       ${times || events.length ? `<div class="kh-my-meta"><span>${times}${hours}</span>${events.length ? `<span class="kh-my-pg">Pergerakan ${chevron}</span>` : ''}</div>` : ''}
       ${remark ? `<small>${escapeHtml(remark)}</small>` : ''}`;
+    const fill = khFillType(key, why, r);
+    const fillBtn = fill ? `<button type="button" class="kh-my-fill" data-key="${escapeHtml(key)}" onclick="openKhFillModal(this.dataset.key)">${fill === 'rekod' ? 'Isi rekod' : 'Isi masa keluar'}</button>` : '';
     return `<li class="kh-my-day">${events.length
       ? `<button type="button" class="kh-my-row" data-key="${escapeHtml(key)}" aria-expanded="${open}" onclick="toggleKhMyDay(this.dataset.key)">${inner}</button>${open ? renderPergerakanTimeline(r || { masuk: '', keluar: '' }, events) : ''}`
-      : `<div class="kh-my-row">${inner}</div>`}</li>`;
+      : `<div class="kh-my-row">${inner}</div>`}${fillBtn}</li>`;
   }).join('');
 
   const c = my.counts;
   const canPrev = !!my.firstKey && my.firstKey.slice(0, 7) < bulan;
   el.innerHTML = `
+    ${isKhSelfFillOpen() ? '<p class="kh-my-fill-banner">Anda boleh mengisi rekod yang tertinggal sehingga Jumaat, 16 Oktober 2026.</p>' : ''}
     <div class="kh-my-nav">
       <button type="button" aria-label="Bulan sebelumnya" onclick="stepKhMyMonth(-1)" ${canPrev ? '' : 'disabled'}>&lsaquo;</button>
       <b>${fmtBulanMalay(bulan)}</b>
@@ -5995,6 +6063,223 @@ function openMyKehadiranRecord(){
   const section = document.getElementById('khMyRecordSection');
   if(!section.classList.contains('open')) toggleKhCollapse(section.querySelector('.kh-collapse-toggle'));
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ---- Isi rekod tertinggal (audit Kehadiran) — hanya mengisi jurang, tidak mengubah rekod sedia ada ----
+const KH_SELF_FILL_UNTIL = '2026-10-16';
+let khFill = null; // { key, type: 'rekod' | 'keluar', masuk }
+const khFillUnverified = new Set();
+
+function malaysiaNowParts(){
+  const p = {};
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
+    .formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
+  return p;
+}
+
+function malaysiaTodayKey(){
+  const p = malaysiaNowParts();
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+function isKhSelfFillOpen(){
+  return malaysiaTodayKey() <= KH_SELF_FILL_UNTIL;
+}
+
+// why: dari getMyAttendanceMonth().attn. Hari ini dan masa depan tidak boleh diisi.
+function khFillType(key, why, r){
+  if(!why || !isKhSelfFillOpen() || key >= malaysiaTodayKey() || key >= fmtKey(new Date())) return null;
+  if(why === 'Tiada rekod' && !r) return 'rekod';
+  if(why === 'Tiada clock-out' && r && r.status === 'Hadir' && r.masuk && !r.keluar) return 'keluar';
+  return null;
+}
+
+function getKhFillGap(key){
+  const [y, m] = key.split('-').map(Number);
+  const my = getMyAttendanceMonth(y, m - 1);
+  const a = my.attn.find(x => x.key === key);
+  const r = my.byDate.get(key) || null;
+  return { type: khFillType(key, a && a.why, r), rec: r };
+}
+
+function openKhFillModal(key){
+  if(khSelfWriting) return;
+  const gap = getKhFillGap(key);
+  if(!gap.type){
+    renderMyKehadiranRecord();
+    return;
+  }
+  khFill = { key, type: gap.type, masuk: gap.type === 'keluar' ? gap.rec.masuk : '' };
+  document.getElementById('khFillTitle').textContent = gap.type === 'rekod' ? 'Isi rekod' : 'Isi masa keluar';
+  document.getElementById('khFillTarikh').textContent = fmtTarikhMelayu(new Date(key + 'T00:00:00'));
+  document.getElementById('khFillRekodWrap').style.display = gap.type === 'rekod' ? '' : 'none';
+  document.getElementById('khFillKeluarWrap').style.display = gap.type === 'keluar' ? '' : 'none';
+  document.getElementById('khFillMasukInfo').textContent = gap.type === 'keluar' ? `Masa masuk direkod: ${gap.rec.masuk}` : '';
+  document.getElementById('khFillStatus').value = 'Hadir';
+  ['khFillMasuk', 'khFillKeluar', 'khFillTajuk', 'khFillLokasi', 'khFillKeluarOnly', 'khFillSebab'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('khFillNote').textContent = khFillUnverified.has(key) ? KH_SELF_UNVERIFIED_MSG : '';
+  document.getElementById('khMyFillNote').textContent = '';
+  document.getElementById('khFillConfirmBtn').textContent = 'Simpan';
+  updateKhFillForm();
+  document.getElementById('khFillModalOverlay').classList.add('open');
+}
+
+function closeKhFillModal(){
+  if(khSelfWriting) return;
+  document.getElementById('khFillModalOverlay').classList.remove('open');
+  khFill = null;
+}
+
+function readKhFillForm(){
+  const v = id => document.getElementById(id).value.trim();
+  const sebab = v('khFillSebab');
+  if(khFill.type === 'keluar'){
+    const keluar = v('khFillKeluarOnly');
+    const timeBad = !!keluar && keluar <= khFill.masuk;
+    return { keluar, sebab, timeBad, valid: !!sebab && !!keluar && !timeBad };
+  }
+  const status = v('khFillStatus');
+  const hadir = status === 'Hadir';
+  const trip = status === 'Outstation' || status === 'Kursus';
+  const masuk = hadir ? v('khFillMasuk') : '';
+  const keluar = hadir ? v('khFillKeluar') : '';
+  const tajuk = trip ? v('khFillTajuk') : '';
+  const lokasi = trip ? v('khFillLokasi') : '';
+  const timeBad = hadir && !!masuk && !!keluar && keluar <= masuk;
+  const valid = !!sebab && (!hadir || (!!masuk && !!keluar && !timeBad)) && (!trip || (!!tajuk && !!lokasi));
+  return { status, hadir, trip, masuk, keluar, tajuk, lokasi, sebab, timeBad, valid };
+}
+
+function updateKhFillForm(){
+  if(!khFill) return;
+  const status = document.getElementById('khFillStatus').value;
+  document.getElementById('khFillMasaWrap').style.display = status === 'Hadir' ? '' : 'none';
+  document.getElementById('khFillTripWrap').style.display = status === 'Outstation' || status === 'Kursus' ? '' : 'none';
+  const f = readKhFillForm();
+  document.getElementById('khFillHint').textContent = f.timeBad ? 'Masa keluar mesti selepas masa masuk.' : '';
+  document.getElementById('khFillConfirmBtn').disabled = khSelfWriting || !f.valid || khFillUnverified.has(khFill.key)
+    || getKhFillGap(khFill.key).type !== khFill.type;
+}
+
+async function logKhPindaan(row){
+  try{
+    const res = await appendKehadiranTabRows('LogPindaan', [row], (value, col) => kehadiranCell(value, col === 3 ? 0 : 1));
+    if(!res.ok) console.error('LogPindaan gagal:', res.status, await res.text().catch(() => ''));
+  }catch(e){
+    console.error('LogPindaan gagal:', e);
+  }
+}
+
+async function submitKhFill(){
+  if(khSelfWriting || !khFill) return;
+  const f = readKhFillForm();
+  if(!f.valid) return;
+  const { key, type } = khFill;
+  const note = document.getElementById('khFillNote');
+  const btn = document.getElementById('khFillConfirmBtn');
+  if(khFillUnverified.has(key)){
+    btn.disabled = true;
+    note.textContent = KH_SELF_UNVERIFIED_MSG;
+    return;
+  }
+  if(!isKhSelfFillOpen()){
+    btn.disabled = true;
+    note.textContent = 'Tempoh mengisi rekod telah tamat.';
+    renderMyKehadiranRecord();
+    return;
+  }
+  const nama = getSelfCheckinName();
+  const isMine = r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === key;
+  const p = malaysiaNowParts();
+  const tag = `[Diisi staf ${p.day}/${p.month}/${p.year}: ${f.sebab}]`;
+
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  note.textContent = '';
+  khSelfWriting = true;
+
+  try{
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
+    // Semak semula dengan data terkini — jurang mungkin sudah diisi dari peranti/tab lain atau oleh pentadbir.
+    if(!(await loadKehadiranFromSheet())){
+      if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', note, btn, 'Simpan'); return; }
+      throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+    }
+    const rec = kehadiranRecords.find(isMine);
+    const stale = type === 'rekod'
+      ? !!rec
+      : (!rec || rec.keluar || rec.status !== 'Hadir' || !rec.masuk || f.keluar <= rec.masuk);
+    if(stale || getKhFillGap(key).type !== type){
+      note.textContent = 'Rekod untuk tarikh ini telah berubah — tiada perubahan dibuat. Sila semak senarai.';
+      btn.textContent = 'Simpan';
+      return;
+    }
+
+    let res, nilai, verify, remarkErr = '';
+    if(type === 'rekod'){
+      const row = f.trip
+        ? [key, nama, '', '', f.status, tag, f.lokasi, f.tajuk]
+        : [key, nama, f.masuk, f.keluar, f.status, tag];
+      res = await appendKehadiranRows([row]);
+      nilai = f.hadir ? `Hadir ${f.masuk}–${f.keluar}` : f.trip ? `${f.status} — ${f.tajuk} · ${f.lokasi}` : f.status;
+      verify = () => kehadiranRecords.some(r => isMine(r) && r.status === f.status && (!f.hadir || (r.masuk === f.masuk && r.keluar === f.keluar)));
+    } else {
+      res = await putKehadiranKeluar(rec.rowIndex, f.keluar);
+      nilai = `Keluar ${f.keluar}`;
+      verify = () => { const r = kehadiranRecords.find(isMine); return !!r && r.keluar === f.keluar; };
+      if(res.ok){
+        const remarkRes = await putKehadiranRemark(rec.rowIndex, rec.remark ? `${rec.remark} ${tag}` : tag);
+        if(!remarkRes.ok){
+          const errData = await remarkRes.json().catch(()=>({}));
+          remarkErr = errData.error?.message || ('status ' + remarkRes.status);
+          console.error('Kemas kini Remark gagal:', remarkErr);
+        }
+      }
+    }
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      const errMsg = errData.error?.message || '';
+      const errReason = errData.error?.status || errData.error?.errors?.[0]?.reason || '';
+      if(res.status === 403 || res.status === 401 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('permission')){
+        handleAttendanceAuthError(res.status, errMsg, note, btn, 'Simpan', errReason);
+        return;
+      }
+      throw new Error(errMsg || ('Gagal menyimpan (status ' + res.status + ')'));
+    }
+
+    await logKhPindaan([
+      `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`,
+      currentUser.email.toLowerCase(), nama, key,
+      type === 'rekod' ? 'ISI_REKOD' : 'ISI_KELUAR', nilai, f.sebab
+    ]);
+
+    let verified = false;
+    for(let i = 0; i < 3 && !verified; i++){
+      if(i) await new Promise(resolve => setTimeout(resolve, 2000));
+      if(await loadKehadiranFromSheet()) verified = verify();
+    }
+    if(!verified){
+      khFillUnverified.add(key);
+      note.textContent = KH_SELF_UNVERIFIED_MSG;
+      btn.textContent = 'Simpan';
+      return;
+    }
+    khSelfWriting = false;
+    closeKhFillModal();
+    document.getElementById('khMyFillNote').textContent = remarkErr
+      ? `Masa keluar disimpan, tetapi catatan Remark gagal dikemas kini (${remarkErr}). Sila maklumkan pentadbir.`
+      : `Rekod ${fmtTarikhPendek(new Date(key + 'T00:00:00'))} berjaya diisi.`;
+  }catch(e){
+    if(!note.querySelector('.kh-auth-msg')){
+      note.textContent = 'Ralat: ' + e.message;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Simpan';
+  }finally{
+    khSelfWriting = false;
+    applySelfCheckinLock();
+    if(khFill) updateKhFillForm();
+  }
 }
 
 function updateHoursPreview(){
