@@ -1267,6 +1267,16 @@
   .kh-my-nav b{ font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; color:var(--ink); }
   .kh-my-nav button{ width:34px; height:34px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); font-size:18px; line-height:1; cursor:pointer; }
   .kh-my-nav button:disabled{ opacity:.35; cursor:default; }
+  .kh-my-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:16px 0;}
+  .kh-my-weekday{text-align:center;font-size:11px;color:var(--ink-soft);padding:6px 0;font-weight:600;}
+  .kh-my-cell{min-width:0;min-height:48px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;}
+  .kh-my-cell:hover{background:var(--bg);}
+  .kh-my-cell.muted{color:var(--sage);}
+  .kh-my-cell.today{border-color:var(--paddy-light);font-weight:700;}
+  .kh-my-cell.selected{background:#E7EFF8;border-color:var(--paddy-light);}
+  .kh-my-cross{height:16px;line-height:16px;color:var(--red-text);font-size:18px;font-weight:700;}
+  .kh-my-legend{font-size:12px;line-height:1.6;color:var(--ink-soft);margin:8px 0;}
+  .kh-my-nav button{min-width:44px;min-height:44px;}
   .kh-my-list{ list-style:none; margin:14px 0 0; padding:0; }
   .kh-my-day{ border-bottom:1px solid var(--line); }
   .kh-my-day:last-child{ border-bottom:none; }
@@ -3614,7 +3624,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.49";
+const APP_VERSION = "1.0.51";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -6004,8 +6014,9 @@ function stepKhMyMonth(delta){
 }
 
 function toggleKhMyDay(key){
-  if(khMyOpenDays.has(key)) khMyOpenDays.delete(key);
-  else khMyOpenDays.add(key);
+  const wasOpen = khMyOpenDays.has(key);
+  khMyOpenDays.clear();
+  if(!wasOpen) khMyOpenDays.add(key);
   renderMyKehadiranRecord();
 }
 
@@ -6023,18 +6034,8 @@ function renderMyKehadiranRecord(){
   const todayKey = fmtKey(new Date());
   const attnWhy = new Map(my.attn.map(a => [a.key, a.why]));
 
-  const keys = new Set();
-  const daysInMonth = new Date(y, m, 0).getDate();
-  for(let d = 1; d <= daysInMonth; d++){
-    const date = new Date(y, m - 1, d);
-    const key = fmtKey(date);
-    if(key > todayKey) break;
-    if(date.getDay() !== 0 && date.getDay() !== 6) keys.add(key);
-  }
-  my.byDate.forEach((r, key) => { if(key.startsWith(bulan)) keys.add(key); });
-
   const chevron = '<svg class="kh-collapse-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
-  const items = [...keys].sort().reverse().map(key => {
+  const items = [...khMyOpenDays].filter(key => key.startsWith(bulan)).map(key => {
     const r = my.byDate.get(key);
     const why = attnWhy.get(key);
     let status;
@@ -6057,12 +6058,9 @@ function renderMyKehadiranRecord(){
       ${remark ? `<small>${escapeHtml(remark)}</small>` : ''}`;
     const fill = khFillType(key, why, r);
     const fillBtn = fill ? `<button type="button" class="kh-my-fill" data-key="${escapeHtml(key)}" onclick="openKhFillModal(this.dataset.key)">${fill === 'rekod' ? 'Isi rekod' : 'Isi masa keluar'}</button>` : '';
-    return `<li class="kh-my-day">${events.length
-      ? `<button type="button" class="kh-my-row" data-key="${escapeHtml(key)}" aria-expanded="${open}" onclick="toggleKhMyDay(this.dataset.key)">${inner}</button>${open ? renderPergerakanTimeline(r || { masuk: '', keluar: '' }, events) : ''}`
-      : `<div class="kh-my-row">${inner}</div>`}${fillBtn}</li>`;
+    return `<li class="kh-my-day"><div class="kh-my-row">${inner}</div>${events.length ? renderPergerakanTimeline(r || { masuk: "", keluar: "" }, events) : ""}${fillBtn}</li>`;
   }).join('');
 
-  const c = my.counts;
   const canPrev = !!my.firstKey && my.firstKey.slice(0, 7) < bulan;
   el.innerHTML = `
     ${isKhSelfFillOpen() ? '<p class="kh-my-fill-banner">Anda boleh mengisi rekod yang tertinggal sehingga Jumaat, 16 Oktober 2026.</p>' : ''}
@@ -6071,16 +6069,28 @@ function renderMyKehadiranRecord(){
       <b>${fmtBulanMalay(bulan)}</b>
       <button type="button" aria-label="Bulan seterusnya" onclick="stepKhMyMonth(1)" ${bulan < current ? '' : 'disabled'}>&rsaquo;</button>
     </div>
-    <div class="utama-stats">
-      <div class="utama-stat"><b>${my.hadir}</b><span>Hadir</span></div>
-      <div class="utama-stat"><b>${my.lewat}</b><span>Lewat</span></div>
-      <div class="utama-stat"><b>${c.Cuti} Cuti &middot; ${c.MC} MC</b><span>Cuti / MC</span></div>
-      <div class="utama-stat"><b>${c.Outstation} Outstation &middot; ${c.Kursus} Kursus</b><span>Outstation / Kursus</span></div>
-      <div class="utama-stat"><b>${my.purataJam !== null ? fmtHours(my.purataJam) : '-'}</b><span>Purata jam</span></div>
-      <div class="utama-stat${my.attn.length ? ' warn' : ''}"><b>${my.attn.length}</b><span>Perlu perhatian</span></div>
-    </div>
-    ${items ? `<ul class="kh-my-list">${items}</ul>` : '<p class="kh-note">Tiada rekod untuk bulan ini.</p>'}
+    ${renderMyAttendanceCalendar(y, m, my, attnWhy, todayKey)}
+    ${items ? `<ul class="kh-my-list">${items}</ul>` : ""}
   `;
+}
+
+
+function renderMyAttendanceCalendar(y, m, my, attnWhy, todayKey){
+  const labels = ['Isn','Sel','Rab','Kha','Jum','Sab','Ahd'];
+  let html = labels.map(d => '<span class="kh-my-weekday" aria-hidden="true">' + d + '</span>').join('');
+  html += '<span aria-hidden="true"></span>'.repeat((new Date(y,m-1,1).getDay()+6)%7);
+  let missingCount = 0;
+  for(let d=1; d<=new Date(y,m,0).getDate(); d++){
+    const date = new Date(y,m-1,d), key = fmtKey(date), r = my.byDate.get(key);
+    const missing = key < todayKey && attnWhy.get(key) === 'Tiada rekod';
+    if(missing) missingCount++;
+    const weekend = date.getDay() === 0 || date.getDay() === 6;
+    const status = missing ? 'Tiada rekod' : r ? (r.status || 'Hadir') : key > todayKey ? 'Akan datang' : weekend ? 'Hujung minggu' : 'Tiada rekod';
+    const selected = khMyOpenDays.has(key);
+    const classes = (weekend || key > todayKey ? ' muted' : '') + (key === todayKey ? ' today' : '') + (selected ? ' selected' : '');
+    html += '<button type="button" class="kh-my-cell' + classes + '" data-key="' + key + '" onclick="toggleKhMyDay(this.dataset.key)" aria-pressed="' + selected + '" ' + (key === todayKey ? 'aria-current="date" ' : '') + 'aria-label="' + escapeHtml(fmtTarikhPendek(date) + ': ' + status) + '"><span>' + d + '</span><span class="kh-my-cross" aria-hidden="true">' + (missing ? '&times;' : '&nbsp;') + '</span></button>';
+  }
+  return '<div class="kh-my-calendar" role="group" aria-label="Kalendar kehadiran ' + escapeHtml(fmtBulanMalay(y + '-' + String(m).padStart(2,'0'))) + '">' + html + '</div><p class="kh-my-legend"><span class="kh-my-cross" aria-hidden="true">&times;</span> Tiada rekod (' + missingCount + ' hari). Ketik tarikh untuk butiran.</p><p class="kh-my-legend">Cuti umum belum diambil kira.</p>';
 }
 
 function downloadMyKehadiranPDF(){
