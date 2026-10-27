@@ -1293,6 +1293,30 @@
   .kh-holiday-manual input{min-width:0;max-width:100%;min-height:44px;}
   .kh-holiday-manual input[type="text"]{flex:1;border:1px solid var(--sage-line);border-radius:8px;padding:8px;}
   .kh-my-cell.holiday{background:#E9F2EC;color:#285C3D;}
+  .kh-editor-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0;}
+  .kh-editor-card{display:flex;flex-direction:column;align-items:flex-start;gap:14px;text-align:left;padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--bg-card);color:var(--ink);cursor:pointer;min-width:0;transition:border-color .15s,box-shadow .15s;}
+  .kh-editor-card:first-child{grid-column:1/-1;}
+  .kh-editor-card:hover{border-color:var(--paddy-light);box-shadow:0 4px 18px rgba(27,58,92,.06);}
+  .kh-editor-icon{display:flex;align-items:center;justify-content:center;width:44px;height:44px;background:#E7EFF8;border-radius:12px;color:var(--paddy);}
+  .kh-editor-icon svg{width:24px;height:24px;}
+  .kh-editor-card strong{font-size:16px;line-height:1.5;}
+  .kh-editor-card small{display:block;font-size:13px;line-height:1.6;color:var(--ink-soft);margin-top:6px;}
+  .kh-editor-alert{font-size:11px;padding:4px 8px;background:var(--amber-bg);color:var(--amber-text);border-radius:6px;}
+  .kh-editor-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:20px 0;}
+  .kh-editor-heading h3{margin:0;font-size:18px;line-height:1.5;}
+  .kh-editor-back{display:inline-flex;align-items:center;min-height:44px;background:none;border:0;padding:0;color:var(--paddy-light);font-size:13px;font-weight:600;cursor:pointer;}
+  .kh-editor-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:20px;overflow-x:auto;}
+  .kh-editor-tabs button{border:0;border-bottom:2px solid transparent;background:none;color:var(--ink-soft);padding:12px 10px;min-height:44px;white-space:nowrap;font-size:12.5px;cursor:pointer;}
+  .kh-editor-tabs button.active{border-bottom-color:var(--paddy);color:var(--paddy);font-weight:600;}
+  .kh-editor-search{width:100%;min-height:44px;border:1px solid var(--sage-line);border-radius:10px;padding:10px 12px;background:var(--bg-card);color:var(--ink);margin-bottom:12px;}
+  .kh-editor-filters{margin-bottom:16px;font-size:13px;color:var(--ink-soft);}
+  .kh-editor-filters summary{cursor:pointer;padding:10px 0;}
+  .kh-editor-filters .period-toggle{flex-wrap:wrap;width:max-content;max-width:100%;}
+  #khEditorRecords #khTersimpanSection{margin-top:0!important;}
+  .kh-editor-workspace[hidden],#khEditorMenu[hidden],#khEditorToolbar[hidden],#khEditorRecordsView[hidden]{display:none!important;}
+  .kh-editor-workspace .kh-holiday-panel{margin-bottom:0;}
+  .kh-editor-workspace .kh-holiday-head h3{display:none;}
+  @media(max-width:420px){.kh-editor-menu{grid-template-columns:1fr;}.kh-editor-card:first-child{grid-column:auto;}.kh-editor-card{padding:20px;}}
   @media(max-width:400px){.kh-holiday-row{align-items:stretch;flex-direction:column;}.kh-holiday-row select{max-width:none;width:100%;}}
   .kh-my-day{ border-bottom:1px solid var(--line); }
   .kh-my-day:last-child{ border-bottom:none; }
@@ -2715,7 +2739,6 @@
       <p class="eyebrow">Pengurusan Kehadiran</p>
       <h2 class="ana-title">Kehadiran Staf <span class="kh-editor-badge" id="khEditorBadge" style="display:none;">Editor</span></h2>
     </div>
-    <section class="kh-holiday-panel" id="khHolidayPanel" style="display:none;" aria-label="Cuti umum Sabah"></section>
 
     <!-- Self check-in card: shown to all signed-in staff who are NOT Kehadiran editors -->
     <div id="khSelfCheckinCard" style="display:none;">
@@ -2785,10 +2808,25 @@
       </div>
     </div>
 
-    <!-- Editor-only block: full admin form, full table, PDF export -->
     <div id="kehadiranEditorBlock" style="display:none;">
-      <div class="kh-collapse open" id="khRekodSection">
-        <div class="section-heading-row kh-collapse-toggle" role="button" tabindex="0" aria-expanded="true" aria-controls="khRekodBody">
+      <div class="kh-editor-menu" id="khEditorMenu">
+        <button type="button" class="kh-editor-card" onclick="openKhEditorPage('rekod')"><span class="kh-editor-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v3H8z"/><path d="M8 5H5v16h14V5h-3M8 12h8M8 16h5"/></svg></span><span><strong>Rekod &amp; Semakan Kehadiran</strong><small>Lihat dan kemas kini rekod, semak staf tanpa rekod atau masa keluar.</small></span></button>
+        <button type="button" class="kh-editor-card" onclick="openKhEditorPage('cuti')"><span class="kh-editor-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-12 5 2 2 4-4"/></svg></span><span><strong>Cuti Umum Sabah</strong><small>Sahkan cuti bulanan dan tambah cuti gantian.</small></span><span class="kh-editor-alert" id="khEditorHolidayBadge" hidden>Belum disahkan</span></button>
+        <button type="button" class="kh-editor-card" onclick="openKhEditorPage('laporan')"><span class="kh-editor-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H5v18h14V8zM14 3v5h5M8 13h8m-8 4h5"/></svg></span><span><strong>Laporan Kehadiran</strong><small>Muat turun laporan PDF harian atau bulanan.</small></span></button>
+      </div>
+      <div id="khEditorToolbar" hidden>
+        <button type="button" class="kh-editor-back" onclick="openKhEditorPage('menu')">&larr; Mod Editor</button>
+        <div class="kh-editor-heading"><h3 id="khEditorPageTitle" tabindex="-1"></h3><button type="button" class="utama-btn" id="khEditorAddBtn" onclick="openKhEditorForm()">+ Tambah Rekod</button></div>
+      </div>
+      <div class="kh-editor-workspace" id="khEditorRecords" hidden>
+        <nav class="kh-editor-tabs" aria-label="Paparan rekod kehadiran">
+          <button type="button" data-khrecordview="semua" onclick="setKhEditorRecordView('semua')">Semua</button>
+          <button type="button" data-khrecordview="tiada" onclick="setKhEditorRecordView('tiada')">Tiada Rekod</button>
+          <button type="button" data-khrecordview="keluar" onclick="setKhEditorRecordView('keluar')">Tiada Clock-Out</button>
+        </nav>
+        <div id="khEditorRecordsView">
+      <div class="kh-collapse" id="khRekodSection">
+        <div class="section-heading-row kh-collapse-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="khRekodBody">
           <h2 class="section-heading">Tambah / Edit Rekod</h2>
           <svg class="kh-collapse-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
@@ -2860,11 +2898,13 @@
           <svg class="kh-collapse-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div class="kh-collapse-body" id="khTersimpanBody">
+      <input type="search" class="kh-editor-search" id="khEditorSearch" aria-label="Cari nama staf" placeholder="Cari nama staf..." oninput="filterKhEditorRecords(this.value)">
+      <details class="kh-editor-filters"><summary>Tapis tarikh <span id="khEditorRangeLabel"></span></summary>
       <div class="kh-filter-bar" style="margin-bottom:16px;">
         <div class="period-toggle" id="khDateFilterPreset">
-          <button class="period-btn" data-preset="today">Hari Ini</button>
+          <button class="period-btn active" data-preset="today">Hari Ini</button>
           <button class="period-btn" data-preset="7d">7 Hari</button>
-          <button class="period-btn active" data-preset="30d">30 Hari</button>
+          <button class="period-btn" data-preset="30d">30 Hari</button>
           <button class="period-btn" data-preset="month">Bulan Ini</button>
           <button class="period-btn" data-preset="all">Semua</button>
         </div>
@@ -2876,14 +2916,16 @@
         </div>
       </div>
 
+      </details>
       <div class="kh-table-wrap" id="khTableWrap">
         <div class="empty-state"><div class="big">Memuatkan rekod...</div></div>
       </div>
         </div>
       </div>
 
-      <div class="kehadiran-form kh-collapse" id="khSemakSection" style="margin-top:16px;">
-        <div class="kh-collapse-toggle" id="khSemakToggle" role="button" tabindex="0" aria-expanded="false" aria-controls="khSemakBody">
+        </div>
+      <div class="kehadiran-form kh-collapse open" id="khSemakSection" style="margin-top:16px;">
+        <div class="kh-collapse-toggle" id="khSemakToggle" role="button" tabindex="0" aria-expanded="true" aria-controls="khSemakBody">
           <h3 class="section-heading" style="margin:0; font-size:15px;">Semak Staf Tidak Hadir</h3>
           <svg class="kh-collapse-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
@@ -2897,8 +2939,8 @@
         </div>
       </div>
 
-      <div class="kehadiran-form kh-collapse" id="khLupaSection" style="margin-top:16px;">
-        <div class="kh-collapse-toggle" id="khLupaToggle" role="button" tabindex="0" aria-expanded="false" aria-controls="khLupaBody">
+      <div class="kehadiran-form kh-collapse open" id="khLupaSection" style="margin-top:16px;">
+        <div class="kh-collapse-toggle" id="khLupaToggle" role="button" tabindex="0" aria-expanded="true" aria-controls="khLupaBody">
           <h3 class="section-heading" style="margin:0; font-size:15px;">Staf Lupa Clock-Out</h3>
           <svg class="kh-collapse-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
@@ -2912,6 +2954,12 @@
         </div>
       </div>
 
+      </div>
+      <div class="kh-editor-workspace" id="khEditorHolidays" hidden>
+        <section class="kh-holiday-panel" id="khHolidayPanel" style="display:none;" aria-label="Cuti umum Sabah"></section>
+      </div>
+      <div class="kh-editor-workspace" id="khEditorReports" hidden>
+        <p class="kh-my-legend">Pilih laporan harian atau bulanan. Tarikh dan pilihan staf boleh ditetapkan sebelum menjana PDF.</p>
       <div class="print-controls" style="margin-top:20px;">
         <div class="kh-staff-filter-wrap" style="display:none;"><!-- disembunyikan sementara -->
           <label class="range-label" for="khExcludeStaff">Kecualikan staf (PDF)</label>
@@ -2920,6 +2968,7 @@
         <button class="print-btn" id="khPrintBtn">&#128190; Muat turun PDF</button>
       </div>
       <p class="print-note" id="khPrintNote"></p>
+      </div>
     </div>
 
     <div class="modal-overlay" id="khPdfModalOverlay">
@@ -3642,7 +3691,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.52";
+const APP_VERSION = "1.0.53";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -4201,6 +4250,10 @@ function semakStafLupaClockOut(){
 }
 
 function jumpToEditKehadiranRow(rowIndex){
+  if(!isKhHolidayEditor()) return;
+  khEditorSearch = '';
+  document.getElementById('khEditorSearch').value = '';
+  setKhEditorRecordView('semua');
   const section = document.getElementById('khTersimpanSection');
   const toggle = section.querySelector('.kh-collapse-toggle');
   if(!section.classList.contains('open')) toggleKhCollapse(toggle);
@@ -4220,6 +4273,8 @@ function fmtKehadiranRemark(r){
 }
 
 function renderKehadiranTable(){
+  const rangeLabel = document.getElementById('khEditorRangeLabel');
+  if(rangeLabel) rangeLabel.textContent = khFilterFrom && khFilterTo ? (khFilterFrom === khFilterTo ? '· ' + fmtTarikhMalay(khFilterFrom) : '· ' + fmtTarikhMalay(khFilterFrom) + ' – ' + fmtTarikhMalay(khFilterTo)) : '· Semua tarikh';
   if(bulkEditDate){
     renderBulkEditTable();
     return;
@@ -4228,12 +4283,13 @@ function renderKehadiranTable(){
   const canEdit = currentUser && isAllowedKehadiranEditor(currentUser.email);
 
   if(kehadiranRecords.length === 0){
-    wrap.innerHTML = `<div class="empty-state"><div class="big">Tiada rekod lagi</div>Tambah rekod kehadiran pertama menggunakan borang di atas.</div>`;
+    wrap.innerHTML = `<div class="empty-state"><div class="big">Tiada rekod lagi</div>Gunakan butang Tambah Rekod untuk merekodkan kehadiran staf.</div>`;
     populateKehadiranStaffFilter();
     return;
   }
 
   const filteredRecords = kehadiranRecords.filter(r =>
+    (!khEditorSearch || r.nama.toLowerCase().includes(khEditorSearch.toLowerCase())) &&
     (!khFilterFrom || r.tarikh >= khFilterFrom) && (!khFilterTo || r.tarikh <= khFilterTo)
   );
 
@@ -5732,16 +5788,81 @@ function getKehadiranMode(){
   return localStorage.getItem('kehadiran_mode_' + currentUser.email) === 'peribadi' ? 'peribadi' : 'pentadbir';
 }
 
+let khEditorPage = 'menu';
+let khEditorRecordView = 'semua';
+let khEditorSearch = '';
+
+function applyKhEditorPage(){
+  const allowed = isKhHolidayEditor() && getKehadiranMode() === 'pentadbir';
+  document.getElementById('khEditorMenu').hidden = !allowed || khEditorPage !== 'menu';
+  document.getElementById('khEditorToolbar').hidden = !allowed || khEditorPage === 'menu';
+  document.getElementById('khEditorRecords').hidden = !allowed || khEditorPage !== 'rekod';
+  document.getElementById('khEditorHolidays').hidden = !allowed || khEditorPage !== 'cuti';
+  document.getElementById('khEditorReports').hidden = !allowed || khEditorPage !== 'laporan';
+  document.getElementById('khEditorAddBtn').hidden = khEditorPage !== 'rekod';
+  document.getElementById('khEditorPageTitle').textContent = ({ rekod: 'Rekod & Semakan Kehadiran', cuti: 'Cuti Umum Sabah', laporan: 'Laporan Kehadiran' })[khEditorPage] || '';
+  document.getElementById('khEditorRecordsView').hidden = khEditorRecordView !== 'semua';
+  document.getElementById('khSemakSection').style.display = khEditorRecordView === 'tiada' ? '' : 'none';
+  document.getElementById('khLupaSection').style.display = khEditorRecordView === 'keluar' ? '' : 'none';
+  document.querySelectorAll('[data-khrecordview]').forEach(b => {
+    const selected = b.dataset.khrecordview === khEditorRecordView;
+    b.classList.toggle('active',selected);
+    b.setAttribute('aria-pressed',String(selected));
+  });
+  renderKhHolidayPanel();
+  renderKhHolidayReminder();
+}
+
+function openKhEditorPage(page){
+  if(!isKhHolidayEditor() || !['menu','rekod','cuti','laporan'].includes(page)) return;
+  khEditorPage = page;
+  if(page === 'rekod') khEditorRecordView = 'semua';
+  applyKhEditorPage();
+  if(page === 'cuti' && khHolidayApprovalsLoaded) loadKhHolidayFeed(khHolidayMonth || khMyCurrentMonth());
+  if(page !== 'menu') document.getElementById('khEditorPageTitle').focus();
+  else document.querySelector('#khEditorMenu .kh-editor-card').focus();
+}
+
+function setKhEditorRecordView(view){
+  if(!isKhHolidayEditor() || !['semua','tiada','keluar'].includes(view)) return;
+  khEditorRecordView = view;
+  applyKhEditorPage();
+  if(view !== 'semua'){
+    const id = view === 'tiada' ? 'khSemakSection' : 'khLupaSection';
+    const section = document.getElementById(id);
+    section.classList.add('open');
+    section.querySelector('.kh-collapse-toggle').setAttribute('aria-expanded','true');
+    if(view === 'tiada') semakStafTidakHadir();
+    else semakStafLupaClockOut();
+  }
+}
+
+function openKhEditorForm(){
+  if(!isKhHolidayEditor()) return;
+  setKhEditorRecordView('semua');
+  const section = document.getElementById('khRekodSection');
+  section.classList.add('open');
+  section.querySelector('.kh-collapse-toggle').setAttribute('aria-expanded','true');
+  document.getElementById('kh-nama').focus();
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function filterKhEditorRecords(value){
+  khEditorSearch = value.trim();
+  renderKehadiranTable();
+}
+
 function setKehadiranMode(mode){
   if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
   localStorage.setItem('kehadiran_mode_' + currentUser.email, mode);
+  khEditorPage = 'menu';
   applyKehadiranMode();
 }
 
 function applyKehadiranMode(){
   const isEditor = !!(currentUser && isAllowedKehadiranEditor(currentUser.email));
   const mode = getKehadiranMode();
-  renderKhHolidayPanel();
+  applyKhEditorPage();
 
   const toggle = document.getElementById('khModeToggle');
   toggle.style.display = isEditor ? '' : 'none';
@@ -6148,6 +6269,11 @@ function renderKhHolidayReminder(){
   const month = khMyCurrentMonth();
   const feed = khHolidayFeeds.get(month);
   const feedError = feed && feed.error;
+  const badge = document.getElementById('khEditorHolidayBadge');
+  if(badge){
+    badge.hidden = !isKhHolidayEditor() || (khHolidayApprovalsLoaded && !khHolidayApprovalError && !feedError && !khHolidayNeedsReview(month));
+    badge.textContent = khHolidayApprovalError || feedError ? 'Semakan diperlukan' : !khHolidayApprovalsLoaded ? 'Memuatkan...' : 'Belum disahkan';
+  }
   const show = isKhHolidayEditor() && (!khHolidayApprovalsLoaded || khHolidayApprovalError || feedError || khHolidayNeedsReview(month));
   el.style.display = show ? '' : 'none';
   if(show) el.innerHTML = `<div class="kh-holiday-reminder">${khHolidayApprovalError || feedError ? 'Semakan cuti umum gagal dimuatkan.' : 'Peringatan bulanan: sahkan cuti umum Sabah bagi ' + escapeHtml(fmtBulanMalay(month)) + '.'} <button type="button" class="utama-link" onclick="openKhHolidayPanel()">Semak cuti umum</button></div>`;
@@ -6158,6 +6284,7 @@ function openKhHolidayPanel(){
   khHolidayMonth = khMyCurrentMonth();
   switchSection('kehadiran');
   setKehadiranMode('pentadbir');
+  openKhEditorPage('cuti');
   document.getElementById('khHolidayPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -6192,7 +6319,7 @@ function addKhManualHoliday(){
 function renderKhHolidayPanel(){
   const el = document.getElementById('khHolidayPanel');
   if(!el) return;
-  const visible = isKhHolidayEditor() && getKehadiranMode() === 'pentadbir';
+  const visible = isKhHolidayEditor() && getKehadiranMode() === 'pentadbir' && khEditorPage === 'cuti';
   el.style.display = visible ? '' : 'none';
   if(!visible) return;
   const month = khHolidayMonth || khMyCurrentMonth(), feed = khHolidayFeeds.get(month), saved = khHolidayApprovals.get(month);
@@ -8629,6 +8756,7 @@ const SECTION_TITLES = {
 };
 
 function switchSection(section){
+  if(section === 'kehadiran' && appSection !== 'kehadiran') khEditorPage = 'menu';
   appSection = section;
   ['Utama','Aktiviti','Analitik','Kehadiran','Minit','Task','Fail','Pautan'].forEach(name=>{
     const el = document.getElementById('section'+name);
@@ -8662,7 +8790,7 @@ function switchSection(section){
     applyKehadiranMode();
     if(!khFilterInitialized){
       khFilterInitialized = true;
-      applyKhDatePreset('30d');
+      applyKhDatePreset('today');
     }
     loadKehadiranFromSheet().then(() => {
       if(document.getElementById('khSelfCheckinCard').style.display !== 'none') renderSelfCheckinCard();

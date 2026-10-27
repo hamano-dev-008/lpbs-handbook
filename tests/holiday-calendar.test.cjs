@@ -16,7 +16,22 @@ function source(from, to){
 
 function fixture(editor = true){
   const nodes = new Map();
-  const calls = [], rows = [], pages = [];
+  const calls = [], rows = [], pages = [], checks = [];
+  function node(id){
+    if(!nodes.has(id)) nodes.set(id, {
+      style: {}, hidden: false, innerHTML: '', textContent: '', value: '', dataset: {}, attributes: {},
+      classList: { add(){}, toggle(){} },
+      setAttribute(key,value){ this.attributes[key] = value; },
+      focus(){ this.focused = true; }, scrollIntoView(){},
+      querySelector(){ return node(id + '-toggle'); }
+    });
+    return nodes.get(id);
+  }
+  const tabs = ['semua','tiada','keluar'].map(view => {
+    const tab = node('tab-' + view);
+    tab.dataset.khrecordview = view;
+    return tab;
+  });
   let tabExists = false;
   class Clock extends Date {
     constructor(...args){ super(...(args.length ? args : ['2026-10-27T10:00:00+08:00'])); }
@@ -34,11 +49,12 @@ function fixture(editor = true){
     getSelfCheckinName: () => 'Staf', isKhLewat: () => false,
     kehadiranRecords: [], kehadiranLoaded: false,
     refreshUtama: () => {}, handleAuthExpired: () => {},
+    semakStafTidakHadir: () => checks.push('tiada'),
+    semakStafLupaClockOut: () => checks.push('keluar'),
+    renderKehadiranTable: () => checks.push('render'),
     setInterval: () => {},
-    document: { hidden: false, addEventListener: () => {}, getElementById: id => {
-      if(!nodes.has(id)) nodes.set(id, { style: {}, innerHTML: '', textContent: '', value: '' });
-      return nodes.get(id);
-    } },
+    document: { hidden: false, addEventListener: () => {}, getElementById: node,
+      querySelector: () => node('first-card'), querySelectorAll: () => tabs },
     apiFetch: async (url, options = {}) => {
       calls.push({ url, options });
       const body = options.body ? JSON.parse(options.body) : null;
@@ -52,11 +68,12 @@ function fixture(editor = true){
       return { ok: true, status: 200, json: async () => data };
     }
   });
+  vm.runInContext(source("let khEditorPage = 'menu';", 'function setKehadiranMode('), c);
   vm.runInContext(source('let khMyMonth = null;', 'function stepKhMyMonth('), c);
   vm.runInContext(source('function getKhWorkdaysToCheck(', 'function buildMissingHqRecords('), c);
   vm.runInContext(source('function renderMyAttendanceCalendar(', 'function downloadMyKehadiranPDF('), c);
   const run = code => vm.runInContext(code, c);
-  return { c, run, calls, rows, pages, nodes };
+  return { c, run, calls, rows, pages, nodes, checks };
 }
 
 test('production inline scripts parse', () => {
@@ -217,4 +234,70 @@ test('logout during a save stops before appending a decision under another sessi
   };
   await f.run('saveKhHolidayMonth()');
   assert.equal(f.rows.length, 0);
+});
+
+test('editor starts at the card menu and shows only the chosen workspace', () => {
+  const f = fixture();
+  f.run('applyKhEditorPage()');
+  assert.equal(f.nodes.get('khEditorMenu').hidden, false);
+  assert.equal(f.nodes.get('khEditorRecords').hidden, true);
+  assert.equal(f.nodes.get('khEditorHolidays').hidden, true);
+  assert.equal(f.nodes.get('khEditorReports').hidden, true);
+  f.run('openKhEditorPage("rekod")');
+  assert.equal(f.nodes.get('khEditorMenu').hidden, true);
+  assert.equal(f.nodes.get('khEditorRecords').hidden, false);
+  assert.equal(f.nodes.get('khEditorRecordsView').hidden, false);
+  f.run('openKhEditorPage("laporan")');
+  assert.equal(f.nodes.get('khEditorRecords').hidden, true);
+  assert.equal(f.nodes.get('khEditorReports').hidden, false);
+  assert.equal(f.nodes.get('khEditorAddBtn').hidden, true);
+  f.run('openKhEditorPage("menu")');
+  assert.equal(f.nodes.get('khEditorMenu').hidden, false);
+  assert.equal(f.nodes.get('first-card').focused, true);
+});
+
+test('record checks share one category, and staff cannot navigate into editor tools', () => {
+  const f = fixture();
+  f.run('openKhEditorPage("rekod");setKhEditorRecordView("tiada")');
+  assert.equal(f.nodes.get('khEditorRecordsView').hidden, true);
+  assert.equal(f.nodes.get('khSemakSection').style.display, '');
+  assert.equal(f.nodes.get('khLupaSection').style.display, 'none');
+  f.run('setKhEditorRecordView("keluar")');
+  assert.equal(f.nodes.get('khLupaSection').style.display, '');
+  assert.equal(f.nodes.get('khSemakSection').style.display, 'none');
+  f.run('openKhEditorForm()');
+  assert.equal(f.nodes.get('khEditorRecordsView').hidden, false);
+  assert.equal(f.nodes.get('kh-nama').focused, true);
+  assert.deepEqual(f.checks, ['tiada','keluar']);
+  const staff = fixture(false);
+  staff.run('openKhEditorPage("rekod");setKhEditorRecordView("tiada");applyKhEditorPage()');
+  assert.equal(staff.run('khEditorPage'), 'menu');
+  assert.equal(staff.nodes.get('khEditorMenu').hidden, true);
+  assert.equal(staff.nodes.get('khEditorRecords').hidden, true);
+  assert.deepEqual(staff.checks, []);
+});
+
+test('holiday panel stays behind its category and retains its pending badge', () => {
+  const f = fixture();
+  f.run('applyKhEditorPage()');
+  assert.equal(f.nodes.get('khHolidayPanel').style.display, 'none');
+  assert.equal(f.nodes.get('khEditorHolidayBadge').hidden, false);
+  f.run('openKhEditorPage("cuti")');
+  assert.equal(f.nodes.get('khEditorHolidays').hidden, false);
+  assert.equal(f.nodes.get('khHolidayPanel').style.display, '');
+  f.run('openKhEditorPage("menu")');
+  assert.equal(f.nodes.get('khHolidayPanel').style.display, 'none');
+});
+
+test('holiday reminder opens the holiday category directly and search preserves the typed field', () => {
+  const f = fixture();
+  f.c.switchSection = () => {};
+  f.c.setKehadiranMode = () => {};
+  f.run('openKhHolidayPanel()');
+  assert.equal(f.run('khEditorPage'), 'cuti');
+  assert.equal(f.nodes.get('khEditorMenu').hidden, true);
+  assert.equal(f.nodes.get('khEditorHolidays').hidden, false);
+  f.run('filterKhEditorRecords("  Siti  ")');
+  assert.equal(f.run('khEditorSearch'), 'Siti');
+  assert.deepEqual(f.checks, ['render']);
 });
