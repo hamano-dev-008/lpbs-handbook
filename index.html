@@ -1316,6 +1316,31 @@
   .kh-editor-workspace[hidden],#khEditorMenu[hidden],#khEditorToolbar[hidden],#khEditorRecordsView[hidden]{display:none!important;}
   .kh-editor-workspace .kh-holiday-panel{margin-bottom:0;}
   .kh-editor-workspace .kh-holiday-head h3{display:none;}
+  .kh-attendance-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:14px 0 24px;}
+  .kh-attendance-card{min-width:0;background:var(--bg-card);border:1px solid var(--line);border-radius:14px;padding:20px;}
+  .kh-attendance-card.needs-attention{border-top:3px solid var(--red);}
+  .kh-attendance-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .kh-attendance-head>div{min-width:0;}
+  .kh-attendance-head h4{font-size:15px;line-height:1.5;margin:0;overflow-wrap:anywhere;}
+  .kh-attendance-sub{font-size:12px;line-height:1.6;color:var(--ink-soft);margin:4px 0 0;}
+  .kh-attendance-status{font-size:11px;font-weight:600;padding:5px 8px;border-radius:6px;background:var(--bg);color:var(--paddy);flex:none;}
+  .kh-attendance-status.warn{background:var(--red-bg);color:var(--red-text);}
+  .kh-attendance-times{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:18px 0 0;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+  .kh-attendance-times dt{font-size:11px;color:var(--ink-soft);margin-bottom:6px;}
+  .kh-attendance-times dd{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;margin:0;overflow-wrap:anywhere;}
+  .kh-attendance-info{font-size:12.5px;line-height:1.7;margin:12px 0 0;overflow-wrap:anywhere;white-space:pre-line;}
+  .kh-attendance-card details{margin-top:12px;font-size:12.5px;}
+  .kh-attendance-card summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--paddy-light);font-weight:600;}
+  .kh-attendance-card .kh-pg-timeline{margin:6px 0;}
+  .kh-attendance-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:14px;}
+  .kh-attendance-actions button{min-height:44px;}
+  .kh-attendance-day{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 16px;}
+  .kh-attendance-day input{min-width:0;min-height:44px;}
+  .kh-attendance-edit label{display:block;font-size:12px;color:var(--ink-soft);margin:12px 0 6px;}
+  .kh-attendance-edit input,.kh-attendance-edit select{width:100%;min-width:0;min-height:44px;border:1px solid var(--sage-line);border-radius:8px;padding:8px;background:var(--bg-card);color:var(--ink);}
+  #khEditorRecords .kh-semak-bar{display:none;}
+  #khTableWrap.kh-attendance-wrap{overflow:visible;}
+  @media(max-width:600px){.kh-attendance-grid{grid-template-columns:1fr;}.kh-attendance-card{padding:16px;}}
   @media(max-width:420px){.kh-editor-menu{grid-template-columns:1fr;}.kh-editor-card:first-child{grid-column:auto;}.kh-editor-card{padding:20px;}}
   @media(max-width:400px){.kh-holiday-row{align-items:stretch;flex-direction:column;}.kh-holiday-row select{max-width:none;width:100%;}}
   .kh-my-day{ border-bottom:1px solid var(--line); }
@@ -2819,6 +2844,8 @@
         <div class="kh-editor-heading"><h3 id="khEditorPageTitle" tabindex="-1"></h3><button type="button" class="utama-btn" id="khEditorAddBtn" onclick="openKhEditorForm()">+ Tambah Rekod</button></div>
       </div>
       <div class="kh-editor-workspace" id="khEditorRecords" hidden>
+        <div class="kh-attendance-day"><button type="button" class="nav-btn" aria-label="Hari sebelumnya" onclick="stepKhEditorDay(-1)">&lsaquo;</button><input type="date" id="khEditorDate" aria-label="Tarikh rekod kehadiran" onchange="selectKhEditorDay(this.value)"><button type="button" class="nav-btn" aria-label="Hari seterusnya" onclick="stepKhEditorDay(1)">&rsaquo;</button><button type="button" class="today-btn" onclick="selectKhEditorDay(fmtKey(new Date()))">Hari ini</button></div>
+      <input type="search" class="kh-editor-search" id="khEditorSearch" aria-label="Cari nama staf" placeholder="Cari nama staf..." oninput="filterKhEditorRecords(this.value)">
         <nav class="kh-editor-tabs" aria-label="Paparan rekod kehadiran">
           <button type="button" data-khrecordview="semua" onclick="setKhEditorRecordView('semua')">Semua</button>
           <button type="button" data-khrecordview="tiada" onclick="setKhEditorRecordView('tiada')">Tiada Rekod</button>
@@ -2898,7 +2925,6 @@
           <svg class="kh-collapse-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div class="kh-collapse-body" id="khTersimpanBody">
-      <input type="search" class="kh-editor-search" id="khEditorSearch" aria-label="Cari nama staf" placeholder="Cari nama staf..." oninput="filterKhEditorRecords(this.value)">
       <details class="kh-editor-filters"><summary>Tapis tarikh <span id="khEditorRangeLabel"></span></summary>
       <div class="kh-filter-bar" style="margin-bottom:16px;">
         <div class="period-toggle" id="khDateFilterPreset">
@@ -2917,7 +2943,7 @@
       </div>
 
       </details>
-      <div class="kh-table-wrap" id="khTableWrap">
+      <div class="kh-attendance-wrap" id="khTableWrap">
         <div class="empty-state"><div class="big">Memuatkan rekod...</div></div>
       </div>
         </div>
@@ -2968,6 +2994,14 @@
         <button class="print-btn" id="khPrintBtn">&#128190; Muat turun PDF</button>
       </div>
       <p class="print-note" id="khPrintNote"></p>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="khRecordEditOverlay" onclick="if(event.target===this) cancelEditKehadiranRow()" onkeydown="handleKhRecordEditKey(event)">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="khRecordEditTitle">
+        <div class="modal-head"><h3 id="khRecordEditTitle">Edit Kehadiran</h3><button type="button" class="modal-close" aria-label="Tutup borang edit" onclick="cancelEditKehadiranRow()">&times;</button></div>
+        <div class="modal-body kh-attendance-edit" id="khRecordEditBody"></div>
+        <div class="modal-foot"><button type="button" class="cancel-btn" onclick="cancelEditKehadiranRow()">Batal</button><button type="button" class="save-btn" id="khRecordEditSave" onclick="saveEditKehadiranRow(editingKehadiranRow)">Simpan</button></div>
       </div>
     </div>
 
@@ -3691,7 +3725,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.53";
+const APP_VERSION = "1.0.54";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3986,6 +4020,8 @@ async function loadKehadiranFromSheet(){
     kehadiranLoaded = true;
     kehadiranLoadFailed = false;
     renderKehadiranTable();
+    if(khEditorPage === 'rekod' && khEditorRecordView === 'tiada') semakStafTidakHadir();
+    if(khEditorPage === 'rekod' && khEditorRecordView === 'keluar') semakStafLupaClockOut();
     renderMyKehadiranRecord();
     refreshUtama('kehadiran');
     return true;
@@ -4131,6 +4167,7 @@ function getSistemKeluarPejabatUrl(){
 }
 
 let editingKehadiranRow = null;
+let khRecordEditSaving = false;
 let bulkEditDate = null;
 let bulkEditDirtyRows = new Set();
 let khFilterFrom = '';
@@ -4180,6 +4217,16 @@ function semakStafTidakHadir(){
     out.innerHTML = `<p class="kh-note">Sila pilih tarikh dahulu.</p>`;
     return;
   }
+  if(!kehadiranLoaded){
+    out.innerHTML = '<p class="kh-note">Rekod kehadiran belum dimuatkan. Sila cuba semula.</p>';
+    return;
+  }
+  const [checkY,checkM,checkD] = tarikh.split('-').map(Number);
+  const weekday = new Date(checkY,checkM-1,checkD).getDay();
+  if(tarikh > fmtKey(new Date()) || weekday === 0 || weekday === 6){
+    out.innerHTML = '<p class="kh-semak-ok">Tiada semakan ketidakhadiran untuk tarikh akan datang atau hujung minggu.</p>';
+    return;
+  }
   if(!khHolidayApprovalsLoaded || khHolidayApprovalError){
     out.innerHTML = '<p class="kh-note">Semakan cuti umum belum tersedia. Sila muat semula rekod kehadiran.</p>';
     return;
@@ -4200,8 +4247,8 @@ function semakStafTidakHadir(){
   const missing = [];
   for(const [email, info] of STAFF_DIRECTORY){
     const nama = (info && info.nama) ? info.nama : getStaffDisplayName(email);
-    if(!recordedNames.has(nama.trim().toLowerCase())){
-      missing.push({ nama, jawatan: (info && info.jawatan) || '' });
+    if(!recordedNames.has(nama.trim().toLowerCase()) && (!khEditorSearch || nama.toLowerCase().includes(khEditorSearch.toLowerCase()))){
+      missing.push({ nama, jawatan: (info && info.jawatan) || '', tarikh, missing: true, masuk: '', keluar: '', jam: null });
     }
   }
   missing.sort((a,b) => a.nama.localeCompare(b.nama));
@@ -4210,14 +4257,12 @@ function semakStafTidakHadir(){
   const tarikhLabel = `${d} ${MONTH_NAMES[m - 1]} ${y}`;
 
   if(missing.length === 0){
-    out.innerHTML = `<p class="kh-semak-ok">&#10003; Semua staf telah key-in kehadiran pada ${tarikhLabel}.</p>`;
+    out.innerHTML = `<p class="kh-semak-ok">Tiada staf tanpa rekod ditemui${khEditorSearch ? ' untuk carian ini' : ''} pada ${tarikhLabel}.</p>`;
     return;
   }
   out.innerHTML = `
     <p class="kh-semak-count">${missing.length} daripada ${STAFF_DIRECTORY.size} staf belum key-in kehadiran pada ${tarikhLabel}:</p>
-    <ul class="kh-semak-list">
-      ${missing.map(s => `<li>${escapeHtml(s.nama)}${s.jawatan ? ` <span class="kh-semak-jawatan">&mdash; ${escapeHtml(s.jawatan)}</span>` : ''}</li>`).join('')}
-    </ul>
+    <div class="kh-attendance-grid">${missing.map(renderKhAttendanceCard).join('')}</div>
   `;
 }
 
@@ -4230,8 +4275,13 @@ function semakStafLupaClockOut(){
     out.innerHTML = `<p class="kh-note">Sila pilih tarikh dahulu.</p>`;
     return;
   }
+  if(!kehadiranLoaded){
+    out.innerHTML = '<p class="kh-note">Rekod kehadiran belum dimuatkan. Sila cuba semula.</p>';
+    return;
+  }
   const lupa = kehadiranRecords
     .filter(r => r.tarikh === tarikh && r.status === 'Hadir' && r.masuk && !r.keluar)
+    .filter(r => !khEditorSearch || r.nama.toLowerCase().includes(khEditorSearch.toLowerCase()))
     .sort((a,b) => a.nama.localeCompare(b.nama));
 
   const [y, m, d] = tarikh.split('-').map(Number);
@@ -4242,10 +4292,8 @@ function semakStafLupaClockOut(){
     return;
   }
   out.innerHTML = `
-    <p class="kh-semak-count">${lupa.length} staf belum clock-out pada ${tarikhLabel} (klik untuk edit):</p>
-    <ul class="kh-semak-list kh-lupa-list">
-      ${lupa.map(r => `<li><button type="button" class="kh-lupa-item" onclick="jumpToEditKehadiranRow(${r.rowIndex})"><span>${escapeHtml(r.nama)} <span class="kh-semak-jawatan">&mdash; masuk ${escapeHtml(r.masuk)}</span></span><span class="kh-lupa-edit">Edit &rsaquo;</span></button></li>`).join('')}
-    </ul>
+    <p class="kh-semak-count">${lupa.length} staf belum clock-out pada ${tarikhLabel}:</p>
+    <div class="kh-attendance-grid">${lupa.map(renderKhAttendanceCard).join('')}</div>
   `;
 }
 
@@ -4262,7 +4310,7 @@ function jumpToEditKehadiranRow(rowIndex){
   if(hiddenByFilter) applyKhDatePreset('all');
   startEditKehadiranRow(rowIndex);
   const editInput = document.getElementById(`khEdit-keluar-${rowIndex}`);
-  const target = (editInput && editInput.closest('tr')) || document.getElementById('khTableWrap');
+  const target = editInput || document.getElementById('khTableWrap');
   target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
@@ -4272,127 +4320,118 @@ function fmtKehadiranRemark(r){
   return [head, r.remark].filter(Boolean).join(' — ');
 }
 
+function khAttendanceStaffInfo(nama){
+  return [...STAFF_DIRECTORY.values()].find(info => (info.nama || '').trim().toLowerCase() === (nama || '').trim().toLowerCase()) || {};
+}
+
+function renderKhAttendanceCard(r){
+  const info = khAttendanceStaffInfo(r.nama);
+  const today = fmtKey(new Date());
+  const incomplete = !r.missing && r.status === 'Hadir' && r.masuk && !r.keluar;
+  const warn = r.missing || (incomplete && r.tarikh < today);
+  const status = r.missing ? 'Tiada rekod' : incomplete ? (r.tarikh < today ? 'Tiada clock-out' : 'Belum clock-out') : r.status || 'Hadir';
+  const events = r.missing ? [] : getPergerakanForRecord(r);
+  const canEdit = isKhHolidayEditor();
+  return `<article class="kh-attendance-card${warn ? ' needs-attention' : ''}" ${r.rowIndex ? `id="khAttendanceCard${r.rowIndex}"` : ''}>
+    <div class="kh-attendance-head"><div><h4>${escapeHtml(r.nama)}</h4>${info.jawatan || r.jawatan ? `<p class="kh-attendance-sub">${escapeHtml(info.jawatan || r.jawatan)}</p>` : ''}<p class="kh-attendance-sub">${escapeHtml(fmtTarikhMalay(r.tarikh))}</p></div><span class="kh-attendance-status${warn ? ' warn' : ''}">${escapeHtml(status)}</span></div>
+    <dl class="kh-attendance-times"><div><dt>Masuk</dt><dd>${escapeHtml(r.masuk || '—')}</dd></div><div><dt>Keluar</dt><dd>${escapeHtml(r.keluar || '—')}</dd></div><div><dt>Jumlah</dt><dd>${r.jam !== null && r.jam !== undefined ? escapeHtml(fmtHours(r.jam)) : '—'}</dd></div></dl>
+    ${r.tajuk ? `<p class="kh-attendance-info"><b>Tajuk:</b> ${escapeHtml(r.tajuk)}</p>` : ''}
+    ${r.lokasi ? `<p class="kh-attendance-info"><b>Lokasi:</b> ${escapeHtml(r.lokasi)}</p>` : ''}
+    ${r.remark ? `<p class="kh-attendance-info"><b>Catatan:</b> ${escapeHtml(r.remark)}</p>` : ''}
+    ${events.length ? `<details><summary>Lihat pergerakan (${events.length})</summary>${renderPergerakanTimeline(r,events,true)}</details>` : ''}
+    ${canEdit ? `<div class="kh-attendance-actions">${r.missing ? `<button type="button" class="utama-link" data-name="${escapeHtml(r.nama)}" data-date="${escapeHtml(r.tarikh)}" onclick="fillKhMissingRecord(this.dataset.name,this.dataset.date)">+ Tambah rekod</button>` : `<button type="button" class="kh-row-edit-btn" onclick="startEditKehadiranRow(${r.rowIndex})">Edit</button><details><summary aria-label="Tindakan lain untuk ${escapeHtml(r.nama)}">Lagi</summary><button type="button" class="kh-row-delete-btn" onclick="deleteKehadiranRow(${r.rowIndex})">Padam rekod</button></details>`}</div>` : ''}
+  </article>`;
+}
+
 function renderKehadiranTable(){
+  document.querySelectorAll('.kh-attendance-day input,.kh-attendance-day button,#khEditorSearch,#khEditorAddBtn,#khEditorRecords [data-khrecordview],#khDateFilterPreset button,#khFilterFrom,#khFilterTo').forEach(el => { el.disabled = !!bulkEditDate; });
+  document.getElementById('khBulkEditDate').disabled = !!bulkEditDate && bulkEditDirtyRows.size > 0;
   const rangeLabel = document.getElementById('khEditorRangeLabel');
   if(rangeLabel) rangeLabel.textContent = khFilterFrom && khFilterTo ? (khFilterFrom === khFilterTo ? '· ' + fmtTarikhMalay(khFilterFrom) : '· ' + fmtTarikhMalay(khFilterFrom) + ' – ' + fmtTarikhMalay(khFilterTo)) : '· Semua tarikh';
-  if(bulkEditDate){
-    renderBulkEditTable();
-    return;
-  }
+  const dateInput = document.getElementById('khEditorDate');
+  if(dateInput) dateInput.value = khFilterFrom === khFilterTo ? khFilterFrom : '';
+  if(bulkEditDate){ renderBulkEditTable(); return; }
   const wrap = document.getElementById('khTableWrap');
-  const canEdit = currentUser && isAllowedKehadiranEditor(currentUser.email);
-
-  if(kehadiranRecords.length === 0){
-    wrap.innerHTML = `<div class="empty-state"><div class="big">Tiada rekod lagi</div>Gunakan butang Tambah Rekod untuk merekodkan kehadiran staf.</div>`;
-    populateKehadiranStaffFilter();
-    return;
-  }
-
-  const filteredRecords = kehadiranRecords.filter(r =>
+  const filtered = kehadiranRecords.filter(r =>
     (!khEditorSearch || r.nama.toLowerCase().includes(khEditorSearch.toLowerCase())) &&
     (!khFilterFrom || r.tarikh >= khFilterFrom) && (!khFilterTo || r.tarikh <= khFilterTo)
-  );
-
-  if(filteredRecords.length === 0){
-    wrap.innerHTML = `<div class="empty-state"><div class="big">Tiada rekod dalam julat tarikh ini</div>Cuba pilih julat tarikh lain.</div>`;
-    populateKehadiranStaffFilter();
-    return;
-  }
-
-  const khGroupColspan = canEdit ? 7 : 6;
-  const khDateCounts = {};
-  filteredRecords.forEach(r => { khDateCounts[r.tarikh] = (khDateCounts[r.tarikh] || 0) + 1; });
-  let khLastGroupDate = null;
-  let khRowParity = 0;
-
-  const rows = filteredRecords.map(r => {
-    let groupHeader = '';
-    if(r.tarikh !== khLastGroupDate){
-      khLastGroupDate = r.tarikh;
-      khRowParity = 0;
-      const [gy, gm, gd] = r.tarikh.split('-').map(Number);
-      const dayName = DAY_NAMES[new Date(gy, gm - 1, gd).getDay()];
-      groupHeader = `
-        <tr class="kh-date-group-row">
-          <td colspan="${khGroupColspan}">
-            <div class="kh-date-group-head">
-              <span class="kh-date-group-main">${gd} ${MONTH_NAMES[gm - 1]} ${gy}</span>
-              <span class="kh-date-group-sub">${dayName}</span>
-              <span class="kh-date-group-count">${khDateCounts[r.tarikh]} rekod</span>
-            </div>
-          </td>
-        </tr>
-      `;
-    }
-    const altClass = khRowParity % 2 === 1 ? 'kh-row-alt' : '';
-    khRowParity++;
-
-    if(canEdit && r.rowIndex === editingKehadiranRow){
-      return groupHeader + `
-        <tr onclick="event.stopPropagation()">
-          <td><input type="date" value="${r.tarikh}" id="khEdit-tarikh-${r.rowIndex}"></td>
-          <td><input type="text" value="${r.nama}" id="khEdit-nama-${r.rowIndex}"></td>
-          <td><input type="time" value="${r.masuk}" id="khEdit-masuk-${r.rowIndex}"></td>
-          <td><input type="time" value="${r.keluar}" id="khEdit-keluar-${r.rowIndex}"></td>
-          <td class="kh-hours-cell">-</td>
-          <td>
-            <select id="khEdit-status-${r.rowIndex}">
-              ${KEHADIRAN_STATUS_OPTIONS.map(s => `<option value="${s}" ${r.status === s ? 'selected' : ''}>${s}</option>`).join('')}
-            </select>
-          </td>
-          <td><input type="text" value="${escapeHtml(r.remark)}" id="khEdit-remark-${r.rowIndex}"></td>
-          <td class="kh-delete-cell">
-            <button class="kh-row-edit-btn" onclick="saveEditKehadiranRow(${r.rowIndex})">Simpan</button>
-            <button class="kh-row-delete-btn" onclick="cancelEditKehadiranRow()">Batal</button>
-          </td>
-        </tr>
-      `;
-    }
-    const pgEvents = getPergerakanForRecord(r);
-    const pgRow = pgEvents.length ? `
-    <tr class="${altClass}">
-      <td colspan="${khGroupColspan}" class="kh-pg-cell">${renderPergerakanTimeline(r, pgEvents, true)}</td>
-    </tr>` : '';
-    return groupHeader + `
-    <tr class="${altClass}${pgEvents.length ? ' kh-pg-parent' : ''}">
-      <td>${r.nama}</td>
-      <td>${r.masuk}</td>
-      <td>${r.keluar}</td>
-      <td class="kh-hours-cell">${fmtHours(r.jam)}</td>
-      <td>${r.status}</td>
-      <td>${escapeHtml(fmtKehadiranRemark(r))}</td>
-      ${canEdit ? `<td class="kh-delete-cell"><button class="kh-row-edit-btn" onclick="startEditKehadiranRow(${r.rowIndex})">Edit</button><button class="kh-row-delete-btn" onclick="deleteKehadiranRow(${r.rowIndex})">Padam</button></td>` : ''}
-    </tr>${pgRow}
-  `;
-  }).join('');
-
-  wrap.innerHTML = `
-    <table class="kh-table">
-      <thead>
-        <tr>
-          <th>Nama</th><th>Masa Masuk</th><th>Masa Keluar</th><th>Jumlah Jam</th><th>Status</th><th>Remark</th>${canEdit ? '<th></th>' : ''}
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-
+  ).sort((a,b) => b.tarikh.localeCompare(a.tarikh) || a.nama.localeCompare(b.nama));
+  const groups = new Map();
+  filtered.forEach(r => { if(!groups.has(r.tarikh)) groups.set(r.tarikh,[]); groups.get(r.tarikh).push(r); });
+  wrap.innerHTML = filtered.length ? [...groups].map(([date,records]) => `${groups.size > 1 ? `<h3 class="section-heading">${escapeHtml(fmtTarikhMalay(date))}</h3>` : ''}<div class="kh-attendance-grid">${records.map(renderKhAttendanceCard).join('')}</div>`).join('') : '<div class="empty-state"><div class="big">Tiada rekod ditemui</div>Cuba nama atau tarikh lain, atau gunakan butang Tambah Rekod.</div>';
   populateKehadiranStaffFilter();
 }
 
 function startEditKehadiranRow(rowIndex){
-  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+  if(!isKhHolidayEditor() || khRecordEditSaving) return;
+  const r = kehadiranRecords.find(r => r.rowIndex === rowIndex);
+  if(!r) return;
   editingKehadiranRow = rowIndex;
-  renderKehadiranTable();
+  const body = document.getElementById('khRecordEditBody');
+  body.innerHTML = `<label for="khEdit-nama-${rowIndex}">Nama staf</label><input type="text" id="khEdit-nama-${rowIndex}" value="${escapeHtml(r.nama)}">
+    <label for="khEdit-tarikh-${rowIndex}">Tarikh</label><input type="date" id="khEdit-tarikh-${rowIndex}" value="${escapeHtml(r.tarikh)}">
+    <div class="field-row"><div><label for="khEdit-masuk-${rowIndex}">Masa masuk</label><input type="time" id="khEdit-masuk-${rowIndex}" value="${escapeHtml(r.masuk || '')}"></div><div><label for="khEdit-keluar-${rowIndex}">Masa keluar</label><input type="time" id="khEdit-keluar-${rowIndex}" value="${escapeHtml(r.keluar || '')}"></div></div>
+    <label for="khEdit-status-${rowIndex}">Status</label><select id="khEdit-status-${rowIndex}">${KEHADIRAN_STATUS_OPTIONS.map(s => `<option value="${s}" ${r.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+    <label for="khEdit-remark-${rowIndex}">Catatan</label><input type="text" id="khEdit-remark-${rowIndex}" value="${escapeHtml(r.remark)}">`;
+  document.getElementById('khRecordEditOverlay').classList.add('open');
+  document.getElementById(`khEdit-keluar-${rowIndex}`).focus();
 }
 
 function cancelEditKehadiranRow(){
+  if(khRecordEditSaving) return;
+  const previous = editingKehadiranRow;
   editingKehadiranRow = null;
-  renderKehadiranTable();
+  document.getElementById('khRecordEditOverlay').classList.remove('open');
+  const card = document.getElementById('khAttendanceCard' + previous);
+  const button = card && card.querySelector('.kh-row-edit-btn');
+  if(button) button.focus();
 }
 
+function selectKhEditorDay(key){
+  if(!isKhHolidayEditor() || bulkEditDate || !/^\d{4}-\d{2}-\d{2}$/.test(key || '')) return;
+  const [y,m,d] = key.split('-').map(Number);
+  if(fmtKey(new Date(y,m-1,d)) !== key) return;
+  document.getElementById('khFilterFrom').value = key;
+  document.getElementById('khFilterTo').value = key;
+  document.getElementById('khSemakTarikh').value = key;
+  document.getElementById('khLupaTarikh').value = key;
+  document.getElementById('kh-tarikh').value = key;
+  applyKhCustomRange();
+  if(khEditorRecordView === 'tiada') semakStafTidakHadir();
+  if(khEditorRecordView === 'keluar') semakStafLupaClockOut();
+}
+
+function stepKhEditorDay(delta){
+  const key = document.getElementById('khEditorDate').value || fmtKey(new Date());
+  const [y,m,d] = key.split('-').map(Number);
+  selectKhEditorDay(fmtKey(new Date(y,m-1,d+delta)));
+}
+
+function fillKhMissingRecord(nama,date){
+  if(!isKhHolidayEditor()) return;
+  openKhEditorForm();
+  document.getElementById('kh-nama').value = nama;
+  document.getElementById('kh-tarikh').value = date;
+  document.getElementById('kh-masuk').value = '';
+  document.getElementById('kh-keluar').value = '';
+  document.getElementById('kh-status').value = 'Hadir';
+  document.getElementById('kh-remark').value = '';
+  document.getElementById('khHoursPreview').textContent = '';
+  document.getElementById('kh-masuk').focus();
+}
+
+function handleKhRecordEditKey(event){
+  if(event.key === 'Escape'){ event.preventDefault(); cancelEditKehadiranRow(); return; }
+  if(event.key !== 'Tab') return;
+  const items = [...document.getElementById('khRecordEditOverlay').querySelectorAll('button:not(:disabled),input,select')];
+  const first = items[0], last = items[items.length-1];
+  if(event.shiftKey && document.activeElement === first){ event.preventDefault(); last.focus(); }
+  else if(!event.shiftKey && document.activeElement === last){ event.preventDefault(); first.focus(); }
+}
+
+
 async function saveEditKehadiranRow(rowIndex){
-  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email)) return;
+  if(!currentUser || !isAllowedKehadiranEditor(currentUser.email) || khRecordEditSaving || rowIndex !== editingKehadiranRow) return;
   const tarikh = document.getElementById(`khEdit-tarikh-${rowIndex}`).value;
   const nama = document.getElementById(`khEdit-nama-${rowIndex}`).value.trim();
   const masuk = document.getElementById(`khEdit-masuk-${rowIndex}`).value;
@@ -4411,6 +4450,10 @@ async function saveEditKehadiranRow(rowIndex){
     return;
   }
 
+  khRecordEditSaving = true;
+  const saveBtn = document.getElementById('khRecordEditSave');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Menyimpan...';
   try{
     accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent('Kehadiran!A'+rowIndex+':F'+rowIndex)}?valueInputOption=USER_ENTERED`;
@@ -4424,9 +4467,19 @@ async function saveEditKehadiranRow(rowIndex){
       throw new Error(errData.error?.message || ('Gagal menyimpan (status ' + res.status + ')'));
     }
     editingKehadiranRow = null;
+    document.getElementById('khRecordEditOverlay').classList.remove('open');
     await loadKehadiranFromSheet();
+    if(khEditorRecordView === 'tiada') semakStafTidakHadir();
+    if(khEditorRecordView === 'keluar') semakStafLupaClockOut();
+    const card = document.getElementById('khAttendanceCard' + rowIndex);
+    const button = card && card.querySelector('.kh-row-edit-btn');
+    (button || document.getElementById('khEditorDate')).focus();
   }catch(e){
     alert('Ralat menyimpan rekod: ' + e.message);
+  }finally{
+    khRecordEditSaving = false;
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Simpan';
   }
 }
 
@@ -4475,38 +4528,14 @@ function renderBulkEditTable(){
     return;
   }
 
-  rows.forEach(r => console.log('row data:', r.tarikh, r.nama, 'masuk:', r.masuk, 'keluar:', r.keluar));
-
-  const trs = rows.map(r => `
-    <tr>
-      <td>${escapeHtml(r.nama)}</td>
-      <td><input type="time" id="khBulk-masuk-${r.rowIndex}" oninput="updateBulkEditHours(${r.rowIndex}); markBulkEditRowDirty(${r.rowIndex})"></td>
-      <td><input type="time" id="khBulk-keluar-${r.rowIndex}" oninput="updateBulkEditHours(${r.rowIndex}); markBulkEditRowDirty(${r.rowIndex})"></td>
-      <td class="kh-hours-cell" id="khBulk-hours-${r.rowIndex}">${fmtHours(r.jam)}</td>
-      <td>
-        <select id="khBulk-status-${r.rowIndex}" onchange="markBulkEditRowDirty(${r.rowIndex})">
-          ${KEHADIRAN_STATUS_OPTIONS.map(s => `<option value="${s}" ${r.status === s ? 'selected' : ''}>${s}</option>`).join('')}
-        </select>
-      </td>
-      <td><input type="text" id="khBulk-remark-${r.rowIndex}" oninput="markBulkEditRowDirty(${r.rowIndex})"></td>
-    </tr>
-  `).join('');
-
-  wrap.innerHTML = `
-    <table class="kh-table">
-      <thead>
-        <tr>
-          <th>Nama</th><th>Masa Masuk</th><th>Masa Keluar</th><th>Jumlah Jam</th><th>Status</th><th>Remark</th>
-        </tr>
-      </thead>
-      <tbody>${trs}</tbody>
-    </table>
-    <div style="margin-top:14px;">
-      <button class="save-btn" id="khBulkSaveAllBtn" style="margin-right:8px;">\u{1F4BE} Simpan Semua</button>
-      <button class="delete-btn" id="khBulkCancelBtn">Batal</button>
-    </div>
-    <p class="kh-note" id="khBulkEditNote"></p>
-  `;
+  const cards = rows.map(r => `
+    <article class="kh-attendance-card kh-attendance-edit"><div class="kh-attendance-head"><h4>${escapeHtml(r.nama)}</h4><span class="kh-attendance-sub">${escapeHtml(fmtTarikhMalay(r.tarikh))}</span></div>
+      <div class="field-row"><div><label for="khBulk-masuk-${r.rowIndex}">Masa masuk</label><input type="time" id="khBulk-masuk-${r.rowIndex}" oninput="updateBulkEditHours(${r.rowIndex}); markBulkEditRowDirty(${r.rowIndex})"></div><div><label for="khBulk-keluar-${r.rowIndex}">Masa keluar</label><input type="time" id="khBulk-keluar-${r.rowIndex}" oninput="updateBulkEditHours(${r.rowIndex}); markBulkEditRowDirty(${r.rowIndex})"></div></div>
+      <p class="kh-attendance-info">Jumlah: <b id="khBulk-hours-${r.rowIndex}">${fmtHours(r.jam)}</b></p>
+      <label for="khBulk-status-${r.rowIndex}">Status</label><select id="khBulk-status-${r.rowIndex}" onchange="markBulkEditRowDirty(${r.rowIndex})">${KEHADIRAN_STATUS_OPTIONS.map(s => `<option value="${s}" ${r.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+      <label for="khBulk-remark-${r.rowIndex}">Catatan</label><input type="text" id="khBulk-remark-${r.rowIndex}" oninput="markBulkEditRowDirty(${r.rowIndex})">
+    </article>`).join('');
+  wrap.innerHTML = `<p class="kh-my-legend">Edit pukal untuk ${escapeHtml(fmtTarikhMalay(bulkEditDate))}. Simpan atau batal sebelum menukar paparan.</p><div class="kh-attendance-grid">${cards}</div><div class="kh-attendance-actions"><button type="button" class="cancel-btn" id="khBulkCancelBtn">Batal</button><button type="button" class="save-btn" id="khBulkSaveAllBtn">Simpan Semua</button></div><p class="kh-note" id="khBulkEditNote"></p>`;
 
   // Set input values after the elements exist in the DOM (setting .value in the
   // template string's `value="..."` attribute before insertion is fine for plain
@@ -4525,6 +4554,7 @@ function renderBulkEditTable(){
 
 function markBulkEditRowDirty(rowIndex){
   bulkEditDirtyRows.add(rowIndex);
+  document.getElementById('khBulkEditDate').disabled = true;
 }
 
 function updateBulkEditHours(rowIndex){
@@ -5824,10 +5854,12 @@ function openKhEditorPage(page){
 }
 
 function setKhEditorRecordView(view){
-  if(!isKhHolidayEditor() || !['semua','tiada','keluar'].includes(view)) return;
+  if(!isKhHolidayEditor() || bulkEditDate || !['semua','tiada','keluar'].includes(view)) return;
   khEditorRecordView = view;
   applyKhEditorPage();
   if(view !== 'semua'){
+    const selected = document.getElementById('khEditorDate').value || fmtKey(new Date());
+    document.getElementById(view === 'tiada' ? 'khSemakTarikh' : 'khLupaTarikh').value = selected;
     const id = view === 'tiada' ? 'khSemakSection' : 'khLupaSection';
     const section = document.getElementById(id);
     section.classList.add('open');
@@ -5838,7 +5870,7 @@ function setKhEditorRecordView(view){
 }
 
 function openKhEditorForm(){
-  if(!isKhHolidayEditor()) return;
+  if(!isKhHolidayEditor() || bulkEditDate) return;
   setKhEditorRecordView('semua');
   const section = document.getElementById('khRekodSection');
   section.classList.add('open');
@@ -5848,8 +5880,11 @@ function openKhEditorForm(){
 }
 
 function filterKhEditorRecords(value){
+  if(bulkEditDate) return;
   khEditorSearch = value.trim();
   renderKehadiranTable();
+  if(khEditorRecordView === 'tiada') semakStafTidakHadir();
+  if(khEditorRecordView === 'keluar') semakStafLupaClockOut();
 }
 
 function setKehadiranMode(mode){
@@ -9948,6 +9983,8 @@ function hideWelcomeBack(){
 }
 
 function logout(){
+  editingKehadiranRow = null;
+  document.getElementById('khRecordEditOverlay').classList.remove('open');
   let pushToken = null;
   try { pushToken = localStorage.getItem('push_token'); } catch(e) {}
   if(pushToken && accessToken){

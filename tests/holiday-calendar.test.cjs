@@ -48,6 +48,7 @@ function fixture(editor = true){
     escapeHtml: s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'),
     getSelfCheckinName: () => 'Staf', isKhLewat: () => false,
     kehadiranRecords: [], kehadiranLoaded: false,
+    bulkEditDate: null,
     refreshUtama: () => {}, handleAuthExpired: () => {},
     semakStafTidakHadir: () => checks.push('tiada'),
     semakStafLupaClockOut: () => checks.push('keluar'),
