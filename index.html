@@ -1278,6 +1278,22 @@
   .kh-my-legend{font-size:12px;line-height:1.6;color:var(--ink-soft);margin:8px 0;}
   .kh-my-nav button{min-width:44px;min-height:44px;}
   .kh-my-list{ list-style:none; margin:14px 0 0; padding:0; }
+  .kh-holiday-panel{margin:0 0 20px;padding:20px;background:var(--bg-card);border:1px solid var(--line);border-radius:16px;}
+  .kh-holiday-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .kh-holiday-head h3{margin:0;font-size:16px;}
+  .kh-holiday-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);}
+  .kh-holiday-row label{flex:1;min-width:0;font-size:13px;line-height:1.6;overflow-wrap:anywhere;}
+  .kh-holiday-row small{display:block;color:var(--ink-soft);}
+  .kh-holiday-row select{min-height:44px;max-width:150px;border:1px solid var(--sage-line);border-radius:8px;background:var(--bg-card);color:var(--ink);padding:8px;}
+  .kh-holiday-reminder{padding:12px;border-radius:10px;background:var(--amber-bg);color:var(--amber-text);font-size:13px;line-height:1.6;margin:12px 0;}
+  .kh-holiday-panel .save-btn{margin-top:16px;min-height:44px;}
+  .kh-holiday-panel details{margin-top:16px;font-size:13px;}
+  .kh-holiday-panel summary{cursor:pointer;padding:10px 0;}
+  .kh-holiday-manual{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;}
+  .kh-holiday-manual input{min-width:0;max-width:100%;min-height:44px;}
+  .kh-holiday-manual input[type="text"]{flex:1;border:1px solid var(--sage-line);border-radius:8px;padding:8px;}
+  .kh-my-cell.holiday{background:#E9F2EC;color:#285C3D;}
+  @media(max-width:400px){.kh-holiday-row{align-items:stretch;flex-direction:column;}.kh-holiday-row select{max-width:none;width:100%;}}
   .kh-my-day{ border-bottom:1px solid var(--line); }
   .kh-my-day:last-child{ border-bottom:none; }
   .kh-my-row{ display:block; width:100%; text-align:left; background:none; border:none; padding:9px 0; font-family:'Inter',sans-serif; color:var(--ink); }
@@ -2562,6 +2578,7 @@
   <div class="search-results" id="searchResults" style="display:none;"></div>
 
   <div class="app-content">
+  <div id="khHolidayReminder" style="display:none;" role="status"></div>
 
   <div id="sectionUtama">
   <section class="analytics no-border-top">
@@ -2698,6 +2715,7 @@
       <p class="eyebrow">Pengurusan Kehadiran</p>
       <h2 class="ana-title">Kehadiran Staf <span class="kh-editor-badge" id="khEditorBadge" style="display:none;">Editor</span></h2>
     </div>
+    <section class="kh-holiday-panel" id="khHolidayPanel" style="display:none;" aria-label="Cuti umum Sabah"></section>
 
     <!-- Self check-in card: shown to all signed-in staff who are NOT Kehadiran editors -->
     <div id="khSelfCheckinCard" style="display:none;">
@@ -3624,7 +3642,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.51";
+const APP_VERSION = "1.0.52";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3878,6 +3896,7 @@ async function loadKehadiranFromSheet(){
   const wrap = document.getElementById('khTableWrap');
   try{
     accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
+    const holidayLoad = loadKhHolidayApprovals();
     const pergerakanLoad = loadPergerakanFromSheet();
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}`;
     const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -3910,6 +3929,11 @@ async function loadKehadiranFromSheet(){
 
     kehadiranRecords.sort((a,b) => b.tarikh.localeCompare(a.tarikh) || a.nama.localeCompare(b.nama));
     await pergerakanLoad;
+    await holidayLoad;
+    if(isKhHolidayEditor()){
+      loadKhHolidayFeed(khMyCurrentMonth());
+      if(khHolidayMonth && khHolidayMonth !== khMyCurrentMonth()) loadKhHolidayFeed(khHolidayMonth);
+    }
     kehadiranLoaded = true;
     kehadiranLoadFailed = false;
     renderKehadiranTable();
@@ -4105,6 +4129,14 @@ function semakStafTidakHadir(){
   const out = document.getElementById('khSemakResults');
   if(!tarikh){
     out.innerHTML = `<p class="kh-note">Sila pilih tarikh dahulu.</p>`;
+    return;
+  }
+  if(!khHolidayApprovalsLoaded || khHolidayApprovalError){
+    out.innerHTML = '<p class="kh-note">Semakan cuti umum belum tersedia. Sila muat semula rekod kehadiran.</p>';
+    return;
+  }
+  if(getKhObservedHoliday(tarikh)){
+    out.innerHTML = `<p class="kh-semak-ok">Cuti umum Sabah: ${escapeHtml(getKhObservedHoliday(tarikh))}. Tiada semakan ketidakhadiran diperlukan.</p>`;
     return;
   }
   if(STAFF_DIRECTORY.size === 0){
@@ -4866,14 +4898,14 @@ function stepSelfDays(delta){
   updateSelfStatusDetails();
 }
 
-// Hari bekerja (Isnin–Jumaat) bermula hari ini; hari ini dikira jika hari bekerja.
+// Hari bekerja bermula hari ini, kecuali cuti umum Sabah yang disahkan.
 function getSelfWorkingDates(count){
   const dates = [];
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   while(dates.length < count){
     const wd = d.getDay();
-    if(wd !== 0 && wd !== 6) dates.push(fmtKey(d));
+    if(wd !== 0 && wd !== 6 && !getKhObservedHoliday(fmtKey(d))) dates.push(fmtKey(d));
     d.setDate(d.getDate() + 1);
   }
   return dates;
@@ -5709,6 +5741,7 @@ function setKehadiranMode(mode){
 function applyKehadiranMode(){
   const isEditor = !!(currentUser && isAllowedKehadiranEditor(currentUser.email));
   const mode = getKehadiranMode();
+  renderKhHolidayPanel();
 
   const toggle = document.getElementById('khModeToggle');
   toggle.style.display = isEditor ? '' : 'none';
@@ -5769,7 +5802,7 @@ function getKhWorkdaysToCheck(fromKey, toKey){
   const dates = [];
   for(const dt = new Date(y, m - 1, d); fmtKey(dt) <= endKey; dt.setDate(dt.getDate() + 1)){
     const dow = dt.getDay();
-    if(dow !== 0 && dow !== 6) dates.push(fmtKey(dt));
+    if(dow !== 0 && dow !== 6 && !getKhObservedHoliday(fmtKey(dt))) dates.push(fmtKey(dt));
   }
   return dates;
 }
@@ -5802,6 +5835,10 @@ function confirmKhPdfModal(){
   const modalNote = document.getElementById('khPdfModalNote');
   const excluded = new Set(Array.from(document.getElementById('khExcludeStaff').selectedOptions).map(o => o.value));
   const hqOnly = document.getElementById('khPdfHqOnly').checked;
+  if(hqOnly && (!khHolidayApprovalsLoaded || khHolidayApprovalError)){
+    modalNote.textContent = 'Semakan cuti umum belum tersedia. Muat semula rekod kehadiran sebelum menjana laporan HQ.';
+    return;
+  }
 
   if(isMonthly){
     const bulan = document.getElementById('khPdfMonth').value;
@@ -5955,6 +5992,296 @@ function generateKehadiranPDF(label, recordsToPrint, isMonthly, opts = {}){
 let khMyMonth = null; // 'YYYY-MM'; null = bulan semasa
 const khMyOpenDays = new Set();
 
+// CUTI UMUM — keputusan bulanan dikongsi melalui tab CutiUmum (log tambahan sahaja).
+const MALAYSIA_HOLIDAY_CALENDAR_ID = 'en.malaysia#holiday@group.v.calendar.google.com';
+const KH_HOLIDAY_TAB = 'CutiUmum';
+let khHolidayApprovals = new Map();
+let khHolidayApprovalsLoaded = false;
+let khHolidayApprovalError = '';
+let khHolidayLoad = null;
+let khHolidayMonth = null;
+let khHolidaySaving = false;
+let khHolidayNotice = '';
+let khHolidayOwner = '';
+let khHolidayReminderMonth = '';
+const khHolidayFeeds = new Map();
+
+function isKhHolidayEditor(){
+  return !!(currentUser && isAllowedKehadiranEditor(currentUser.email));
+}
+
+function validKhHolidayMonth(month){
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(month || '');
+}
+
+function validKhHolidayDate(key, month){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(key || '') || key.slice(0, 7) !== month) return false;
+  const [y,m,d] = key.split('-').map(Number);
+  return fmtKey(new Date(y,m-1,d)) === key;
+}
+
+function khHolidayFingerprint(items){
+  return JSON.stringify(items.filter(i => !i.manual).map(i => [i.id,i.date,i.title]).sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
+}
+
+function getKhObservedHoliday(key){
+  const saved = khHolidayApprovals.get(key.slice(0,7));
+  return saved && saved.items.filter(i => i.date === key && i.observed === true).map(i => i.title).join(' / ') || '';
+}
+
+async function khHolidayJson(url, options){
+  const res = await apiFetch(url, { cache: 'no-store', ...(options || {}) });
+  if(res.status === 401){ handleAuthExpired(); throw new Error('Sila sambung semula akaun Google.'); }
+  if(!res.ok) throw new Error(`Google API (${res.status}). Sila cuba lagi atau semak akses Google.`);
+  return res.json();
+}
+
+function resetKhHolidays(){
+  khHolidayOwner = currentUser ? currentUser.email : '';
+  khHolidayApprovals = new Map();
+  khHolidayApprovalsLoaded = false;
+  khHolidayApprovalError = '';
+  khHolidayLoad = null;
+  khHolidayMonth = null;
+  khHolidayReminderMonth = '';
+  khHolidayNotice = '';
+  khHolidayFeeds.clear();
+}
+
+async function loadKhHolidayApprovals(){
+  if(!currentUser || !accessToken) return;
+  if(khHolidayOwner !== currentUser.email) resetKhHolidays();
+  if(!khHolidayReminderMonth) khHolidayReminderMonth = khMyCurrentMonth();
+  if(khHolidayLoad) return khHolidayLoad;
+  const owner = currentUser.email;
+  const pending = (async () => {
+    try{
+      const base = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}`;
+      const meta = await khHolidayJson(`${base}?fields=sheets.properties.title`);
+      const exists = (meta.sheets || []).some(s => s.properties.title === KH_HOLIDAY_TAB);
+      const data = exists ? await khHolidayJson(`${base}/values/${encodeURIComponent(KH_HOLIDAY_TAB + '!A2:D')}`) : { values: [] };
+      const approvals = new Map();
+      for(const row of data.values || []){
+        if(!validKhHolidayMonth(row[0])) continue;
+        const saved = JSON.parse(row[1]);
+        if(!saved || !Array.isArray(saved.items) || typeof saved.fingerprint !== 'string'
+          || saved.items.some(i => !i || !validKhHolidayDate(i.date,row[0]) || typeof i.id !== 'string' || typeof i.title !== 'string' || typeof i.observed !== 'boolean')) throw new Error('Format tab CutiUmum tidak sah. Sila hubungi pentadbir.');
+        approvals.set(row[0], { ...saved, editor: row[2] || '', updated: row[3] || '' });
+      }
+      if(!currentUser || currentUser.email !== owner) return;
+      khHolidayApprovals = approvals;
+      khHolidayApprovalsLoaded = true;
+      khHolidayApprovalError = '';
+    }catch(e){
+      if(currentUser && currentUser.email === owner) khHolidayApprovalError = e.message;
+    }finally{
+      if(currentUser && currentUser.email === owner){
+        renderKhHolidayPanel();
+        renderKhHolidayReminder();
+      }
+    }
+  })();
+  khHolidayLoad = pending;
+  try{ await pending; }finally{ if(khHolidayLoad === pending) khHolidayLoad = null; }
+}
+
+function normalizeKhHolidayEvents(events, month){
+  const items = new Map();
+  for(const event of events){
+    if(event.status === 'cancelled' || !event.id || !event.start || !event.start.date || !event.end || !event.end.date) continue;
+    const start = event.start.date, end = event.end.date;
+    const [y,m] = month.split('-').map(Number);
+    for(let d=1; d<=new Date(y,m,0).getDate(); d++){
+      const date = fmtKey(new Date(y,m-1,d));
+      if(date < start || date >= end) continue;
+      const id = event.id + '|' + date;
+      items.set(id, { id, date, title: event.summary || 'Cuti umum', manual: false, observed: null });
+    }
+  }
+  return [...items.values()].sort((a,b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+}
+
+async function loadKhHolidayFeed(month, force = false){
+  if(!isKhHolidayEditor() || !validKhHolidayMonth(month)) return;
+  const prior = khHolidayFeeds.get(month);
+  if(prior && (prior.loading || (prior.ready && !force))) return;
+  const owner = currentUser.email;
+  const feed = { loading: true, ready: false, error: '', items: [] };
+  khHolidayFeeds.set(month, feed);
+  renderKhHolidayPanel();
+  try{
+    const [y,m] = month.split('-').map(Number);
+    const next = fmtKey(new Date(y,m,1)).slice(0,7);
+    const params = new URLSearchParams({ timeMin: month + '-01T00:00:00+08:00', timeMax: next + '-01T00:00:00+08:00', timeZone: 'Asia/Kuala_Lumpur', singleEvents: 'true', maxResults: '2500' });
+    const events = [];
+    let page = '';
+    do{
+      if(page) params.set('pageToken',page);
+      const data = await khHolidayJson(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(MALAYSIA_HOLIDAY_CALENDAR_ID)}/events?${params}`);
+      events.push(...(data.items || []));
+      page = data.nextPageToken || '';
+    }while(page);
+    if(!currentUser || currentUser.email !== owner) return;
+    const saved = khHolidayApprovals.get(month);
+    const decisions = new Map((saved ? saved.items : []).map(i => [i.id,i]));
+    feed.items = normalizeKhHolidayEvents(events,month).map(i => {
+      const old = decisions.get(i.id);
+      return { ...i, observed: old && old.date === i.date && old.title === i.title ? old.observed : null };
+    });
+    if(saved) feed.items.push(...saved.items.filter(i => i.manual));
+    feed.ready = true;
+  }catch(e){ feed.error = e.message; }
+  finally{
+    feed.loading = false;
+    if(currentUser && currentUser.email === owner){ renderKhHolidayPanel(); renderKhHolidayReminder(); }
+  }
+}
+
+function khHolidayNeedsReview(month){
+  const saved = khHolidayApprovals.get(month), feed = khHolidayFeeds.get(month);
+  return !saved || !!(feed && feed.ready && saved.fingerprint !== khHolidayFingerprint(feed.items));
+}
+
+function renderKhHolidayReminder(){
+  const el = document.getElementById('khHolidayReminder');
+  if(!el) return;
+  const month = khMyCurrentMonth();
+  const feed = khHolidayFeeds.get(month);
+  const feedError = feed && feed.error;
+  const show = isKhHolidayEditor() && (!khHolidayApprovalsLoaded || khHolidayApprovalError || feedError || khHolidayNeedsReview(month));
+  el.style.display = show ? '' : 'none';
+  if(show) el.innerHTML = `<div class="kh-holiday-reminder">${khHolidayApprovalError || feedError ? 'Semakan cuti umum gagal dimuatkan.' : 'Peringatan bulanan: sahkan cuti umum Sabah bagi ' + escapeHtml(fmtBulanMalay(month)) + '.'} <button type="button" class="utama-link" onclick="openKhHolidayPanel()">Semak cuti umum</button></div>`;
+}
+
+function openKhHolidayPanel(){
+  if(!isKhHolidayEditor()) return;
+  khHolidayMonth = khMyCurrentMonth();
+  switchSection('kehadiran');
+  setKehadiranMode('pentadbir');
+  document.getElementById('khHolidayPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function selectKhHolidayMonth(month){
+  if(khHolidaySaving || !validKhHolidayMonth(month) || month > khMyCurrentMonth()) return;
+  khHolidayMonth = month;
+  khHolidayNotice = '';
+  await loadKhHolidayFeed(month);
+  renderKhHolidayPanel();
+}
+
+function setKhHolidayChoice(index, value){
+  if(!isKhHolidayEditor() || khHolidaySaving) return;
+  const feed = khHolidayFeeds.get(khHolidayMonth || khMyCurrentMonth());
+  if(feed && feed.items[index]) feed.items[index].observed = value === 'yes' ? true : value === 'no' ? false : null;
+}
+
+function addKhManualHoliday(){
+  if(!isKhHolidayEditor() || khHolidaySaving) return;
+  const month = khHolidayMonth || khMyCurrentMonth(), feed = khHolidayFeeds.get(month);
+  const date = document.getElementById('khHolidayDate').value;
+  const title = document.getElementById('khHolidayName').value.trim();
+  if(!feed || !feed.ready || !validKhHolidayDate(date,month) || !title){
+    document.getElementById('khHolidayManualNote').textContent = 'Isi tarikh dalam bulan dipilih dan nama cuti.';
+    return;
+  }
+  const id = 'manual|' + date + '|' + title;
+  if(!feed.items.some(i => i.id === id)) feed.items.push({ id, date, title, manual: true, observed: true });
+  renderKhHolidayPanel();
+}
+
+function renderKhHolidayPanel(){
+  const el = document.getElementById('khHolidayPanel');
+  if(!el) return;
+  const visible = isKhHolidayEditor() && getKehadiranMode() === 'pentadbir';
+  el.style.display = visible ? '' : 'none';
+  if(!visible) return;
+  const month = khHolidayMonth || khMyCurrentMonth(), feed = khHolidayFeeds.get(month), saved = khHolidayApprovals.get(month);
+  const current = khMyCurrentMonth();
+  const [y,m] = month.split('-').map(Number);
+  const last = fmtKey(new Date(y,m,0));
+  const ready = feed && feed.ready && !feed.loading && !feed.error && khHolidayApprovalsLoaded && !khHolidayApprovalError;
+  el.innerHTML = `<div class="kh-holiday-head"><h3>Cuti Umum Sabah</h3><input type="month" aria-label="Bulan semakan cuti umum" value="${month}" max="${current}" onchange="selectKhHolidayMonth(this.value)" ${khHolidaySaving ? 'disabled' : ''}></div>
+    <p class="kh-my-legend">Semak pada 1 hari bulan. Pilih sama ada setiap cuti Malaysia disambut di Sabah. Keputusan digunakan untuk semua staf.</p>
+    <p class="kh-my-legend"><a href="https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(MALAYSIA_HOLIDAY_CALENDAR_ID)}" target="_blank" rel="noopener noreferrer">Sumber: Google Calendar · Holidays in Malaysia</a></p>
+    ${khHolidayNeedsReview(month) ? '<p class="kh-holiday-reminder">Pengesahan bulan ini diperlukan. Cuti hanya dikecualikan daripada tiada rekod selepas disahkan.</p>' : '<p class="kh-my-legend">Bulan ini telah disahkan. Anda boleh mengemas kini keputusan.</p>'}
+    ${khHolidayApprovalError ? `<p class="kh-note">${escapeHtml(khHolidayApprovalError)}</p>` : ''}
+    ${!feed || feed.loading ? '<p class="kh-note">Memuatkan cuti dari Google Calendar...</p>' : feed.error ? `<p class="kh-note">${escapeHtml(feed.error)}</p>` : ''}
+    <fieldset style="border:0;padding:0;margin:0;min-width:0;" ${!ready || khHolidaySaving ? 'disabled' : ''}><legend class="kh-my-legend">Disambut di Sabah?</legend>
+    ${feed && feed.ready ? feed.items.map((i,index) => `<div class="kh-holiday-row"><label for="khHolidayChoice${index}">${escapeHtml(i.title)}<small>${escapeHtml(fmtTarikhMalay(i.date))}${i.manual ? ' · Ditambah pentadbir' : ''}</small></label><select id="khHolidayChoice${index}" onchange="setKhHolidayChoice(${index},this.value)"><option value="" ${i.observed === null ? 'selected' : ''}>Pilih...</option><option value="yes" ${i.observed === true ? 'selected' : ''}>Ya, cuti Sabah</option><option value="no" ${i.observed === false ? 'selected' : ''}>Tidak</option></select></div>`).join('') || '<p class="kh-my-legend">Tiada cuti dalam suapan Google bagi bulan ini. Sahkan bulan ini jika tiada cuti tambahan.</p>' : ''}
+    <details><summary>Tambah cuti Sabah / cuti gantian</summary><div class="kh-holiday-manual"><input type="date" id="khHolidayDate" aria-label="Tarikh cuti tambahan" min="${month}-01" max="${last}"><input type="text" id="khHolidayName" aria-label="Nama cuti tambahan" maxlength="160" placeholder="Nama cuti"><button type="button" class="today-btn" onclick="addKhManualHoliday()">Tambah</button></div><p class="kh-note" id="khHolidayManualNote"></p></details>
+    <button type="button" class="save-btn" onclick="saveKhHolidayMonth()">${khHolidaySaving ? 'Menyimpan...' : 'Sahkan cuti bulan ini'}</button></fieldset>
+    <button type="button" class="utama-link" onclick="reloadKhHolidays()" ${khHolidaySaving || (feed && feed.loading) ? 'disabled' : ''}>Muat semula</button>
+    ${saved ? `<p class="kh-my-legend">Disahkan oleh ${escapeHtml(saved.editor)} · ${escapeHtml(saved.updated)}</p>` : ''}
+    <p class="kh-note" role="status">${escapeHtml(khHolidayNotice)}</p>`;
+}
+
+async function reloadKhHolidays(){
+  if(!isKhHolidayEditor() || khHolidaySaving) return;
+  await loadKhHolidayApprovals();
+  await loadKhHolidayFeed(khHolidayMonth || khMyCurrentMonth(),true);
+  refreshKhHolidayViews();
+}
+
+function refreshKhHolidayViews(){
+  renderKhHolidayPanel();
+  renderKhHolidayReminder();
+  if(kehadiranLoaded){ renderMyKehadiranRecord(); refreshUtama('kehadiran'); }
+}
+
+async function saveKhHolidayMonth(){
+  if(!isKhHolidayEditor() || khHolidaySaving) return;
+  const month = khHolidayMonth || khMyCurrentMonth(), feed = khHolidayFeeds.get(month);
+  if(!feed || !feed.ready || feed.loading || feed.error || !khHolidayApprovalsLoaded || khHolidayApprovalError) return;
+  if(feed.items.some(i => typeof i.observed !== 'boolean')){
+    khHolidayNotice = 'Pilih Ya atau Tidak untuk setiap cuti dahulu.';
+    renderKhHolidayPanel();
+    return;
+  }
+  const owner = currentUser.email;
+  const snapshot = { items: feed.items.map(i => ({ ...i })), fingerprint: khHolidayFingerprint(feed.items) };
+  khHolidaySaving = true;
+  khHolidayNotice = '';
+  renderKhHolidayPanel();
+  try{
+    const base = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}`;
+    const meta = await khHolidayJson(`${base}?fields=sheets.properties.title`);
+    if(!(meta.sheets || []).some(s => s.properties.title === KH_HOLIDAY_TAB)){
+      try{
+        await khHolidayJson(`${base}:batchUpdate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requests: [{ addSheet: { properties: { title: KH_HOLIDAY_TAB } } }] }) });
+      }catch(e){
+        const check = await khHolidayJson(`${base}?fields=sheets.properties.title`);
+        if(!(check.sheets || []).some(s => s.properties.title === KH_HOLIDAY_TAB)) throw e;
+      }
+    }
+    if(!isKhHolidayEditor() || currentUser.email !== owner) return;
+    await khHolidayJson(`${base}/values/${encodeURIComponent(KH_HOLIDAY_TAB + '!A1:D1')}?valueInputOption=RAW`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [['Bulan','KeputusanJSON','DisahkanOleh','Masa']] }) });
+    if(!isKhHolidayEditor() || currentUser.email !== owner) return;
+    const stamp = new Date().toISOString();
+    await khHolidayJson(`${base}/values/${encodeURIComponent(KH_HOLIDAY_TAB + '!A:D')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [[month,JSON.stringify(snapshot),owner,stamp]] }) });
+    await loadKhHolidayApprovals();
+    if(!currentUser || currentUser.email !== owner) return;
+    const verified = khHolidayApprovals.get(month);
+    if(khHolidayApprovalError || !verified || JSON.stringify(verified.items) !== JSON.stringify(snapshot.items)) throw new Error('Simpanan belum dapat disahkan atau diubah pentadbir lain. Muat semula dan semak sebelum menyimpan lagi.');
+    khHolidayNotice = 'Cuti bulan ini disahkan dan dikongsi dengan semua staf.';
+  }catch(e){ if(currentUser && currentUser.email === owner) khHolidayNotice = e.message; }
+  finally{ khHolidaySaving = false; refreshKhHolidayViews(); }
+}
+
+async function checkKhHolidayMonth(){
+  if(!currentUser || !accessToken || document.hidden || khHolidaySaving) return;
+  const month = khMyCurrentMonth();
+  if(khHolidayReminderMonth === month) return;
+  khHolidayReminderMonth = month;
+  khHolidayMonth = null;
+  renderKhHolidayReminder();
+  await loadKhHolidayApprovals();
+  if(isKhHolidayEditor()) await loadKhHolidayFeed(month);
+  refreshKhHolidayViews();
+}
+
+setInterval(checkKhHolidayMonth,60000);
+document.addEventListener('visibilitychange',checkKhHolidayMonth);
+
 // month: 0-11. "Perlu perhatian" = hari bekerja tanpa rekod (sejak rekod pertama)
 // atau Hadir tanpa clock-out, sebelum hari ini.
 function getMyAttendanceMonth(year, month){
@@ -5990,7 +6317,7 @@ function getMyAttendanceMonth(year, month){
     const r = byDate.get(key);
     if(!r){
       const weekday = date.getDay() !== 0 && date.getDay() !== 6;
-      if(weekday && firstKey && key >= firstKey) attn.push({ date, key, why: 'Tiada rekod' });
+      if(weekday && firstKey && key >= firstKey && khHolidayApprovalsLoaded && !khHolidayApprovalError && !getKhObservedHoliday(key)) attn.push({ date, key, why: 'Tiada rekod' });
     } else if(r.status === 'Hadir' && !r.keluar){
       attn.push({ date, key, why: 'Tiada clock-out' });
     }
@@ -6040,7 +6367,7 @@ function renderMyKehadiranRecord(){
     const why = attnWhy.get(key);
     let status;
     if(why) status = why;
-    else if(!r) status = key === todayKey ? 'Belum clock in' : 'Tiada rekod';
+    else if(!r) status = getKhObservedHoliday(key) ? 'Cuti umum · ' + getKhObservedHoliday(key) : key > todayKey ? 'Akan datang' : key === todayKey ? 'Belum clock in' : 'Tiada rekod';
     else if(r.status === 'Hadir') status = isKhLewat(r.masuk) ? 'Hadir · Lewat' : 'Hadir';
     else status = r.status;
 
@@ -6082,21 +6409,28 @@ function renderMyAttendanceCalendar(y, m, my, attnWhy, todayKey){
   let missingCount = 0;
   for(let d=1; d<=new Date(y,m,0).getDate(); d++){
     const date = new Date(y,m-1,d), key = fmtKey(date), r = my.byDate.get(key);
-    const missing = key < todayKey && attnWhy.get(key) === 'Tiada rekod';
+    const holiday = getKhObservedHoliday(key);
+    const missing = !holiday && key < todayKey && attnWhy.get(key) === 'Tiada rekod';
     if(missing) missingCount++;
     const weekend = date.getDay() === 0 || date.getDay() === 6;
-    const status = missing ? 'Tiada rekod' : r ? (r.status || 'Hadir') : key > todayKey ? 'Akan datang' : weekend ? 'Hujung minggu' : 'Tiada rekod';
+    const status = holiday ? 'Cuti umum: ' + holiday : missing ? 'Tiada rekod' : r ? (r.status || 'Hadir') : key > todayKey ? 'Akan datang' : weekend ? 'Hujung minggu' : 'Tiada rekod';
     const selected = khMyOpenDays.has(key);
-    const classes = (weekend || key > todayKey ? ' muted' : '') + (key === todayKey ? ' today' : '') + (selected ? ' selected' : '');
+    const classes = (weekend || key > todayKey ? ' muted' : '') + (holiday ? ' holiday' : '') + (key === todayKey ? ' today' : '') + (selected ? ' selected' : '');
     html += '<button type="button" class="kh-my-cell' + classes + '" data-key="' + key + '" onclick="toggleKhMyDay(this.dataset.key)" aria-pressed="' + selected + '" ' + (key === todayKey ? 'aria-current="date" ' : '') + 'aria-label="' + escapeHtml(fmtTarikhPendek(date) + ': ' + status) + '"><span>' + d + '</span><span class="kh-my-cross" aria-hidden="true">' + (missing ? '&times;' : '&nbsp;') + '</span></button>';
   }
-  return '<div class="kh-my-calendar" role="group" aria-label="Kalendar kehadiran ' + escapeHtml(fmtBulanMalay(y + '-' + String(m).padStart(2,'0'))) + '">' + html + '</div><p class="kh-my-legend"><span class="kh-my-cross" aria-hidden="true">&times;</span> Tiada rekod (' + missingCount + ' hari). Ketik tarikh untuk butiran.</p><p class="kh-my-legend">Cuti umum belum diambil kira.</p>';
+  const month = y + '-' + String(m).padStart(2,'0');
+  const note = khHolidayApprovalError ? 'Semakan cuti gagal dimuatkan; tanda tiada rekod ditangguhkan. Sila muat semula.' : !khHolidayApprovalsLoaded ? 'Memuatkan semakan cuti umum...' : !khHolidayApprovals.has(month) ? 'Cuti bulan ini belum disahkan pentadbir.' : 'Latar hijau: cuti umum Sabah yang disahkan pentadbir.';
+  return '<div class="kh-my-calendar" role="group" aria-label="Kalendar kehadiran ' + escapeHtml(fmtBulanMalay(month)) + '">' + html + '</div><p class="kh-my-legend"><span class="kh-my-cross" aria-hidden="true">&times;</span> Tiada rekod (' + missingCount + ' hari). Ketik tarikh untuk butiran.</p><p class="kh-my-legend">' + note + '</p>';
 }
 
 function downloadMyKehadiranPDF(){
   const note = document.getElementById('khMyPdfNote');
   if(!kehadiranLoaded){
     note.textContent = 'Rekod belum dimuatkan.';
+    return;
+  }
+  if(!khHolidayApprovalsLoaded || khHolidayApprovalError){
+    note.textContent = 'Semakan cuti umum belum tersedia. Sila muat semula rekod kehadiran.';
     return;
   }
   const bulan = khMyMonth || khMyCurrentMonth();
@@ -8094,7 +8428,9 @@ function renderUtamaKehadiran(){
   const rec = byDate.get(todayKey);
   let todayText, todayBtn = '';
   if(!rec){
-    if(weekend){
+    if(getKhObservedHoliday(todayKey)){
+      todayText = 'Cuti umum · ' + escapeHtml(getKhObservedHoliday(todayKey));
+    } else if(weekend){
       todayText = 'Hujung minggu';
     } else {
       todayText = 'Belum clock in';
@@ -9502,6 +9838,8 @@ function logout(){
     console.warn('Failed to clear session from localStorage:', e);
   }
   currentUser = null;
+  resetKhHolidays();
+  renderKhHolidayReminder();
   accessToken = null;
   document.getElementById('gateScreen').style.display = '';
   document.getElementById('mainApp').style.display = 'none';
