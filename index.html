@@ -2419,6 +2419,61 @@
     border-color:var(--paddy);
     outline:none;
   }
+  /* Penyegaran paparan */
+  :root{
+    --bg:#F3F5F7;
+    --bg-card:#FFFFFF;
+    --ink:#202C3A;
+    --ink-soft:#536174;
+    --sage:#667689;
+    --sage-line:#CBD5DF;
+    --line:#E0E6ED;
+  }
+  button,input,select,textarea{font-family:inherit;}
+  button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+    outline:3px solid #3979BE;
+    outline-offset:3px;
+  }
+  .hero-v2{border-radius:0 0 24px 24px; padding-bottom:24px;}
+  .hero-v2-id{min-width:0;}
+  .hero-v2-id>div:last-child{min-width:0;}
+  .hero-v2-name{overflow-wrap:anywhere; line-height:1.35;}
+  .hero-v2-top{gap:16px;}
+  .hero-v2-bell{width:44px; height:44px; border-radius:12px;}
+  .hero-search .search-input-row{border-radius:12px; min-height:48px;}
+  .utama-grid{gap:20px; margin-top:20px;}
+  .utama-card{padding:22px; border-radius:16px; box-shadow:0 3px 14px rgba(27,58,92,.035);}
+  .utama-card-head{margin-bottom:16px; gap:12px; flex-wrap:wrap;}
+  .utama-card-title{font-family:'Inter',sans-serif; font-size:16px; line-height:1.5;}
+  .utama-item{padding:14px 0;}
+  .utama-item-title{line-height:1.55; margin-top:5px; overflow-wrap:anywhere;}
+  .utama-item-meta{line-height:1.6; margin-top:4px;}
+  .utama-stat{padding:12px;}
+  .utama-stat b{font-size:22px; margin-bottom:4px;}
+  .utama-stat span{line-height:1.5;}
+  .utama-today{gap:12px; flex-wrap:wrap; padding:14px;}
+  .utama-btn,.utama-link,.utama-chip{min-height:44px;}
+  .utama-link{display:inline-flex; align-items:center;}
+  .utama-chip{display:inline-flex; align-items:center; white-space:normal; overflow-wrap:anywhere;}
+  .utama-notif-btn{min-height:48px; gap:12px; text-align:left;}
+  .ana-title{font-size:22px; font-weight:600; line-height:1.4;}
+  .datebar{gap:10px; margin:20px 0 24px;}
+  .nav-btn{width:44px; height:44px; border-radius:12px;}
+  .period-btn{min-height:40px;}
+  .card{border-radius:12px; padding:18px;}
+  .title{line-height:1.55;}
+  .tab-btn{min-height:52px; color:var(--ink-soft);}
+  .tab-btn.active{background:#E7EFF8; color:var(--paddy);}
+  .bottom-tabs{box-shadow:0 -4px 20px rgba(27,58,92,.05);}
+  .gate-card{padding:36px 28px; border-radius:22px;}
+  .gate-privacy{color:var(--ink-soft); line-height:1.65;}
+  @media(max-width:480px){
+    .utama-grid{gap:16px;}
+    .utama-card{padding:18px;}
+    .hero-v2-top{flex-wrap:wrap; gap:14px;}
+    .hero-v2-actions{margin-left:auto;}
+    .date-display{min-width:0; flex:1;}
+  }
 </style>
 </head>
 <body>
