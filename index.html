@@ -2549,6 +2549,27 @@
     .hero-v2-actions{margin-left:auto;}
     .date-display{min-width:0; flex:1;}
   }
+
+  /* Utama & navigasi */
+  .activity-toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 16px;}
+  #sectionAktiviti .hero-search{max-width:none; margin-bottom:20px;}
+  #sectionAktiviti .hero-search .search-input-row{border:1px solid var(--line);}
+  #sectionAktiviti .stat-card-row{margin-top:0;}
+  #sectionUtama .utama-card{padding:20px;}
+  #sectionUtama .utama-today{padding:16px; flex-wrap:wrap;}
+  #sectionUtama .utama-today-text{flex:1 1 150px; line-height:1.6;}
+  #sectionUtama .utama-item{padding:14px 0; min-height:48px;}
+  #sectionUtama .utama-item-title{font-size:15px; line-height:1.5; overflow-wrap:anywhere;}
+  #sectionUtama .utama-item-meta{line-height:1.5; overflow-wrap:anywhere;}
+  .utama-attention{display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-height:44px; padding:12px 0 0; border:0; background:none; color:var(--red-text); font:inherit; font-size:13px; text-align:left; cursor:pointer;}
+  .utama-more summary,.lagi-notifications summary{padding:14px 0; min-height:44px; cursor:pointer; color:var(--paddy); font-size:13px; font-weight:600;}
+  .lagi-notifications{padding:0 20px;}
+  #lagiSheet{max-height:80dvh; overflow-y:auto;}
+  .kh-my-summary{font-size:12px; color:var(--ink-soft); line-height:1.8; margin:12px 0;}
+  #utamaPautan .utama-chips{display:grid; grid-template-columns:1fr 1fr;}
+  #utamaPautan .utama-chip{display:flex; align-items:center; border-radius:10px; padding:12px; white-space:normal; overflow-wrap:anywhere; line-height:1.5;}
+  .bottom-tabs button:focus-visible,.utama-card button:focus-visible,.lagi-sheet button:focus-visible{outline:3px solid var(--paddy-light); outline-offset:3px;}
+  @media(max-width:400px){.activity-toolbar{flex-wrap:wrap;} #utamaPautan .utama-chips{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -2601,30 +2622,14 @@
         </div>
       </div>
       <div class="hero-v2-actions" style="display:flex; align-items:center; gap:8px;">
-        <button class="hero-v2-bell" id="faqBtn" aria-label="Soalan Lazim & Bantuan" title="Soalan Lazim & Bantuan (FAQ)" onclick="openFaqModal()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        </button>
-        <button class="hero-v2-bell" id="hardRefreshBtn" aria-label="Muat Semula Paksa" title="Muat Semula Paksa (jika app tersangkut pada versi lama)" onclick="forceHardRefresh()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        </button>
         <button class="hero-v2-bell" id="notifBellBtn" aria-label="Notifikasi" onclick="toggleNotifPanel()">
           <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.75 9v.704c0 .845.24 1.671.692 2.374l1.108 1.723c1.011 1.574.239 3.713-1.52 4.21a25.8 25.8 0 0 1-14.06 0c-1.759-.497-2.531-2.636-1.52-4.21l1.108-1.723a4.4 4.4 0 0 0 .693-2.374V9c0-3.866 3.022-7 6.749-7s6.75 3.134 6.75 7" opacity=".5"/><path fill="currentColor" d="M12.75 6a.75.75 0 0 0-1.5 0v4a.75.75 0 0 0 1.5 0zM7.243 18.545a5.002 5.002 0 0 0 9.513 0c-3.145.59-6.367.59-9.513 0"/></svg>
           <span class="hero-v2-bell-dot" id="heroBellDot" style="display:none;"></span>
         </button>
       </div>
     </div>
-    <div class="search-bar-wrap hero-search">
-      <div class="search-input-row">
-        <span class="search-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11.5" cy="11.5" r="9.5"/><path stroke-linecap="round" d="M18.5 18.5L22 22"/></svg>
-        </span>
-        <input type="text" id="searchInput" placeholder="Cari aktiviti, lokasi, atau VIP...">
-        <button class="search-clear-btn" id="searchClearBtn" style="display:none;">&times;</button>
-      </div>
-    </div>
   </header>
   <div class="search-results" id="notifPanel" style="display:none;"></div>
-  <div class="search-results" id="searchResults" style="display:none;"></div>
 
   <div class="app-content">
   <div id="khHolidayReminder" style="display:none;" role="status"></div>
@@ -2640,13 +2645,7 @@
       <div class="utama-card" id="utamaAktiviti"></div>
       <div class="utama-card" id="utamaTugasan"></div>
       <div class="utama-card" id="utamaPautan">
-        <div class="utama-card-head"><h3 class="utama-card-title">Pautan &amp; Notifikasi</h3></div>
-        <button type="button" class="utama-notif-btn" id="utamaNotifBtn" onclick="event.stopPropagation(); openNotifFromUtama()"></button>
-        <div class="utama-push" id="utamaPushStatus" data-push-status></div>
-        <div class="utama-card-head" style="margin:14px 0 8px;">
-          <p class="utama-sub" style="margin:0;">Pautan Pantas</p>
-          <button type="button" class="utama-link" onclick="switchSection('pautan')">Lihat semua</button>
-        </div>
+        <div class="utama-card-head"><h3 class="utama-card-title">Pautan pantas</h3><button type="button" class="utama-link" onclick="switchSection('pautan')">Lihat semua</button></div>
         <div id="utamaPautanChips"></div>
       </div>
     </div>
@@ -2654,6 +2653,17 @@
   </div>
 
   <div id="sectionAktiviti" style="display:none;">
+    <div class="activity-toolbar"><h2 class="ana-title">Aktiviti</h2><button type="button" class="utama-btn" id="tabAddCenter" style="display:none;" onclick="openModal()">+ Tambah aktiviti</button></div>
+    <div class="search-bar-wrap hero-search">
+      <div class="search-input-row">
+        <span class="search-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11.5" cy="11.5" r="9.5"/><path stroke-linecap="round" d="M18.5 18.5L22 22"/></svg>
+        </span>
+        <input type="text" id="searchInput" placeholder="Cari aktiviti, lokasi atau VIP" aria-label="Cari aktiviti, lokasi atau VIP">
+        <button class="search-clear-btn" id="searchClearBtn" aria-label="Kosongkan carian" style="display:none;">&times;</button>
+      </div>
+    </div>
+    <div class="search-results" id="searchResults" style="display:none;" aria-live="polite"></div>
 
   <div class="stat-card-row" id="statCardRow">
     <div class="stat-card stat-card-primary">
@@ -3274,7 +3284,7 @@
   </div>
   </div>
 
-  <nav class="bottom-tabs" id="bottomTabs">
+  <nav class="bottom-tabs" id="bottomTabs" aria-label="Navigasi utama">
     <button class="tab-btn active" id="tabUtama" onclick="switchSection('utama')">
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12.204c0-2.289 0-3.433.52-4.381c.518-.949 1.467-1.537 3.364-2.715l2-1.241C9.889 2.622 10.892 2 12 2s2.11.622 4.116 1.867l2 1.241c1.897 1.178 2.846 1.766 3.365 2.715S22 9.915 22 12.203v1.522c0 3.9 0 5.851-1.172 7.063S17.771 22 14 22h-4c-3.771 0-5.657 0-6.828-1.212S2 17.626 2 13.725z"/><path stroke-linecap="round" d="M15 18H9"/></g></svg></span>
       <span class="tab-label">Utama</span>
@@ -3287,16 +3297,13 @@
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="6" r="4"/><path stroke-linecap="round" d="M15 9a3 3 0 1 0 0-6"/><ellipse cx="9" cy="17" rx="7" ry="4"/><path stroke-linecap="round" d="M18 14c1.754.385 3 1.359 3 2.5c0 1.03-1.014 1.923-2.5 2.37"/></g></svg></span>
       <span class="tab-label">Kehadiran</span>
     </button>
-    <button class="tab-add-center" id="tabAddCenter" style="display:none;" onclick="openModal()" aria-label="Tambah aktiviti">
-      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 13H6q-.425 0-.712-.288T5 12t.288-.712T6 11h5V6q0-.425.288-.712T12 5t.713.288T13 6v5h5q.425 0 .713.288T19 12t-.288.713T18 13h-5v5q0 .425-.288.713T12 19t-.712-.288T11 18z"/></svg>
-    </button>
     <button class="tab-btn" id="tabTask" onclick="switchSection('task')" style="display:none;">
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 4h8a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M9 4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><path stroke-linecap="round" d="m9 13l2 2l4-4"/></g></svg></span>
       <span class="tab-label">Tugasan</span>
     </button>
-    <button class="tab-btn" id="tabLagi" onclick="toggleLagiMenu()" style="display:none;">
+    <button class="tab-btn" id="tabLagi" onclick="toggleLagiMenu()" aria-expanded="false" aria-controls="lagiSheet" style="display:none;">
       <span class="tab-icon"><svg viewBox="0 0 24 24"><g fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></g></svg></span>
-      <span class="tab-label">More</span>
+      <span class="tab-label">Lagi</span>
     </button>
   </nav>
 
@@ -3307,7 +3314,7 @@
   </div>
 
   <div class="lagi-overlay" id="lagiOverlay" onclick="closeLagiMenu()"></div>
-  <div class="lagi-sheet" id="lagiSheet">
+  <div class="lagi-sheet" id="lagiSheet" role="dialog" aria-modal="true" aria-label="Menu lagi" tabindex="-1">
     <div class="lagi-sheet-handle"></div>
     <button class="lagi-row" id="lagiRowAnalitik" onclick="openLagiSection('analitik')" style="display:none;">
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2s7.071 0 8.535 1.464C22 4.93 22 7.286 22 12s0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z"/><path stroke-linecap="round" d="M7 18V9m5 9V6m5 12v-5"/></g></svg></span>
@@ -3329,6 +3336,8 @@
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
       <span class="lagi-row-label">Soalan Lazim & Bantuan</span>
     </button>
+    <button type="button" class="lagi-row" id="hardRefreshBtn" onclick="closeLagiMenu(); forceHardRefresh()"><span class="lagi-row-label">Muat semula aplikasi</span></button>
+    <details class="lagi-notifications"><summary>Notifikasi</summary><button type="button" class="utama-notif-btn" id="utamaNotifBtn" onclick="closeLagiMenu(); openNotifFromUtama()"></button><div class="utama-push" id="utamaPushStatus" data-push-status></div></details>
     <button class="lagi-row" id="lagiRowAbout" onclick="closeLagiMenu(); openAboutModal();">
       <span class="lagi-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16.5"/><line x1="12" y1="7.5" x2="12.01" y2="7.5"/></svg></span>
       <span class="lagi-row-label">Mengenai PadiApp</span>
@@ -3725,7 +3734,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.55";
+const APP_VERSION = "1.0.56";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -6588,6 +6597,7 @@ function renderMyKehadiranRecord(){
       <b>${fmtBulanMalay(bulan)}</b>
       <button type="button" aria-label="Bulan seterusnya" onclick="stepKhMyMonth(1)" ${bulan < current ? '' : 'disabled'}>&rsaquo;</button>
     </div>
+    <p class="kh-my-summary">${my.hadir} hadir &middot; ${my.lewat} lewat &middot; ${my.counts.Cuti} cuti &middot; ${my.counts.MC} MC<br>${my.counts.Outstation} outstation &middot; ${my.counts.Kursus} kursus</p>
     ${renderMyAttendanceCalendar(y, m, my, attnWhy, todayKey)}
     ${items ? `<ul class="kh-my-list">${items}</ul>` : ""}
   `;
@@ -8518,7 +8528,6 @@ function renderPautanList(links){
 // data modul sedia ada dan dirender sendiri (muat / kosong / ralat).
 // ============================================================
 const utamaInFlight = {}; // part -> Promise yang sedang berjalan
-let utamaAttnOpen = false;
 
 const UTAMA_LOADERS = {
   kehadiran: () => loadKehadiranFromSheet(),
@@ -8604,15 +8613,15 @@ function fmtTarikhPendek(date){
 
 function renderUtamaKehadiran(){
   const el = document.getElementById('utamaKehadiran');
-  const link = `<button type="button" class="utama-link" onclick="openMyKehadiranRecord()">Lihat rekod penuh</button>`;
+  const link = `<button type="button" class="utama-link" onclick="openMyKehadiranRecord()">Lihat rekod</button>`;
   const state = utamaState('kehadiran', kehadiranLoaded, kehadiranLoadFailed);
   if(state !== 'ok'){
-    el.innerHTML = utamaCardHtml('Kehadiran', link, utamaStateHtml(state, 'kehadiran'));
+    el.innerHTML = utamaCardHtml('Kehadiran hari ini', link, utamaStateHtml(state, 'kehadiran'));
     return;
   }
 
   const now = new Date();
-  const { byDate, hadir, lewat, counts, attn } = getMyAttendanceMonth(now.getFullYear(), now.getMonth());
+  const { byDate, attn } = getMyAttendanceMonth(now.getFullYear(), now.getMonth());
   const todayKey = fmtKey(now);
   const weekend = now.getDay() === 0 || now.getDay() === 6;
   const goBtn = label => `<button type="button" class="utama-btn" onclick="switchSection('kehadiran')">${label}</button>`;
@@ -8625,47 +8634,27 @@ function renderUtamaKehadiran(){
     } else if(weekend){
       todayText = 'Hujung minggu';
     } else {
-      todayText = 'Belum clock in';
-      todayBtn = goBtn('Clock In');
+      todayText = 'Belum daftar masuk';
+      todayBtn = goBtn('Daftar masuk');
     }
   } else if((rec.status || 'Hadir') !== 'Hadir'){
     todayText = escapeHtml(rec.status) + (rec.tajuk ? `<small>${escapeHtml(rec.tajuk)}</small>` : '');
   } else if(!rec.keluar){
     const pgActive = getActivePergerakan(getMyPergerakan(todayKey));
-    todayText = `Clock in ${rec.masuk || '--:--'} &middot; belum clock out`
+    todayText = `Masuk ${rec.masuk || '--:--'} &middot; belum daftar keluar`
       + (pgActive ? `<small>${pgActive.jenis === 'URUSAN_PERIBADI' ? 'Keluar Pejabat' : 'Keluar Bertugas'}: ${escapeHtml(pgJenisLabel(pgActive))}${pgActive.lokasi ? ' — ' + escapeHtml(pgActive.lokasi) : ''}</small>` : '');
     if(pgActive && pgActive.kembali !== 'Tidak') todayBtn = goBtn('Kembali Ke Pejabat');
-    else if(!isBeforeSelfKeluarStart() && !isPastSelfKeluarEnd()) todayBtn = goBtn(pgActive ? 'Tamat Bertugas' : 'Clock Out');
+    else if(!isBeforeSelfKeluarStart() && !isPastSelfKeluarEnd()) todayBtn = goBtn(pgActive ? 'Tamat Bertugas' : 'Daftar keluar');
   } else {
     todayText = `${rec.masuk} &ndash; ${rec.keluar} &middot; ${fmtHours(rec.jam)}`;
   }
 
-  const attnList = (utamaAttnOpen && attn.length)
-    ? `<ul class="utama-attn-list">${attn.map(a => `<li><span>${fmtTarikhPendek(a.date)}</span><span class="why">${a.why}</span></li>`).join('')}</ul>`
-    : '';
+  if(rec && (rec.status || 'Hadir') === 'Hadir' && !rec.keluar && !todayBtn) todayBtn = goBtn('Buka kehadiran');
 
-  el.innerHTML = utamaCardHtml('Kehadiran', link, `
-    <div class="utama-today">
-      <span class="utama-today-text">${todayText}</span>
-      ${todayBtn}
-    </div>
-    <p class="utama-sub">Bulan ini &middot; ${MONTH_NAMES[now.getMonth()]}</p>
-    <div class="utama-stats">
-      <div class="utama-stat"><b>${hadir}</b><span>Hadir</span></div>
-      <div class="utama-stat"><b>${lewat}</b><span>Lewat</span></div>
-      <div class="utama-stat"><b>${counts.Cuti} Cuti &middot; ${counts.MC} MC</b><span>Cuti / MC</span></div>
-      <div class="utama-stat"><b>${counts.Outstation} Outstation &middot; ${counts.Kursus} Kursus</b><span>Outstation / Kursus</span></div>
-      <button type="button" class="utama-stat${attn.length ? ' warn' : ''}" style="grid-column:1 / -1;" onclick="toggleUtamaAttn()" aria-expanded="${utamaAttnOpen && attn.length ? 'true' : 'false'}" ${attn.length ? '' : 'disabled'}>
-        <b>${attn.length}</b><span>Perlu perhatian${attn.length ? (utamaAttnOpen ? ' &middot; tutup senarai' : ' &middot; lihat tarikh') : ''}</span>
-      </button>
-    </div>
-    ${attnList}
+  el.innerHTML = utamaCardHtml('Kehadiran hari ini', link, `
+    <div class="utama-today"><span class="utama-today-text">${todayText}</span>${todayBtn}</div>
+    ${attn.length ? `<button type="button" class="utama-attention" onclick="openMyKehadiranRecord()">${attn.length} rekod bulan ini perlu perhatian <span aria-hidden="true">&rsaquo;</span></button>` : ''}
   `);
-}
-
-function toggleUtamaAttn(){
-  utamaAttnOpen = !utamaAttnOpen;
-  renderUtamaKehadiran();
 }
 
 function renderUtamaAktiviti(){
@@ -8673,31 +8662,36 @@ function renderUtamaAktiviti(){
   const link = `<button type="button" class="utama-link" onclick="switchSection('aktiviti')">Lihat semua</button>`;
   const state = utamaState('aktiviti', calendarLoaded, !!calendarLoadError);
   if(state !== 'ok'){
-    el.innerHTML = utamaCardHtml('Aktiviti Hari Ini', link, utamaStateHtml(state, 'aktiviti'));
+    el.innerHTML = utamaCardHtml('Aktiviti hari ini', link, utamaStateHtml(state, 'aktiviti'));
     return;
   }
 
   const sortEvents = list => dedupeEventsById(list).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-  const evItem = (e, dateLabel) => `
-    <div class="utama-item">
+  const evItem = (e, key, dateLabel) => `
+    <button type="button" class="utama-item" data-date="${escapeHtml(key)}" onclick="openUtamaActivity(this.dataset.date)">
       <div class="utama-item-top"><span>${dateLabel ? dateLabel + ' &middot; ' : ''}${e.allDay ? 'Sepanjang hari' : e.time}</span>${e.protocol ? `<span class="protocol-tag ${e.protocol}">${e.protocol.toUpperCase()}</span>` : ''}</div>
       <div class="utama-item-title">${escapeHtml(e.title)}</div>
       ${e.location ? `<div class="utama-item-meta">${escapeHtml(e.location)}</div>` : ''}
-    </div>`;
+    </button>`;
 
   const todayKey = fmtKey(new Date());
   const today = sortEvents(SAMPLE_EVENTS[todayKey] || []);
   let body;
   if(today.length){
-    body = `<div class="utama-list">${today.slice(0, 3).map(e => evItem(e)).join('')}</div>` +
+    body = `<div class="utama-list">${today.slice(0, 3).map(e => evItem(e, todayKey)).join('')}</div>` +
       (today.length > 3 ? `<p class="utama-muted" style="margin-top:6px;">+${today.length - 3} lagi aktiviti hari ini</p>` : '');
   } else {
     const nextKey = Object.keys(SAMPLE_EVENTS).filter(k => k > todayKey && SAMPLE_EVENTS[k].length).sort()[0];
     body = nextKey
-      ? `<p class="utama-muted">Tiada aktiviti hari ini. Aktiviti seterusnya:</p><div class="utama-list">${evItem(sortEvents(SAMPLE_EVENTS[nextKey])[0], fmtTarikhPendek(new Date(nextKey + 'T00:00:00')))}</div>`
+      ? `<p class="utama-muted">Tiada aktiviti hari ini. Aktiviti seterusnya:</p><div class="utama-list">${evItem(sortEvents(SAMPLE_EVENTS[nextKey])[0], nextKey, fmtTarikhPendek(new Date(nextKey + 'T00:00:00')))}</div>`
       : '<p class="utama-muted">Tiada aktiviti hari ini atau akan datang.</p>';
   }
-  el.innerHTML = utamaCardHtml('Aktiviti Hari Ini', link, body);
+  el.innerHTML = utamaCardHtml('Aktiviti hari ini', link, body);
+}
+
+function openUtamaActivity(key){
+  switchSection('aktiviti');
+  goToSearchResult(key);
 }
 
 // TarikhAkhir dari Sheet: "YYYY-MM-DD", atau "D/M/YYYY" jika Sheet memformatnya semula.
@@ -8716,28 +8710,27 @@ function renderUtamaTugasan(){
   const link = canSeeTasks ? `<button type="button" class="utama-link" onclick="switchSection('task')">Lihat semua</button>` : '';
   const state = utamaState('task', taskLoaded, taskLoadFailed);
   if(state !== 'ok'){
-    el.innerHTML = utamaCardHtml('Tugasan Saya', link, utamaStateHtml(state, 'task'));
+    el.innerHTML = utamaCardHtml('Tugasan saya', link, utamaStateHtml(state, 'task'));
     return;
   }
 
   const tasks = getTaggedTasksForCurrentUser();
   if(tasks.length === 0){
-    el.innerHTML = utamaCardHtml('Tugasan Saya', link, '<p class="utama-muted">Tiada tugasan ditugaskan kepada anda.</p>');
+    el.innerHTML = utamaCardHtml('Tugasan saya', link, '<p class="utama-muted">Tiada tugasan ditugaskan kepada anda.</p>');
     return;
   }
 
-  const count = s => tasks.filter(t => t.status === s).length;
   const todayKey = fmtKey(new Date());
   const open = tasks
     .filter(t => t.status !== 'Selesai')
     .map(t => ({ t, due: taskDueKey(t.tarikhAkhir) }))
-    .sort((a, b) => (a.due || '9999-99-99').localeCompare(b.due || '9999-99-99'))
-    .slice(0, 5);
+    .sort((a, b) => (a.due || '9999-99-99').localeCompare(b.due || '9999-99-99'));
 
   const items = open.map(({ t, due }) => {
     const overdue = due && due < todayKey;
+    const dueLabel = due ? fmtTarikhMalay(due) : t.tarikhAkhir;
     const dueText = t.tarikhAkhir
-      ? (overdue ? `Lewat tarikh &middot; ${escapeHtml(t.tarikhAkhir)}` : `Tarikh akhir: ${escapeHtml(t.tarikhAkhir)}`)
+      ? (overdue ? `Lewat tarikh &middot; ${escapeHtml(dueLabel)}` : `Tarikh akhir: ${escapeHtml(dueLabel)}`)
       : 'Tiada tarikh akhir';
     const unread = !isTaskReadByCurrentUser(t.rowIndex);
     return `
@@ -8746,15 +8739,11 @@ function renderUtamaTugasan(){
         <div class="utama-item-title">${escapeHtml(t.tajuk)}</div>
         <div class="utama-item-meta">${dueText}</div>
       </button>`;
-  }).join('');
+  });
 
-  el.innerHTML = utamaCardHtml('Tugasan Saya', link, `
-    <div class="utama-task-counts">
-      <div class="utama-stat"><b>${count('Belum Mula')}</b><span>Belum Mula</span></div>
-      <div class="utama-stat"><b>${count('Sedang Dijalankan')}</b><span>Sedang Dijalankan</span></div>
-      <div class="utama-stat"><b>${count('Selesai')}</b><span>Selesai</span></div>
-    </div>
-    ${items ? `<div class="utama-list">${items}</div>` : '<p class="utama-muted">Semua tugasan anda telah selesai.</p>'}
+  el.innerHTML = utamaCardHtml('Tugasan saya', link, `
+    ${open.length ? `<p class="utama-muted">${open.length} tugasan belum selesai</p><div class="utama-list">${items.slice(0,3).join('')}</div>` : '<p class="utama-muted">Semua tugasan anda telah selesai.</p>'}
+    ${items.length > 3 ? `<details class="utama-more"><summary>Lihat ${items.length - 3} tugasan lagi</summary><div class="utama-list">${items.slice(3).join('')}</div></details>` : ''}
   `);
 }
 
@@ -8808,7 +8797,7 @@ function renderUtamaPautan(){
     return;
   }
   el.innerHTML = pautanLinks.length
-    ? `<div class="utama-chips">${pautanLinks.slice(0, 6).map(l => `<a class="utama-chip" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.namaPautan)}</a>`).join('')}</div>`
+    ? `<div class="utama-chips">${pautanLinks.slice(0, 4).map(l => `<a class="utama-chip" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.namaPautan)}</a>`).join('')}</div>`
     : '<p class="utama-muted">Tiada pautan tersedia.</p>';
 }
 
@@ -8829,10 +8818,18 @@ function switchSection(section){
   });
   ['tabUtama','tabAktiviti','tabKehadiran','tabTask'].forEach(id=>{
     const tab = document.getElementById(id);
-    if(tab) tab.classList.toggle('active', id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1));
+    if(tab){
+      const active = id === 'tab'+section.charAt(0).toUpperCase()+section.slice(1);
+      tab.classList.toggle('active', active);
+      if(active) tab.setAttribute('aria-current','page'); else tab.removeAttribute('aria-current');
+    }
   });
   const tabLagi = document.getElementById('tabLagi');
-  if(tabLagi) tabLagi.classList.toggle('active', section === 'analitik' || section === 'minit' || section === 'fail' || section === 'pautan');
+  if(tabLagi){
+    const active = ['analitik','minit','fail','pautan'].includes(section);
+    tabLagi.classList.toggle('active', active);
+    if(active) tabLagi.setAttribute('aria-current','page'); else tabLagi.removeAttribute('aria-current');
+  }
 
   const titles = SECTION_TITLES[section] || SECTION_TITLES.aktiviti;
 
@@ -8888,12 +8885,27 @@ function toggleLagiMenu(){
 function openLagiMenu(){
   document.getElementById('lagiOverlay').classList.add('open');
   document.getElementById('lagiSheet').classList.add('open');
+  document.getElementById('tabLagi').setAttribute('aria-expanded','true');
+  renderUtamaNotifCount();
+  if(accessToken) refreshPushStatus(null, document.getElementById('utamaPushStatus'));
+  [...document.querySelectorAll('#lagiSheet button')].find(el => el.getClientRects().length)?.focus();
 }
 
 function closeLagiMenu(){
   document.getElementById('lagiOverlay').classList.remove('open');
   document.getElementById('lagiSheet').classList.remove('open');
+  document.getElementById('tabLagi').setAttribute('aria-expanded','false');
+  document.getElementById('tabLagi').focus();
 }
+
+document.getElementById('lagiSheet').addEventListener('keydown', event => {
+  if(event.key === 'Escape'){ event.preventDefault(); closeLagiMenu(); }
+  if(event.key !== 'Tab') return;
+  const items = [...document.getElementById('lagiSheet').querySelectorAll('button, a[href], summary')].filter(el => el.getClientRects().length && !el.disabled);
+  const first = items[0], last = items[items.length - 1];
+  if(event.shiftKey && document.activeElement === first){ event.preventDefault(); last?.focus(); }
+  else if(!event.shiftKey && document.activeElement === last){ event.preventDefault(); first?.focus(); }
+});
 
 function openLagiSection(section){
   closeLagiMenu();
@@ -9267,10 +9279,9 @@ document.getElementById('nextMonth').addEventListener('click', () => {
 function syncSignInButtons(){
   if(!currentUser) return;
   const canEdit = isAllowedEditor(currentUser.email);
-  const visible = canEdit ? 'inline-flex' : 'none';
 
-  document.getElementById('addBtnMonth').style.display = visible;
-  document.getElementById('addBtnRange').style.display = visible;
+  document.getElementById('addBtnMonth').style.display = 'none';
+  document.getElementById('addBtnRange').style.display = 'none';
   document.getElementById('cetakInAnalitik').style.display = canEdit ? '' : 'none';
   document.getElementById('tabAddCenter').style.display = canEdit ? '' : 'none';
 
