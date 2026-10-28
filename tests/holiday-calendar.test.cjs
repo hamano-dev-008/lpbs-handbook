@@ -14,7 +14,7 @@ function source(from, to){
   return html.slice(start, end);
 }
 
-function fixture(editor = true){
+function fixture(editor = true, officialSchedule = false){
   const nodes = new Map();
   const calls = [], rows = [], pages = [], checks = [];
   function node(id){
@@ -73,6 +73,7 @@ function fixture(editor = true){
   vm.runInContext(source('let khMyMonth = null;', 'function stepKhMyMonth('), c);
   vm.runInContext(source('function getKhWorkdaysToCheck(', 'function buildMissingHqRecords('), c);
   vm.runInContext(source('function renderMyAttendanceCalendar(', 'function downloadMyKehadiranPDF('), c);
+  if(!officialSchedule) c.getKhOfficialHolidays = () => [];
   const run = code => vm.runInContext(code, c);
   return { c, run, calls, rows, pages, nodes, checks };
 }
@@ -301,4 +302,51 @@ test('holiday reminder opens the holiday category directly and search preserves 
   f.run('filterKhEditorRecords("  Siti  ")');
   assert.equal(f.run('khEditorSearch'), 'Siti');
   assert.deepEqual(f.checks, ['render']);
+});
+
+test('official schedule supplies the state holiday missing from the current-month Google feed', async () => {
+  const f=fixture(true,true);await f.run('loadKhHolidayApprovals()');await f.run('loadKhHolidayFeed("2026-10")');
+  assert.equal(f.run('khHolidayFeeds.get("2026-10").items.length'),1);
+  assert.equal(f.run('khHolidayFeeds.get("2026-10").items[0].date'),'2026-10-10');
+  assert.equal(f.run('khHolidayFeeds.get("2026-10").items[0].scope'),'Sarawak');
+  assert.equal(f.run('khHolidayFeeds.get("2026-10").items[0].observed'),null);
+  assert.equal(f.run('getKhObservedHoliday("2026-10-10")'),'');
+  await f.run('saveKhHolidayMonth()');assert.equal(f.rows.length,0);
+  f.run('setKhHolidayChoice(0,"no")');await f.run('saveKhHolidayMonth()');assert.equal(f.rows.length,1);assert.equal(f.run('getKhObservedHoliday("2026-10-10")'),'');
+});
+
+test('panel is admin-only and current-month-only even if an old month was selected', async () => {
+  const f=fixture(true,true);await f.run('loadKhHolidayApprovals()');await f.run('loadKhHolidayFeed("2026-10")');
+  f.run('khHolidayMonth="2026-09"; khEditorPage="cuti"; renderKhHolidayPanel()');
+  const html=f.nodes.get('khHolidayPanel').innerHTML;assert.match(html,/2026-10/);assert.match(html,/Sarawak/);assert(!html.includes('type="month"'));assert(!html.includes('2026-09'));
+  await f.run('selectKhHolidayMonth("2026-08")');assert.equal(f.run('khHolidayMonth'),'2026-09');
+  const staff=fixture(false,true);staff.run('khEditorPage="cuti"; renderKhHolidayPanel()');assert.equal(staff.nodes.get('khHolidayPanel').style.display,'none');
+});
+
+test('official records merge with Google while retaining Google IDs and filtering observances', () => {
+  const f=fixture(true,true);f.c.events=[
+    {id:'diwali',summary:'Diwali (regional holiday)',description:'Public holiday in Sabah',start:{date:'2026-11-08'},end:{date:'2026-11-09'}},
+    {id:'observance',summary:'An observance',description:'Observance\nNot a public holiday',start:{date:'2026-11-02'},end:{date:'2026-11-03'}}
+  ];
+  const items=JSON.parse(f.run('JSON.stringify(mergeKhHolidaySources(normalizeKhHolidayEvents(events,"2026-11"),"2026-11"))'));
+  assert.equal(items.length,2);assert.equal(items[0].scope,'Perak');assert.equal(items[1].id,'diwali|2026-11-08');assert.equal(items[1].displayTitle,'Hari Deepavali');assert.match(items[1].scope,/kecuali Sarawak/);
+});
+
+test('rollover shows the new month and source failures retain a disabled official reference list', async () => {
+  const f=fixture(true,true);await f.run('loadKhHolidayApprovals()');await f.run('loadKhHolidayFeed("2026-10")');
+  f.c.khMyCurrentMonth=()=> '2026-11';f.run('khEditorPage="cuti"');await f.run('checkKhHolidayMonth()');
+  assert.match(f.nodes.get('khHolidayPanel').innerHTML,/Perak/);assert(!f.nodes.get('khHolidayPanel').innerHTML.includes('2026-10-10'));
+  f.c.apiFetch=async()=>({ok:false,status:503});await f.run('loadKhHolidayFeed("2026-11",true)');
+  assert.match(f.nodes.get('khHolidayPanel').innerHTML,/Perak/);assert.match(f.nodes.get('khHolidayPanel').innerHTML,/<fieldset[^>]*disabled/);
+  await f.run('saveKhHolidayMonth()');assert.equal(f.rows.length,0);
+});
+
+test('official dates are unique, valid and restricted to the requested month and year', () => {
+  const f=fixture(true,true);const rows=JSON.parse(f.run('JSON.stringify(KH_OFFICIAL_HOLIDAYS_2026)'));
+  assert.equal(new Set(rows.map(r=>r[0]+'|'+r[1])).size,rows.length);
+  for(let month=1;month<=12;month++){
+    const key='2026-'+String(month).padStart(2,'0');f.c.month=key;
+    assert.equal(f.run('getKhOfficialHolidays(month).every(i=>validKhHolidayDate(i.date,month) && i.scope && i.observed === null)'),true);
+  }
+  assert.equal(f.run('getKhOfficialHolidays("2027-10").length'),0);
 });

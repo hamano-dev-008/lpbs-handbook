@@ -2596,6 +2596,13 @@
   #khSelfAction .kh-self-alt-btn{font-size:14px;}
   #khSelfNote{overflow-wrap:anywhere; line-height:1.6;}
   #khSelfStatusPills button:focus-visible,#khSelfAction button:focus-visible{outline:3px solid var(--paddy-light); outline-offset:3px;}
+
+  .kh-holiday-month{margin:6px 0 0; font-size:15px; font-weight:600; color:var(--paddy);}
+  .kh-holiday-row label{min-width:0; overflow-wrap:anywhere; line-height:1.5;}
+  .kh-holiday-row small{display:block; margin-top:5px; line-height:1.5;}
+  .kh-holiday-row .kh-holiday-source{font-size:11px; color:var(--ink-soft);}
+  .kh-holiday-row select{min-height:44px;}
+  @media(max-width:480px){.kh-holiday-row{align-items:stretch; flex-direction:column; gap:12px;} .kh-holiday-row select{width:100%;}}
 </style>
 </head>
 <body>
@@ -2879,7 +2886,7 @@
     <div id="kehadiranEditorBlock" style="display:none;">
       <div class="kh-editor-menu" id="khEditorMenu">
         <button type="button" class="kh-editor-card" onclick="openKhEditorPage('rekod')"><span class="kh-editor-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v3H8z"/><path d="M8 5H5v16h14V5h-3M8 12h8M8 16h5"/></svg></span><span><strong>Rekod &amp; Semakan Kehadiran</strong><small>Lihat dan kemas kini rekod, semak staf tanpa rekod atau masa keluar.</small></span></button>
-        <button type="button" class="kh-editor-card" onclick="openKhEditorPage('cuti')"><span class="kh-editor-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-12 5 2 2 4-4"/></svg></span><span><strong>Cuti Umum Sabah</strong><small>Sahkan cuti bulanan dan tambah cuti gantian.</small></span><span class="kh-editor-alert" id="khEditorHolidayBadge" hidden>Belum disahkan</span></button>
+        <button type="button" class="kh-editor-card" onclick="openKhEditorPage('cuti')"><span class="kh-editor-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-12 5 2 2 4-4"/></svg></span><span><strong>Cuti Umum Malaysia</strong><small>Lihat cuti bulan ini dan sahkan cuti yang digunakan di Sabah.</small></span><span class="kh-editor-alert" id="khEditorHolidayBadge" hidden>Belum disahkan</span></button>
         <button type="button" class="kh-editor-card" onclick="openKhEditorPage('laporan')"><span class="kh-editor-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H5v18h14V8zM14 3v5h5M8 13h8m-8 4h5"/></svg></span><span><strong>Laporan Kehadiran</strong><small>Muat turun laporan PDF harian atau bulanan.</small></span></button>
       </div>
       <div id="khEditorToolbar" hidden>
@@ -3767,7 +3774,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.57";
+const APP_VERSION = "1.0.58";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -5959,7 +5966,7 @@ function applyKhEditorPage(){
   document.getElementById('khEditorHolidays').hidden = !allowed || khEditorPage !== 'cuti';
   document.getElementById('khEditorReports').hidden = !allowed || khEditorPage !== 'laporan';
   document.getElementById('khEditorAddBtn').hidden = khEditorPage !== 'rekod';
-  document.getElementById('khEditorPageTitle').textContent = ({ rekod: 'Rekod & Semakan Kehadiran', cuti: 'Cuti Umum Sabah', laporan: 'Laporan Kehadiran' })[khEditorPage] || '';
+  document.getElementById('khEditorPageTitle').textContent = ({ rekod: 'Rekod & Semakan Kehadiran', cuti: 'Cuti Umum Malaysia', laporan: 'Laporan Kehadiran' })[khEditorPage] || '';
   document.getElementById('khEditorRecordsView').hidden = khEditorRecordView !== 'semua';
   document.getElementById('khSemakSection').style.display = khEditorRecordView === 'tiada' ? '' : 'none';
   document.getElementById('khLupaSection').style.display = khEditorRecordView === 'keluar' ? '' : 'none';
@@ -5977,7 +5984,7 @@ function openKhEditorPage(page){
   khEditorPage = page;
   if(page === 'rekod') khEditorRecordView = 'semua';
   applyKhEditorPage();
-  if(page === 'cuti' && khHolidayApprovalsLoaded) loadKhHolidayFeed(khHolidayMonth || khMyCurrentMonth());
+  if(page === 'cuti' && khHolidayApprovalsLoaded) loadKhHolidayFeed(khMyCurrentMonth());
   if(page !== 'menu') document.getElementById('khEditorPageTitle').focus();
   else document.querySelector('#khEditorMenu .kh-editor-card').focus();
 }
@@ -6370,17 +6377,95 @@ async function loadKhHolidayApprovals(){
   try{ await pending; }finally{ if(khHolidayLoad === pending) khHolidayLoad = null; }
 }
 
+const KH_OFFICIAL_HOLIDAY_SOURCE = 'https://www.kabinet.gov.my/storage/2025/08/HKA-2026.pdf';
+const KH_OFFICIAL_HOLIDAYS_2026 = [
+  ['01-01','Tahun Baharu','Semua negeri kecuali Johor, Kedah, Kelantan, Perlis dan Terengganu',"New Year.s Day"],
+  ['01-14','Hari Keputeraan Yang di-Pertuan Besar Negeri Sembilan','Negeri Sembilan','Negeri Sembilan'],
+  ['01-17','Israk dan Mikraj','Kedah, Negeri Sembilan, Perlis, Terengganu','Isra|Mikraj'],
+  ['02-01','Hari Wilayah Persekutuan','Kuala Lumpur, Labuan, Putrajaya','Federal Territory'],
+  ['02-01','Hari Thaipusam','Johor, Negeri Sembilan, Perak, Pulau Pinang, Selangor, Kuala Lumpur, Putrajaya','Thaipusam'],
+  ['02-17','Tahun Baharu Cina','Seluruh Malaysia','Chinese'],
+  ['02-18','Tahun Baharu Cina (Hari Kedua)','Seluruh Malaysia','Chinese'],
+  ['02-19','Awal Ramadan','Johor, Kedah','Ramadan'],
+  ['02-20','Hari Pengisytiharan Tarikh Kemerdekaan','Melaka','Declaration.*Independence'],
+  ['03-04','Hari Ulang Tahun Pertabalan Sultan Terengganu','Terengganu','Installation.*Terengganu|Coronation.*Terengganu'],
+  ['03-07','Hari Nuzul Al-Quran','Kelantan, Pahang, Perak, Perlis, Pulau Pinang, Selangor, Terengganu, Kuala Lumpur, Labuan, Putrajaya','Nuzul'],
+  ['03-21','Hari Raya Puasa','Seluruh Malaysia','Raya Puasa|Eid.*Fitr'],
+  ['03-22','Hari Raya Puasa (Hari Kedua)','Seluruh Malaysia','Raya Puasa|Eid.*Fitr'],
+  ['03-23','Hari Keputeraan Sultan Johor','Johor','Birthday.*Johor|Johor.*Birthday'],
+  ['03-23','Hari Raya Puasa (Hari Ketiga)','Melaka','Raya Puasa|Eid.*Fitr'],
+  ['03-30','Hari Jadi Yang di-Pertua Negeri Sabah','Sabah','Birthday.*Sabah|Sabah.*Birthday'],
+  ['04-03','Good Friday','Sabah, Sarawak','Good Friday'],
+  ['04-26','Hari Keputeraan Sultan Terengganu','Terengganu','Birthday.*Terengganu|Terengganu.*Birthday'],
+  ['05-01','Hari Pekerja','Seluruh Malaysia','Labou?r'],
+  ['05-17','Hari Ulang Tahun Keputeraan Raja Perlis','Perlis','Birthday.*Perlis|Perlis.*Birthday'],
+  ['05-22',"Hari Hol Almarhum Sultan Ahmad Shah Al-Musta'in Billah ibni Almarhum Sultan Abu Bakar",'Pahang','Ahmad Shah'],
+  ['05-26','Hari Arafah','Kelantan, Terengganu','Araf'],
+  ['05-27','Hari Raya Qurban','Seluruh Malaysia','Raya Haji|Qurban|Eid.*Adha'],
+  ['05-28','Hari Raya Qurban (Hari Kedua)','Kedah, Kelantan, Perlis, Terengganu','Raya Haji|Qurban|Eid.*Adha'],
+  ['05-30','Pesta Kaamatan (Pesta Menuai)','Sabah, Labuan','Harvest|Kaamatan'],
+  ['05-31','Pesta Kaamatan (Pesta Menuai)','Sabah, Labuan','Harvest|Kaamatan'],
+  ['05-31','Hari Wesak','Seluruh Malaysia','Wesak|Vesak'],
+  ['06-01','Hari Keputeraan Rasmi Yang di-Pertuan Agong','Seluruh Malaysia','Agong'],
+  ['06-01','Perayaan Hari Gawai Dayak','Sarawak','Gawai'],
+  ['06-02','Perayaan Hari Gawai Dayak (Hari Kedua)','Sarawak','Gawai'],
+  ['06-17','Awal Muharam (Maal Hijrah)','Seluruh Malaysia','Muharr?am|Hijrah'],
+  ['06-21','Hari Keputeraan Sultan Kedah','Kedah','Birthday.*Kedah|Kedah.*Birthday'],
+  ['07-07','Hari Ulang Tahun Perisytiharan Tapak Warisan Dunia','Pulau Pinang','World Heritage'],
+  ['07-11','Hari Jadi Yang di-Pertua Negeri Pulau Pinang','Pulau Pinang','Birthday.*Penang|Penang.*Birthday'],
+  ['07-21','Hari Hol Almarhum Sultan Iskandar','Johor','Iskandar'],
+  ['07-22','Hari Kemerdekaan Sarawak','Sarawak','Sarawak.*Independence|Sarawak Day'],
+  ['07-31','Hari Keputeraan Sultan Pahang','Pahang','Birthday.*Pahang|Pahang.*Birthday'],
+  ['08-24','Hari Jadi Yang di-Pertua Negeri Melaka','Melaka','Birthday.*Malacca|Malacca.*Birthday|Melaka.*Birthday'],
+  ['08-25','Maulidur Rasul','Seluruh Malaysia','Prophet|Maulid'],
+  ['08-31','Hari Kebangsaan','Seluruh Malaysia','National Day|Merdeka'],
+  ['09-16','Hari Malaysia','Seluruh Malaysia','Malaysia Day'],
+  ['09-29','Hari Keputeraan Sultan Kelantan','Kelantan','Birthday.*Kelantan|Kelantan.*Birthday'],
+  ['09-30','Hari Keputeraan Sultan Kelantan (Hari Kedua)','Kelantan','Birthday.*Kelantan|Kelantan.*Birthday'],
+  ['10-10','Hari Jadi Yang di-Pertua Negeri Sarawak','Sarawak','Birthday.*Sarawak|Sarawak.*Birthday'],
+  ['11-06','Hari Keputeraan Sultan Perak','Perak','Birthday.*Perak|Perak.*Birthday'],
+  ['11-08','Hari Deepavali','Semua negeri kecuali Sarawak','Diwali|Deepavali'],
+  ['12-11','Hari Keputeraan Sultan Selangor','Selangor','Birthday.*Selangor|Selangor.*Birthday'],
+  ['12-24','Christmas Eve','Sabah','Christmas Eve'],
+  ['12-25','Hari Krismas','Seluruh Malaysia','Christmas Day']
+];
+
+function getKhOfficialHolidays(month){
+  if(!month.startsWith('2026-')) return [];
+  return KH_OFFICIAL_HOLIDAYS_2026.filter(row => row[0].startsWith(month.slice(5) + '-')).map(([day,title,scope,alias]) => ({
+    id: 'official|2026-' + day + '|' + title, date: '2026-' + day, title, scope, alias, source: 'official', manual: false, observed: null
+  }));
+}
+
+function mergeKhHolidaySources(items, month){
+  const merged = items.map(i => ({...i}));
+  for(const official of getKhOfficialHolidays(month)){
+    const matches = merged.filter(i => i.date === official.date && (new RegExp(official.alias,'i').test(i.title) || i.title === official.title));
+    if(matches.length) matches.forEach(i => { i.scope = official.scope; i.displayTitle = official.title; });
+    else merged.push(official);
+  }
+  return merged.sort((a,b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+}
+
+function khGoogleHolidayScope(event){
+  const description = String(event.description || '').replace(/<[^>]*>/g,' ').trim();
+  if(/^Public holiday in /i.test(description)) return description.split(/\n|<br/i)[0].replace(/^Public holiday in /i,'');
+  if(/^Public holiday\s*$/i.test(description)) return 'Seluruh Malaysia';
+  return 'Liputan negeri tidak dinyatakan oleh sumber';
+}
+
 function normalizeKhHolidayEvents(events, month){
   const items = new Map();
   for(const event of events){
     if(event.status === 'cancelled' || !event.id || !event.start || !event.start.date || !event.end || !event.end.date) continue;
+    if(/^Observance\b/i.test(String(event.description || '').trim())) continue;
     const start = event.start.date, end = event.end.date;
     const [y,m] = month.split('-').map(Number);
     for(let d=1; d<=new Date(y,m,0).getDate(); d++){
       const date = fmtKey(new Date(y,m-1,d));
       if(date < start || date >= end) continue;
       const id = event.id + '|' + date;
-      items.set(id, { id, date, title: event.summary || 'Cuti umum', manual: false, observed: null });
+      items.set(id, { id, date, title: event.summary || 'Cuti umum', scope: khGoogleHolidayScope(event), source: 'google', manual: false, observed: null });
     }
   }
   return [...items.values()].sort((a,b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
@@ -6409,13 +6494,13 @@ async function loadKhHolidayFeed(month, force = false){
     if(!currentUser || currentUser.email !== owner) return;
     const saved = khHolidayApprovals.get(month);
     const decisions = new Map((saved ? saved.items : []).map(i => [i.id,i]));
-    feed.items = normalizeKhHolidayEvents(events,month).map(i => {
+    feed.items = mergeKhHolidaySources(normalizeKhHolidayEvents(events,month),month).map(i => {
       const old = decisions.get(i.id);
       return { ...i, observed: old && old.date === i.date && old.title === i.title ? old.observed : null };
     });
     if(saved) feed.items.push(...saved.items.filter(i => i.manual));
     feed.ready = true;
-  }catch(e){ feed.error = e.message; }
+  }catch(e){ feed.error = e.message; feed.items = getKhOfficialHolidays(month); }
   finally{
     feed.loading = false;
     if(currentUser && currentUser.email === owner){ renderKhHolidayPanel(); renderKhHolidayReminder(); }
@@ -6453,7 +6538,7 @@ function openKhHolidayPanel(){
 }
 
 async function selectKhHolidayMonth(month){
-  if(khHolidaySaving || !validKhHolidayMonth(month) || month > khMyCurrentMonth()) return;
+  if(!isKhHolidayEditor() || khHolidaySaving || month !== khMyCurrentMonth()) return;
   khHolidayMonth = month;
   khHolidayNotice = '';
   await loadKhHolidayFeed(month);
@@ -6462,13 +6547,13 @@ async function selectKhHolidayMonth(month){
 
 function setKhHolidayChoice(index, value){
   if(!isKhHolidayEditor() || khHolidaySaving) return;
-  const feed = khHolidayFeeds.get(khHolidayMonth || khMyCurrentMonth());
+  const feed = khHolidayFeeds.get(khMyCurrentMonth());
   if(feed && feed.items[index]) feed.items[index].observed = value === 'yes' ? true : value === 'no' ? false : null;
 }
 
 function addKhManualHoliday(){
   if(!isKhHolidayEditor() || khHolidaySaving) return;
-  const month = khHolidayMonth || khMyCurrentMonth(), feed = khHolidayFeeds.get(month);
+  const month = khMyCurrentMonth(), feed = khHolidayFeeds.get(month);
   const date = document.getElementById('khHolidayDate').value;
   const title = document.getElementById('khHolidayName').value.trim();
   if(!feed || !feed.ready || !validKhHolidayDate(date,month) || !title){
@@ -6486,19 +6571,19 @@ function renderKhHolidayPanel(){
   const visible = isKhHolidayEditor() && getKehadiranMode() === 'pentadbir' && khEditorPage === 'cuti';
   el.style.display = visible ? '' : 'none';
   if(!visible) return;
-  const month = khHolidayMonth || khMyCurrentMonth(), feed = khHolidayFeeds.get(month), saved = khHolidayApprovals.get(month);
-  const current = khMyCurrentMonth();
+  const month = khMyCurrentMonth(), feed = khHolidayFeeds.get(month), saved = khHolidayApprovals.get(month);
   const [y,m] = month.split('-').map(Number);
   const last = fmtKey(new Date(y,m,0));
   const ready = feed && feed.ready && !feed.loading && !feed.error && khHolidayApprovalsLoaded && !khHolidayApprovalError;
-  el.innerHTML = `<div class="kh-holiday-head"><h3>Cuti Umum Sabah</h3><input type="month" aria-label="Bulan semakan cuti umum" value="${month}" max="${current}" onchange="selectKhHolidayMonth(this.value)" ${khHolidaySaving ? 'disabled' : ''}></div>
-    <p class="kh-my-legend">Semak pada 1 hari bulan. Pilih sama ada setiap cuti Malaysia disambut di Sabah. Keputusan digunakan untuk semua staf.</p>
-    <p class="kh-my-legend"><a href="https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(MALAYSIA_HOLIDAY_CALENDAR_ID)}" target="_blank" rel="noopener noreferrer">Sumber: Google Calendar · Holidays in Malaysia</a></p>
+  el.innerHTML = `<div class="kh-holiday-head"><div><h3>Cuti Umum Malaysia</h3><p class="kh-holiday-month">${escapeHtml(fmtBulanMalay(month))}</p></div><span class="kh-editor-badge">Pentadbir sahaja</span></div>
+    <p class="kh-my-legend">Senarai cuti persekutuan dan negeri untuk bulan semasa sahaja. Semak pada 1 hari bulan dan sahkan sama ada setiap cuti digunakan di Sabah. Hanya keputusan yang disimpan mempengaruhi kehadiran staf.</p>
+    <p class="kh-my-legend"><a href="https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(MALAYSIA_HOLIDAY_CALENDAR_ID)}" target="_blank" rel="noopener noreferrer">Google Calendar</a> &middot; <a href="${KH_OFFICIAL_HOLIDAY_SOURCE}" target="_blank" rel="noopener noreferrer">Jadual rasmi BKPP JPM 2026</a></p>
+    ${month.startsWith('2026-') ? '' : '<p class="kh-note">Jadual rasmi negeri bagi tahun ini belum dikemas kini. Senarai Google mungkin tidak lengkap. Semak sumber rasmi sebelum mengesahkan.</p>'}
     ${khHolidayNeedsReview(month) ? '<p class="kh-holiday-reminder">Pengesahan bulan ini diperlukan. Cuti hanya dikecualikan daripada tiada rekod selepas disahkan.</p>' : '<p class="kh-my-legend">Bulan ini telah disahkan. Anda boleh mengemas kini keputusan.</p>'}
     ${khHolidayApprovalError ? `<p class="kh-note">${escapeHtml(khHolidayApprovalError)}</p>` : ''}
     ${!feed || feed.loading ? '<p class="kh-note">Memuatkan cuti dari Google Calendar...</p>' : feed.error ? `<p class="kh-note">${escapeHtml(feed.error)}</p>` : ''}
     <fieldset style="border:0;padding:0;margin:0;min-width:0;" ${!ready || khHolidaySaving ? 'disabled' : ''}><legend class="kh-my-legend">Disambut di Sabah?</legend>
-    ${feed && feed.ready ? feed.items.map((i,index) => `<div class="kh-holiday-row"><label for="khHolidayChoice${index}">${escapeHtml(i.title)}<small>${escapeHtml(fmtTarikhMalay(i.date))}${i.manual ? ' · Ditambah pentadbir' : ''}</small></label><select id="khHolidayChoice${index}" onchange="setKhHolidayChoice(${index},this.value)"><option value="" ${i.observed === null ? 'selected' : ''}>Pilih...</option><option value="yes" ${i.observed === true ? 'selected' : ''}>Ya, cuti Sabah</option><option value="no" ${i.observed === false ? 'selected' : ''}>Tidak</option></select></div>`).join('') || '<p class="kh-my-legend">Tiada cuti dalam suapan Google bagi bulan ini. Sahkan bulan ini jika tiada cuti tambahan.</p>' : ''}
+    ${feed && feed.items.length ? feed.items.map((i,index) => `<div class="kh-holiday-row"><label for="khHolidayChoice${index}">${escapeHtml(i.displayTitle || i.title)}<small>${escapeHtml(fmtTarikhMalay(i.date))}</small><small>${escapeHtml(i.scope || (i.manual ? 'Sabah · Ditambah pentadbir' : 'Semak liputan negeri'))}</small><small class="kh-holiday-source">${i.source === 'official' ? 'Jadual rasmi BKPP JPM' : i.manual ? 'Cuti tambahan' : 'Google Calendar'}</small></label><select id="khHolidayChoice${index}" onchange="setKhHolidayChoice(${index},this.value)"><option value="" ${i.observed === null ? 'selected' : ''}>Pilih...</option><option value="yes" ${i.observed === true ? 'selected' : ''}>Ya, cuti Sabah</option><option value="no" ${i.observed === false ? 'selected' : ''}>Tidak</option></select></div>`).join('') : feed && feed.ready ? '<p class="kh-my-legend">Tiada cuti disenaraikan bagi bulan ini. Semak cuti tambahan sebelum mengesahkan.</p>' : ''}
     <details><summary>Tambah cuti Sabah / cuti gantian</summary><div class="kh-holiday-manual"><input type="date" id="khHolidayDate" aria-label="Tarikh cuti tambahan" min="${month}-01" max="${last}"><input type="text" id="khHolidayName" aria-label="Nama cuti tambahan" maxlength="160" placeholder="Nama cuti"><button type="button" class="today-btn" onclick="addKhManualHoliday()">Tambah</button></div><p class="kh-note" id="khHolidayManualNote"></p></details>
     <button type="button" class="save-btn" onclick="saveKhHolidayMonth()">${khHolidaySaving ? 'Menyimpan...' : 'Sahkan cuti bulan ini'}</button></fieldset>
     <button type="button" class="utama-link" onclick="reloadKhHolidays()" ${khHolidaySaving || (feed && feed.loading) ? 'disabled' : ''}>Muat semula</button>
@@ -6509,7 +6594,7 @@ function renderKhHolidayPanel(){
 async function reloadKhHolidays(){
   if(!isKhHolidayEditor() || khHolidaySaving) return;
   await loadKhHolidayApprovals();
-  await loadKhHolidayFeed(khHolidayMonth || khMyCurrentMonth(),true);
+  await loadKhHolidayFeed(khMyCurrentMonth(),true);
   refreshKhHolidayViews();
 }
 
@@ -6521,7 +6606,7 @@ function refreshKhHolidayViews(){
 
 async function saveKhHolidayMonth(){
   if(!isKhHolidayEditor() || khHolidaySaving) return;
-  const month = khHolidayMonth || khMyCurrentMonth(), feed = khHolidayFeeds.get(month);
+  const month = khMyCurrentMonth(), feed = khHolidayFeeds.get(month);
   if(!feed || !feed.ready || feed.loading || feed.error || !khHolidayApprovalsLoaded || khHolidayApprovalError) return;
   if(feed.items.some(i => typeof i.observed !== 'boolean')){
     khHolidayNotice = 'Pilih Ya atau Tidak untuk setiap cuti dahulu.';
