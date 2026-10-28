@@ -64,3 +64,9 @@ test('account change during refresh prevents writing for the previous user',asyn
   const f=fixture();f.c.loadKhHolidayApprovals=async()=>{f.c.currentUser={email:'other@example.test'}};
   await f.c.selfSubmitStatus();assert.equal(f.writes.length,0);assert.match(f.node('khSelfNote').textContent,/Akaun telah berubah/);
 });
+test('a refreshed holiday calendar cannot silently change the dates staff reviewed',async()=>{
+  const f=fixture();f.node('khSelfReview').dataset={dates:JSON.stringify(['2026-10-28'])};
+  f.c.getSelfWorkingDates=()=>['2026-10-29'];await f.c.selfSubmitStatus();
+  assert.equal(f.writes.length,0);assert.match(f.node('khSelfNote').textContent,/Tarikh berubah/);
+  assert.equal(f.node('kh-self-tajuk').value,'Lawatan');assert.equal(f.c.khSelfPickerOpen,true);
+});
