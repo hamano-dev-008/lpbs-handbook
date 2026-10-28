@@ -3774,7 +3774,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.58";
+const APP_VERSION = "1.0.59";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -6288,6 +6288,8 @@ const khMyOpenDays = new Set();
 const MALAYSIA_HOLIDAY_CALENDAR_ID = 'en.malaysia#holiday@group.v.calendar.google.com';
 const KH_HOLIDAY_TAB = 'CutiUmum';
 let khHolidayApprovals = new Map();
+let khSpecialHolidays = new Map();
+let khSpecialDraft = { date: '', title: '' };
 let khHolidayApprovalsLoaded = false;
 let khHolidayApprovalError = '';
 let khHolidayLoad = null;
@@ -6318,7 +6320,8 @@ function khHolidayFingerprint(items){
 
 function getKhObservedHoliday(key){
   const saved = khHolidayApprovals.get(key.slice(0,7));
-  return saved && saved.items.filter(i => i.date === key && i.observed === true).map(i => i.title).join(' / ') || '';
+  const items = [...(saved ? saved.items : []), ...[...khSpecialHolidays.values()].filter(i => i.date.slice(0,7) <= khMyCurrentMonth())];
+  return [...new Set(items.filter(i => i.date === key && i.observed === true).map(i => i.title))].join(' / ');
 }
 
 async function khHolidayJson(url, options){
@@ -6331,6 +6334,8 @@ async function khHolidayJson(url, options){
 function resetKhHolidays(){
   khHolidayOwner = currentUser ? currentUser.email : '';
   khHolidayApprovals = new Map();
+  khSpecialHolidays = new Map();
+  khSpecialDraft = { date: '', title: '' };
   khHolidayApprovalsLoaded = false;
   khHolidayApprovalError = '';
   khHolidayLoad = null;
@@ -6352,16 +6357,23 @@ async function loadKhHolidayApprovals(){
       const meta = await khHolidayJson(`${base}?fields=sheets.properties.title`);
       const exists = (meta.sheets || []).some(s => s.properties.title === KH_HOLIDAY_TAB);
       const data = exists ? await khHolidayJson(`${base}/values/${encodeURIComponent(KH_HOLIDAY_TAB + '!A2:D')}`) : { values: [] };
-      const approvals = new Map();
+      const approvals = new Map(), specials = new Map();
       for(const row of data.values || []){
-        if(!validKhHolidayMonth(row[0])) continue;
+        const special = typeof row[0] === 'string' && row[0].startsWith('LPBS|');
+        const month = special ? row[0].slice(5) : row[0];
+        if(!validKhHolidayMonth(month)) continue;
         const saved = JSON.parse(row[1]);
         if(!saved || !Array.isArray(saved.items) || typeof saved.fingerprint !== 'string'
-          || saved.items.some(i => !i || !validKhHolidayDate(i.date,row[0]) || typeof i.id !== 'string' || typeof i.title !== 'string' || typeof i.observed !== 'boolean')) throw new Error('Format tab CutiUmum tidak sah. Sila hubungi pentadbir.');
-        approvals.set(row[0], { ...saved, editor: row[2] || '', updated: row[3] || '' });
+          || saved.items.some(i => !i || !validKhHolidayDate(i.date,month) || typeof i.id !== 'string' || typeof i.title !== 'string' || typeof i.observed !== 'boolean')) throw new Error('Format tab CutiUmum tidak sah. Sila hubungi pentadbir.');
+        if(special){
+          if(saved.kind !== 'lpbs-holiday' || saved.items.length !== 1 || saved.items[0].id !== 'lpbs|' + saved.items[0].date + '|' + saved.items[0].title) throw new Error('Format cuti khas LPBS tidak sah.');
+          const item = saved.items[0];
+          specials.set(item.id, { ...item, editor: row[2] || '', updated: row[3] || '' });
+        }else approvals.set(month, { ...saved, editor: row[2] || '', updated: row[3] || '' });
       }
       if(!currentUser || currentUser.email !== owner) return;
       khHolidayApprovals = approvals;
+      khSpecialHolidays = specials;
       khHolidayApprovalsLoaded = true;
       khHolidayApprovalError = '';
     }catch(e){
@@ -6565,6 +6577,59 @@ function addKhManualHoliday(){
   renderKhHolidayPanel();
 }
 
+function renderKhSpecialHolidays(){
+  const today = fmtKey(new Date());
+  const items = [...khSpecialHolidays.values()].filter(i => i.observed && i.date >= today).sort((a,b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  const disabled = khHolidaySaving || !khHolidayApprovalsLoaded || !!khHolidayApprovalError;
+  return `<section style="border-top:1px solid var(--line);margin-top:20px;padding-top:20px;" aria-labelledby="khSpecialHeading">
+    <h3 id="khSpecialHeading">Cuti khas LPBS</h3>
+    <p class="kh-my-legend">Untuk semua staf LPBS. Pilih hari ini atau tarikh akan datang, termasuk bulan dan tahun berikutnya. Cuti akan datang mula berkuat kuasa secara automatik pada awal bulannya, tanpa pengesahan cuti bulanan.</p>
+    <fieldset style="border:0;padding:0;margin:0;min-width:0;" ${disabled ? 'disabled' : ''}><legend class="kh-my-legend">Jadualkan cuti syarikat</legend>
+    <div class="kh-holiday-manual"><input type="date" id="khSpecialDate" aria-label="Tarikh cuti khas LPBS" min="${today}" value="${escapeHtml(khSpecialDraft.date)}" oninput="khSpecialDraft.date=this.value"><input type="text" id="khSpecialName" aria-label="Nama cuti khas LPBS" maxlength="160" placeholder="Contoh: Cuti Khas LPBS" value="${escapeHtml(khSpecialDraft.title)}" oninput="khSpecialDraft.title=this.value"></div>
+    <button type="button" class="today-btn" onclick="saveKhSpecialHoliday()">Simpan cuti khas</button>
+    <p class="kh-my-legend">Cuti hari ini dan akan datang</p>
+    ${items.length ? items.map(i => `<div class="kh-holiday-row"><div style="flex:1;min-width:0;overflow-wrap:anywhere;">${escapeHtml(i.title)}<small>${escapeHtml(fmtTarikhMalay(i.date))}</small><small>Semua staf LPBS · ${i.date.slice(0,7) > khMyCurrentMonth() ? 'Dijadualkan' : 'Aktif bulan ini'}</small></div><button type="button" class="today-btn" data-id="${escapeHtml(i.id)}" onclick="cancelKhSpecialHoliday(this.dataset.id)">Batalkan</button></div>`).join('') : '<p class="kh-my-legend">Belum ada cuti khas dijadualkan.</p>'}
+    </fieldset></section>`;
+}
+
+async function saveKhSpecialHoliday(){
+  if(!isKhHolidayEditor() || khHolidaySaving) return;
+  const date = khSpecialDraft.date, title = khSpecialDraft.title.trim();
+  if(!validKhHolidayMonth(date.slice(0,7)) || !validKhHolidayDate(date,date.slice(0,7)) || date < fmtKey(new Date()) || !title || title.length > 160){
+    khHolidayNotice = 'Isi nama cuti dan pilih hari ini atau tarikh akan datang.';
+    renderKhHolidayPanel();
+    return;
+  }
+  await persistKhSpecialHoliday({ id: 'lpbs|' + date + '|' + title, date, title, manual: true, observed: true });
+}
+
+async function cancelKhSpecialHoliday(id){
+  if(!isKhHolidayEditor() || khHolidaySaving) return;
+  const item = khSpecialHolidays.get(id);
+  if(!item || !item.observed || item.date < fmtKey(new Date())) return;
+  if(!confirm(`Batalkan ${item.title} pada ${fmtTarikhMalay(item.date)} untuk semua staf LPBS?`)) return;
+  await persistKhSpecialHoliday({ id: item.id, date: item.date, title: item.title, manual: true, observed: false });
+}
+
+async function persistKhSpecialHoliday(item){
+  if(!isKhHolidayEditor() || khHolidaySaving || !khHolidayApprovalsLoaded || khHolidayApprovalError) return;
+  const owner = currentUser.email;
+  khHolidaySaving = true;
+  khHolidayNotice = '';
+  renderKhHolidayPanel();
+  try{
+    const snapshot = { kind: 'lpbs-holiday', items: [item], fingerprint: '' };
+    if(!await appendKhHolidaySnapshot('LPBS|' + item.date.slice(0,7),snapshot,owner)) return;
+    await loadKhHolidayApprovals();
+    if(!currentUser || currentUser.email !== owner) return;
+    const verified = khSpecialHolidays.get(item.id);
+    if(khHolidayApprovalError || !verified || verified.observed !== item.observed) throw new Error('Simpanan belum dapat disahkan. Muat semula dan semak senarai sebelum mencuba lagi.');
+    if(item.observed) khSpecialDraft = { date: '', title: '' };
+    khHolidayNotice = item.observed ? 'Cuti khas disimpan untuk semua staf LPBS. Tarikh akan datang berkuat kuasa pada awal bulannya.' : 'Cuti khas dibatalkan. Cuti umum lain pada tarikh yang sama masih terpakai.';
+  }catch(e){ if(currentUser && currentUser.email === owner) khHolidayNotice = e.message; }
+  finally{ khHolidaySaving = false; refreshKhHolidayViews(); }
+}
+
 function renderKhHolidayPanel(){
   const el = document.getElementById('khHolidayPanel');
   if(!el) return;
@@ -6588,6 +6653,7 @@ function renderKhHolidayPanel(){
     <button type="button" class="save-btn" onclick="saveKhHolidayMonth()">${khHolidaySaving ? 'Menyimpan...' : 'Sahkan cuti bulan ini'}</button></fieldset>
     <button type="button" class="utama-link" onclick="reloadKhHolidays()" ${khHolidaySaving || (feed && feed.loading) ? 'disabled' : ''}>Muat semula</button>
     ${saved ? `<p class="kh-my-legend">Disahkan oleh ${escapeHtml(saved.editor)} · ${escapeHtml(saved.updated)}</p>` : ''}
+    ${renderKhSpecialHolidays()}
     <p class="kh-note" role="status">${escapeHtml(khHolidayNotice)}</p>`;
 }
 
@@ -6602,6 +6668,27 @@ function refreshKhHolidayViews(){
   renderKhHolidayPanel();
   renderKhHolidayReminder();
   if(kehadiranLoaded){ renderMyKehadiranRecord(); refreshUtama('kehadiran'); }
+}
+
+async function appendKhHolidaySnapshot(month, snapshot, owner){
+  if(!isKhHolidayEditor() || currentUser.email !== owner) return false;
+  const base = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}`;
+  const meta = await khHolidayJson(`${base}?fields=sheets.properties.title`);
+  if(!isKhHolidayEditor() || currentUser.email !== owner) return false;
+  if(!(meta.sheets || []).some(s => s.properties.title === KH_HOLIDAY_TAB)){
+    try{
+      await khHolidayJson(`${base}:batchUpdate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requests: [{ addSheet: { properties: { title: KH_HOLIDAY_TAB } } }] }) });
+    }catch(e){
+      const check = await khHolidayJson(`${base}?fields=sheets.properties.title`);
+      if(!(check.sheets || []).some(s => s.properties.title === KH_HOLIDAY_TAB)) throw e;
+    }
+  }
+  if(!isKhHolidayEditor() || currentUser.email !== owner) return;
+  await khHolidayJson(`${base}/values/${encodeURIComponent(KH_HOLIDAY_TAB + '!A1:D1')}?valueInputOption=RAW`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [['Bulan','KeputusanJSON','DisahkanOleh','Masa']] }) });
+  if(!isKhHolidayEditor() || currentUser.email !== owner) return;
+  const stamp = new Date().toISOString();
+  await khHolidayJson(`${base}/values/${encodeURIComponent(KH_HOLIDAY_TAB + '!A:D')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [[month,JSON.stringify(snapshot),owner,stamp]] }) });
+  return true;
 }
 
 async function saveKhHolidayMonth(){
@@ -6619,21 +6706,7 @@ async function saveKhHolidayMonth(){
   khHolidayNotice = '';
   renderKhHolidayPanel();
   try{
-    const base = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}`;
-    const meta = await khHolidayJson(`${base}?fields=sheets.properties.title`);
-    if(!(meta.sheets || []).some(s => s.properties.title === KH_HOLIDAY_TAB)){
-      try{
-        await khHolidayJson(`${base}:batchUpdate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requests: [{ addSheet: { properties: { title: KH_HOLIDAY_TAB } } }] }) });
-      }catch(e){
-        const check = await khHolidayJson(`${base}?fields=sheets.properties.title`);
-        if(!(check.sheets || []).some(s => s.properties.title === KH_HOLIDAY_TAB)) throw e;
-      }
-    }
-    if(!isKhHolidayEditor() || currentUser.email !== owner) return;
-    await khHolidayJson(`${base}/values/${encodeURIComponent(KH_HOLIDAY_TAB + '!A1:D1')}?valueInputOption=RAW`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [['Bulan','KeputusanJSON','DisahkanOleh','Masa']] }) });
-    if(!isKhHolidayEditor() || currentUser.email !== owner) return;
-    const stamp = new Date().toISOString();
-    await khHolidayJson(`${base}/values/${encodeURIComponent(KH_HOLIDAY_TAB + '!A:D')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [[month,JSON.stringify(snapshot),owner,stamp]] }) });
+    if(!await appendKhHolidaySnapshot(month,snapshot,owner)) return;
     await loadKhHolidayApprovals();
     if(!currentUser || currentUser.email !== owner) return;
     const verified = khHolidayApprovals.get(month);

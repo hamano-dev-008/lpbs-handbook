@@ -350,3 +350,77 @@ test('official dates are unique, valid and restricted to the requested month and
   }
   assert.equal(f.run('getKhOfficialHolidays("2027-10").length'),0);
 });
+
+test('future LPBS holiday is scheduled independently and becomes effective at month rollover', async () => {
+  const f=fixture(); await f.run('loadKhHolidayApprovals()');
+  f.run('khSpecialDraft={date:"2027-01-04",title:"Cuti Khas LPBS"}');
+  await f.run('saveKhSpecialHoliday()');
+  assert.equal(f.rows.length,1);
+  assert.equal(f.rows[0][0],'LPBS|2027-01');
+  assert.equal(f.run('khHolidayApprovals.size'),0);
+  assert.equal(f.run('khHolidayNeedsReview("2027-01")'),true);
+  assert.equal(f.run('getKhObservedHoliday("2027-01-04")'),'');
+  assert.match(f.run('renderKhSpecialHolidays()'),/Dijadualkan/);
+  f.c.khMyCurrentMonth=()=> '2027-01';
+  f.c.Date=class extends Date { constructor(...args){ super(...(args.length ? args : ['2027-01-06T10:00:00+08:00'])); } };
+  await f.run('checkKhHolidayMonth()');
+  assert.equal(f.run('getKhObservedHoliday("2027-01-04")'),'Cuti Khas LPBS');
+  assert.equal(f.run('getKhWorkdaysToCheck("2027-01-04","2027-01-05").join(",")'),'2027-01-05');
+  assert.equal(f.run('khHolidayNeedsReview("2027-01")'),true);
+});
+
+test('monthly confirmation and multiple LPBS holidays coexist; cancellation only removes its own exception', async () => {
+  const f=fixture(); await f.run('loadKhHolidayApprovals()'); await f.run('loadKhHolidayFeed("2026-10")');
+  for(const date of ['2026-10-29','2026-10-30']){
+    f.c.date=date; f.run('khSpecialDraft={date,title:"LPBS"}'); await f.run('saveKhSpecialHoliday()');
+  }
+  f.run('khHolidayFeeds.get("2026-10").items=[{id:"public",date:"2026-10-29",title:"Cuti Sabah",observed:true}]');
+  await f.run('saveKhHolidayMonth()');
+  assert.equal(f.run('getKhObservedHoliday("2026-10-29")'),'Cuti Sabah / LPBS');
+  assert.equal(f.run('getKhObservedHoliday("2026-10-30")'),'LPBS');
+  f.c.confirm=()=>true;
+  await f.run('cancelKhSpecialHoliday("lpbs|2026-10-29|LPBS")');
+  assert.equal(f.run('getKhObservedHoliday("2026-10-29")'),'Cuti Sabah');
+  assert.equal(f.run('getKhObservedHoliday("2026-10-30")'),'LPBS');
+  assert.equal(f.run('khHolidayNeedsReview("2026-10")'),false);
+  f.c.confirm=()=>false;
+  await f.run('cancelKhSpecialHoliday("lpbs|2026-10-30|LPBS")');
+  assert.equal(f.rows.length,4);
+});
+
+test('special dates reject past and invalid dates, and retain draft when saving fails', async () => {
+  const f=fixture(); await f.run('loadKhHolidayApprovals()');
+  for(const date of ['2026-10-26','2027-02-30','']){
+    f.c.date=date; f.run('khSpecialDraft={date,title:"LPBS"}'); await f.run('saveKhSpecialHoliday()');
+  }
+  assert.equal(f.rows.length,0);
+  f.run('khSpecialDraft={date:"2027-01-04",title:"LPBS"}');
+  f.c.apiFetch=async()=>({ok:false,status:503});
+  await f.run('saveKhSpecialHoliday()');
+  assert.equal(f.run('khSpecialDraft.date'),'2027-01-04');
+  assert.equal(f.run('khSpecialHolidays.size'),0);
+  assert.match(f.run('khHolidayNotice'),/503/);
+});
+
+test('staff cannot save or cancel special holidays, and logout prevents appending', async () => {
+  const staff=fixture(false); staff.run('khSpecialDraft={date:"2027-01-04",title:"LPBS"}');
+  await staff.run('saveKhSpecialHoliday();cancelKhSpecialHoliday("anything")');
+  assert.equal(staff.calls.length,0);
+  const f=fixture(); await f.run('loadKhHolidayApprovals()');
+  f.run('khSpecialDraft={date:"2027-01-04",title:"LPBS"}');
+  const fetch=f.c.apiFetch;
+  f.c.apiFetch=async(url,opts)=>{const result=await fetch(url,opts);if(opts?.method==='PUT') f.c.currentUser=null;return result;};
+  await f.run('saveKhSpecialHoliday()'); assert.equal(f.rows.length,0);
+});
+
+test('special holiday saving works without Google Calendar and persists across a staff reload', async () => {
+  const f=fixture(); await f.run('loadKhHolidayApprovals()');
+  f.run('khHolidayFeeds.set("2026-10",{items:[],ready:false,error:"Unavailable"});khSpecialDraft={date:"2026-10-29",title:"<LPBS>"}');
+  await f.run('saveKhSpecialHoliday()');
+  assert.equal(f.rows.length,1); assert.match(f.run('renderKhSpecialHolidays()'),/&lt;LPBS>/);
+  const staff=fixture(false);
+  staff.c.apiFetch=async url=>({ok:true,status:200,json:async()=>url.includes('?fields=')?{sheets:[{properties:{title:'CutiUmum'}}]}:{values:f.rows}});
+  await staff.run('loadKhHolidayApprovals()');
+  assert.equal(staff.run('getKhObservedHoliday("2026-10-29")'),'<LPBS>');
+  assert.equal(staff.run('khHolidayApprovals.size'),0);
+});
