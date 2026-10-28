@@ -3774,7 +3774,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.59";
+const APP_VERSION = "1.0.60";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -6287,6 +6287,7 @@ const khMyOpenDays = new Set();
 // CUTI UMUM — keputusan bulanan dikongsi melalui tab CutiUmum (log tambahan sahaja).
 const MALAYSIA_HOLIDAY_CALENDAR_ID = 'en.malaysia#holiday@group.v.calendar.google.com';
 const KH_HOLIDAY_TAB = 'CutiUmum';
+const KH_SPECIAL_HOLIDAYS_ENABLED = false; // Aktifkan hanya atas permintaan pengguna.
 let khHolidayApprovals = new Map();
 let khSpecialHolidays = new Map();
 let khSpecialDraft = { date: '', title: '' };
@@ -6320,7 +6321,7 @@ function khHolidayFingerprint(items){
 
 function getKhObservedHoliday(key){
   const saved = khHolidayApprovals.get(key.slice(0,7));
-  const items = [...(saved ? saved.items : []), ...[...khSpecialHolidays.values()].filter(i => i.date.slice(0,7) <= khMyCurrentMonth())];
+  const items = [...(saved ? saved.items : []), ...(KH_SPECIAL_HOLIDAYS_ENABLED ? [...khSpecialHolidays.values()].filter(i => i.date.slice(0,7) <= khMyCurrentMonth()) : [])];
   return [...new Set(items.filter(i => i.date === key && i.observed === true).map(i => i.title))].join(' / ');
 }
 
@@ -6578,6 +6579,7 @@ function addKhManualHoliday(){
 }
 
 function renderKhSpecialHolidays(){
+  if(!KH_SPECIAL_HOLIDAYS_ENABLED) return '';
   const today = fmtKey(new Date());
   const items = [...khSpecialHolidays.values()].filter(i => i.observed && i.date >= today).sort((a,b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
   const disabled = khHolidaySaving || !khHolidayApprovalsLoaded || !!khHolidayApprovalError;
@@ -6593,6 +6595,7 @@ function renderKhSpecialHolidays(){
 }
 
 async function saveKhSpecialHoliday(){
+  if(!KH_SPECIAL_HOLIDAYS_ENABLED) return;
   if(!isKhHolidayEditor() || khHolidaySaving) return;
   const date = khSpecialDraft.date, title = khSpecialDraft.title.trim();
   if(!validKhHolidayMonth(date.slice(0,7)) || !validKhHolidayDate(date,date.slice(0,7)) || date < fmtKey(new Date()) || !title || title.length > 160){
@@ -6604,6 +6607,7 @@ async function saveKhSpecialHoliday(){
 }
 
 async function cancelKhSpecialHoliday(id){
+  if(!KH_SPECIAL_HOLIDAYS_ENABLED) return;
   if(!isKhHolidayEditor() || khHolidaySaving) return;
   const item = khSpecialHolidays.get(id);
   if(!item || !item.observed || item.date < fmtKey(new Date())) return;
@@ -6612,6 +6616,7 @@ async function cancelKhSpecialHoliday(id){
 }
 
 async function persistKhSpecialHoliday(item){
+  if(!KH_SPECIAL_HOLIDAYS_ENABLED) return;
   if(!isKhHolidayEditor() || khHolidaySaving || !khHolidayApprovalsLoaded || khHolidayApprovalError) return;
   const owner = currentUser.email;
   khHolidaySaving = true;

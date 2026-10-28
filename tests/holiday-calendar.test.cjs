@@ -14,7 +14,7 @@ function source(from, to){
   return html.slice(start, end);
 }
 
-function fixture(editor = true, officialSchedule = false){
+function fixture(editor = true, officialSchedule = false, specialHolidays = false){
   const nodes = new Map();
   const calls = [], rows = [], pages = [], checks = [];
   function node(id){
@@ -70,7 +70,7 @@ function fixture(editor = true, officialSchedule = false){
     }
   });
   vm.runInContext(source("let khEditorPage = 'menu';", 'function setKehadiranMode('), c);
-  vm.runInContext(source('let khMyMonth = null;', 'function stepKhMyMonth('), c);
+  vm.runInContext(source('let khMyMonth = null;', 'function stepKhMyMonth(').replace('const KH_SPECIAL_HOLIDAYS_ENABLED = false;', 'const KH_SPECIAL_HOLIDAYS_ENABLED = ' + specialHolidays + ';'), c);
   vm.runInContext(source('function getKhWorkdaysToCheck(', 'function buildMissingHqRecords('), c);
   vm.runInContext(source('function renderMyAttendanceCalendar(', 'function downloadMyKehadiranPDF('), c);
   if(!officialSchedule) c.getKhOfficialHolidays = () => [];
@@ -82,6 +82,21 @@ test('production inline scripts parse', () => {
   for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){
     if(!m[1].includes('src=') && !m[1].includes('module')) new vm.Script(m[2]);
   }
+});
+
+test('unreleased LPBS holidays stay hidden, cannot be saved and do not affect attendance', async () => {
+  assert.match(html,/const KH_SPECIAL_HOLIDAYS_ENABLED = false;/);
+  const f=fixture(); await f.run('loadKhHolidayApprovals()');
+  f.run('khSpecialHolidays.set("lpbs|2026-10-29|LPBS",{id:"lpbs|2026-10-29|LPBS",date:"2026-10-29",title:"LPBS",observed:true});khSpecialDraft={date:"2026-10-29",title:"LPBS"};khEditorPage="cuti";renderKhHolidayPanel()');
+  assert.equal(f.run('renderKhSpecialHolidays()'),'');
+  assert(!f.nodes.get('khHolidayPanel').innerHTML.includes('khSpecialHeading'));
+  assert.equal(f.run('getKhObservedHoliday("2026-10-29")'),'');
+  await f.run('saveKhSpecialHoliday()');
+  await f.run('cancelKhSpecialHoliday("lpbs|2026-10-29|LPBS")');
+  await f.run('persistKhSpecialHoliday({date:"2026-10-29",title:"LPBS",observed:true})');
+  assert.equal(f.rows.length,0);
+  f.run('khHolidayApprovals.set("2026-10",{items:[{date:"2026-10-29",title:"Cuti Sabah",observed:true}]})');
+  assert.equal(f.run('getKhObservedHoliday("2026-10-29")'),'Cuti Sabah');
 });
 
 test('Google all-day events use exclusive ends, clip to month, deduplicate and ignore cancellations', () => {
@@ -352,7 +367,7 @@ test('official dates are unique, valid and restricted to the requested month and
 });
 
 test('future LPBS holiday is scheduled independently and becomes effective at month rollover', async () => {
-  const f=fixture(); await f.run('loadKhHolidayApprovals()');
+  const f=fixture(true,false,true); await f.run('loadKhHolidayApprovals()');
   f.run('khSpecialDraft={date:"2027-01-04",title:"Cuti Khas LPBS"}');
   await f.run('saveKhSpecialHoliday()');
   assert.equal(f.rows.length,1);
@@ -370,7 +385,7 @@ test('future LPBS holiday is scheduled independently and becomes effective at mo
 });
 
 test('monthly confirmation and multiple LPBS holidays coexist; cancellation only removes its own exception', async () => {
-  const f=fixture(); await f.run('loadKhHolidayApprovals()'); await f.run('loadKhHolidayFeed("2026-10")');
+  const f=fixture(true,false,true); await f.run('loadKhHolidayApprovals()'); await f.run('loadKhHolidayFeed("2026-10")');
   for(const date of ['2026-10-29','2026-10-30']){
     f.c.date=date; f.run('khSpecialDraft={date,title:"LPBS"}'); await f.run('saveKhSpecialHoliday()');
   }
@@ -389,7 +404,7 @@ test('monthly confirmation and multiple LPBS holidays coexist; cancellation only
 });
 
 test('special dates reject past and invalid dates, and retain draft when saving fails', async () => {
-  const f=fixture(); await f.run('loadKhHolidayApprovals()');
+  const f=fixture(true,false,true); await f.run('loadKhHolidayApprovals()');
   for(const date of ['2026-10-26','2027-02-30','']){
     f.c.date=date; f.run('khSpecialDraft={date,title:"LPBS"}'); await f.run('saveKhSpecialHoliday()');
   }
@@ -403,10 +418,10 @@ test('special dates reject past and invalid dates, and retain draft when saving 
 });
 
 test('staff cannot save or cancel special holidays, and logout prevents appending', async () => {
-  const staff=fixture(false); staff.run('khSpecialDraft={date:"2027-01-04",title:"LPBS"}');
+  const staff=fixture(false,false,true); staff.run('khSpecialDraft={date:"2027-01-04",title:"LPBS"}');
   await staff.run('saveKhSpecialHoliday();cancelKhSpecialHoliday("anything")');
   assert.equal(staff.calls.length,0);
-  const f=fixture(); await f.run('loadKhHolidayApprovals()');
+  const f=fixture(true,false,true); await f.run('loadKhHolidayApprovals()');
   f.run('khSpecialDraft={date:"2027-01-04",title:"LPBS"}');
   const fetch=f.c.apiFetch;
   f.c.apiFetch=async(url,opts)=>{const result=await fetch(url,opts);if(opts?.method==='PUT') f.c.currentUser=null;return result;};
@@ -414,11 +429,11 @@ test('staff cannot save or cancel special holidays, and logout prevents appendin
 });
 
 test('special holiday saving works without Google Calendar and persists across a staff reload', async () => {
-  const f=fixture(); await f.run('loadKhHolidayApprovals()');
+  const f=fixture(true,false,true); await f.run('loadKhHolidayApprovals()');
   f.run('khHolidayFeeds.set("2026-10",{items:[],ready:false,error:"Unavailable"});khSpecialDraft={date:"2026-10-29",title:"<LPBS>"}');
   await f.run('saveKhSpecialHoliday()');
   assert.equal(f.rows.length,1); assert.match(f.run('renderKhSpecialHolidays()'),/&lt;LPBS>/);
-  const staff=fixture(false);
+  const staff=fixture(false,false,true);
   staff.c.apiFetch=async url=>({ok:true,status:200,json:async()=>url.includes('?fields=')?{sheets:[{properties:{title:'CutiUmum'}}]}:{values:f.rows}});
   await staff.run('loadKhHolidayApprovals()');
   assert.equal(staff.run('getKhObservedHoliday("2026-10-29")'),'<LPBS>');
