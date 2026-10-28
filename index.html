@@ -3725,7 +3725,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.54";
+const APP_VERSION = "1.0.55";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3936,6 +3936,7 @@ function hasStaffNama(email){
 let kehadiranRecords = []; // { rowIndex, nama, tarikh, masuk, keluar, jam }
 let kehadiranLoaded = false;
 let kehadiranLoadFailed = false;
+let kehadiranLoadError = null;
 
 function calcHours(masuk, keluar){
   if(!masuk || !keluar) return null;
@@ -3975,20 +3976,39 @@ function normalizeTimeString(raw){
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
+async function readKehadiranSnapshot(url){
+  for(let attempt = 0; attempt < 2; attempt++){
+    let res;
+    try{
+      res = await apiFetch(url, { cache: 'no-store' });
+    }catch(e){
+      if(attempt === 0){ await new Promise(resolve => setTimeout(resolve, 700)); continue; }
+      throw new Error('Sambungan ke Google terputus. Semak internet dan cuba Submit semula. Maklumat borang masih disimpan.');
+    }
+    if(res.ok) return res.json();
+    const data = await res.json().catch(() => ({}));
+    const detail = data.error?.message || '';
+    const reason = data.error?.status || data.error?.errors?.[0]?.reason || '';
+    if(attempt === 0 && (res.status === 429 || res.status >= 500)){
+      await new Promise(resolve => setTimeout(resolve, 700));
+      continue;
+    }
+    if(res.status === 401) handleAuthExpired();
+    const message = res.status === 401 ? 'Sesi Google telah tamat. Sila sambung semula.'
+      : res.status === 403 ? 'Google tidak membenarkan akses rekod kehadiran. Sila sambung semula atau hubungi pentadbir.'
+      : res.status === 429 || res.status >= 500 ? 'Google sibuk buat sementara. Sila cuba Submit semula sebentar lagi.'
+      : 'Rekod kehadiran tidak dapat dimuatkan (Google ' + res.status + '). Sila hubungi pentadbir.';
+    throw Object.assign(new Error(message), { status: res.status, detail, reason });
+  }
+}
+
 async function loadKehadiranFromSheet(){
   const wrap = document.getElementById('khTableWrap');
   try{
     accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
-    const holidayLoad = loadKhHolidayApprovals();
-    const pergerakanLoad = loadPergerakanFromSheet();
+    const relatedLoad = Promise.allSettled([loadKhHolidayApprovals(), loadPergerakanFromSheet()]);
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${KEHADIRAN_SHEET_ID}/values/${encodeURIComponent(KEHADIRAN_SHEET_RANGE)}`;
-    const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-    if(res.status === 401){
-      handleAuthExpired();
-      throw new Error('UNAUTHORIZED');
-    }
-    if(!res.ok) throw new Error('status ' + res.status);
-    const data = await res.json();
+    const data = await readKehadiranSnapshot(url);
     const rows = data.values || [];
 
     kehadiranRecords = rows.map((row, idx) => {
@@ -4011,28 +4031,30 @@ async function loadKehadiranFromSheet(){
     }).filter(Boolean);
 
     kehadiranRecords.sort((a,b) => b.tarikh.localeCompare(a.tarikh) || a.nama.localeCompare(b.nama));
-    await pergerakanLoad;
-    await holidayLoad;
+    await relatedLoad;
     if(isKhHolidayEditor()){
       loadKhHolidayFeed(khMyCurrentMonth());
       if(khHolidayMonth && khHolidayMonth !== khMyCurrentMonth()) loadKhHolidayFeed(khHolidayMonth);
     }
     kehadiranLoaded = true;
     kehadiranLoadFailed = false;
-    renderKehadiranTable();
+    kehadiranLoadError = null;
+  }catch(e){
+    console.error('loadKehadiranFromSheet failed:', e);
+    kehadiranLoadFailed = true;
+    kehadiranLoadError = e;
+    if(wrap) wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan rekod</div>Sila semak sambungan atau cuba semula.</div>`;
+  }
+  try{
+    if(!kehadiranLoadFailed) renderKehadiranTable();
     if(khEditorPage === 'rekod' && khEditorRecordView === 'tiada') semakStafTidakHadir();
     if(khEditorPage === 'rekod' && khEditorRecordView === 'keluar') semakStafLupaClockOut();
     renderMyKehadiranRecord();
     refreshUtama('kehadiran');
-    return true;
   }catch(e){
-    console.error('loadKehadiranFromSheet failed:', e);
-    wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan rekod</div>Sila semak sambungan atau cuba semula.</div>`;
-    kehadiranLoadFailed = true;
-    renderMyKehadiranRecord();
-    refreshUtama('kehadiran');
-    return false;
+    console.error('Paparan kehadiran gagal:', e);
   }
+  return !kehadiranLoadFailed;
 }
 
 // ============================================================
@@ -5477,7 +5499,8 @@ async function selfSubmitStatus(){
   const tajuk = isTrip ? document.getElementById('kh-self-tajuk').value.trim() : '';
   const lokasi = isTrip ? document.getElementById('kh-self-lokasi').value.trim() : '';
   const remark = isTrip ? document.getElementById('kh-self-remark').value.trim() : '';
-  const dates = getSelfWorkingDates(getSelfDays());
+  const days = getSelfDays();
+  const owner = currentUser?.email;
   const nama = getSelfCheckinName();
   const note = document.getElementById('khSelfNote');
   const btn = document.getElementById('khSelfSubmitBtn');
@@ -5493,8 +5516,15 @@ async function selfSubmitStatus(){
     // Semak semula dengan data terkini — langkau tarikh yang sudah ada rekod staf ini.
     if(!(await loadKehadiranFromSheet())){
       if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', note, btn, 'Submit'); return; }
-      throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+      if(kehadiranLoadError?.status === 403){
+        handleAttendanceAuthError(403, kehadiranLoadError.detail, note, btn, 'Submit', kehadiranLoadError.reason);
+        return;
+      }
+      throw kehadiranLoadError || new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
     }
+    if(!currentUser || currentUser.email !== owner) throw new Error('Akaun telah berubah. Sila buka semula borang.');
+    if(khHolidayApprovalError || !khHolidayApprovalsLoaded) throw new Error('Cuti umum tidak dapat disemak. Sila cuba Submit semula. Maklumat borang masih disimpan.');
+    const dates = getSelfWorkingDates(days);
     const toAdd = dates.filter(t => !kehadiranRecords.some(isMineOn(t)));
     const skipped = dates.length - toAdd.length;
     if(toAdd.length === 0){
