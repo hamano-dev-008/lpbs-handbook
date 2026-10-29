@@ -3117,6 +3117,7 @@
             <button class="period-btn" data-khpdfmode="bulanan">Bulanan</button>
           </div>
           <label class="checkbox-row"><input type="checkbox" id="khPdfHqOnly"> Hanya staf HQ Kota Kinabalu</label>
+          <p class="kh-note">Tiada Clock In, kurang 9 jam dan belum Clock Out dikumpulkan di bahagian bawah laporan. Semakan hari bekerja sahaja; waktu yang belum lengkap tidak dikira sebagai kurang 9 jam.</p>
           <div id="khPdfDailyField">
             <label class="field-label">Tarikh</label>
             <input type="date" id="khPdfDate">
@@ -3794,7 +3795,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.62";
+const APP_VERSION = "1.0.63";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -6119,13 +6120,13 @@ function getKhWorkdaysToCheck(fromKey, toKey){
   return dates;
 }
 
-function buildMissingHqRecords(dates, records, excluded){
+function buildMissingHqRecords(dates, records, excluded, hqOnly = true){
   const excludedLower = new Set([...excluded].map(n => n.trim().toLowerCase()));
-  const hqNames = [];
+  const hqNames = new Map();
   for(const [, info] of STAFF_DIRECTORY){
     const nama = (info.nama || '').trim();
-    if(nama && (info.kategori || '').trim().toLowerCase().startsWith('hq') && !excludedLower.has(nama.toLowerCase())){
-      hqNames.push(nama);
+    if(nama && (!hqOnly || (info.kategori || '').trim().toLowerCase().startsWith('hq')) && !excludedLower.has(nama.toLowerCase())){
+      hqNames.set(nama.toLowerCase(), nama);
     }
   }
   const missing = [];
@@ -6147,8 +6148,8 @@ function confirmKhPdfModal(){
   const modalNote = document.getElementById('khPdfModalNote');
   const excluded = new Set(Array.from(document.getElementById('khExcludeStaff').selectedOptions).map(o => o.value));
   const hqOnly = document.getElementById('khPdfHqOnly').checked;
-  if(hqOnly && (!khHolidayApprovalsLoaded || khHolidayApprovalError)){
-    modalNote.textContent = 'Semakan cuti umum belum tersedia. Muat semula rekod kehadiran sebelum menjana laporan HQ.';
+  if(!kehadiranLoaded || !khHolidayApprovalsLoaded || khHolidayApprovalError){
+    modalNote.textContent = 'Rekod kehadiran atau semakan cuti belum tersedia. Muat semula sebelum menjana laporan.';
     return;
   }
 
@@ -6159,13 +6160,11 @@ function confirmKhPdfModal(){
     let recordsToPrint = kehadiranRecords
       .filter(r => r.tarikh.slice(0, 7) === bulan && !excluded.has(r.nama))
       .sort(sortKhRecords);
-    if(hqOnly){
-      recordsToPrint = recordsToPrint.filter(r => isStaffStationedAtHQ(r.nama));
-      const [y, m] = bulan.split('-').map(Number);
-      const lastKey = fmtKey(new Date(y, m, 0));
-      const dates = getKhWorkdaysToCheck(`${bulan}-01`, lastKey);
-      recordsToPrint = recordsToPrint.concat(buildMissingHqRecords(dates, recordsToPrint, excluded)).sort(sortKhRecords);
-    }
+    if(hqOnly) recordsToPrint = recordsToPrint.filter(r => isStaffStationedAtHQ(r.nama));
+    const [y, m] = bulan.split('-').map(Number);
+    const lastKey = fmtKey(new Date(y, m, 0));
+    const dates = getKhWorkdaysToCheck(`${bulan}-01`, lastKey);
+    recordsToPrint = recordsToPrint.concat(buildMissingHqRecords(dates, recordsToPrint, excluded, hqOnly)).sort(sortKhRecords);
 
     if(recordsToPrint.length === 0){
       modalNote.textContent = 'Tiada rekod kehadiran pada bulan ini.';
@@ -6181,11 +6180,9 @@ function confirmKhPdfModal(){
   if(!tarikh) return;
 
   let recordsToPrint = kehadiranRecords.filter(r => r.tarikh === tarikh && !excluded.has(r.nama));
-  if(hqOnly){
-    recordsToPrint = recordsToPrint.filter(r => isStaffStationedAtHQ(r.nama));
-    const dates = getKhWorkdaysToCheck(tarikh, tarikh);
-    recordsToPrint = recordsToPrint.concat(buildMissingHqRecords(dates, recordsToPrint, excluded)).sort(sortKhRecords);
-  }
+  if(hqOnly) recordsToPrint = recordsToPrint.filter(r => isStaffStationedAtHQ(r.nama));
+  const dates = getKhWorkdaysToCheck(tarikh, tarikh);
+  recordsToPrint = recordsToPrint.concat(buildMissingHqRecords(dates, recordsToPrint, excluded, hqOnly)).sort(sortKhRecords);
 
   if(recordsToPrint.length === 0){
     modalNote.textContent = 'Tiada rekod kehadiran pada tarikh ini.';
@@ -6204,6 +6201,26 @@ function fmtTarikhMalay(tarikh){
 function fmtBulanMalay(bulan){
   const [y, m] = bulan.split('-').map(Number);
   return `${MONTH_NAMES[m - 1]} ${y}`;
+}
+
+function getKhPdfIssue(record) {
+  if (!record.tarikh || record.tarikh > fmtKey(new Date())) return '';
+  const [y,m,d] = record.tarikh.split('-').map(Number);
+  const day = new Date(y,m-1,d).getDay();
+  if (day === 0 || day === 6 || getKhObservedHoliday(record.tarikh)) return '';
+  const status = String(record.status || 'Hadir').trim().toLowerCase();
+  if (!record.missing && status !== 'hadir' && status !== 'tiada rekod') return '';
+  if (record.missing || !record.masuk) return 'missing';
+  if (!record.keluar) return 'open';
+  const hours = calcHours(record.masuk, record.keluar);
+  return Number.isFinite(hours) && hours < 9 ? 'short' : '';
+}
+
+function groupKhPdfRecords(records) {
+  const groups = { regular: [], missing: [], short: [], open: [] };
+  records.forEach(record => groups[getKhPdfIssue(record) || 'regular'].push(record));
+  Object.values(groups).forEach(group => group.sort(sortKhRecords));
+  return groups;
 }
 
 // opts (pilihan): { btn, note, filename } — lalai kepada butang/nota eksport editor.
@@ -6232,41 +6249,65 @@ function generateKehadiranPDF(label, recordsToPrint, isMonthly, opts = {}){
     const headerLabel = isMonthly ? `Bulan: ${fmtBulanMalay(label)}` : `Tarikh: ${fmtTarikhMalay(label)}`;
     const missingCount = recordsToPrint.filter(r => r.missing).length;
     const missingLabel = missingCount ? ` | Tiada rekod: ${missingCount}` : '';
-    doc.text(`${headerLabel} | Jumlah rekod: ${recordsToPrint.length - missingCount}${missingLabel} | Dicetak: ${todayStr}`, 40, 60);
+    const groups = groupKhPdfRecords(recordsToPrint);
+    const issueCount = groups.missing.length + groups.short.length + groups.open.length;
+    doc.text(`${headerLabel} | Jumlah rekod: ${recordsToPrint.length - missingCount}${missingLabel} | Perlu semakan: ${issueCount} | Dicetak: ${todayStr}`, 40, 60);
 
-    const rows = recordsToPrint.map((r, i) => [i + 1, r.tarikh, r.nama, r.masuk, r.keluar, fmtHours(r.jam), r.status, fmtKehadiranRemark(r)]);
-
-    doc.autoTable({
-      startY: 72,
-      head: [['Bil','Tarikh','Nama','Masa Masuk','Masa Keluar','Jumlah Jam','Status','Remark']],
-      body: rows,
-      styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 5 },
-      headStyles: { fillColor: [31,58,46], textColor: [255,255,255], fontStyle: 'bold' },
-      columnStyles: {
-        0: { cellWidth: 28, halign: 'center' },
-        1: { cellWidth: 70 },
-        2: { cellWidth: 200 },
-        3: { cellWidth: 75 },
-        4: { cellWidth: 75 },
-        5: { cellWidth: 85 },
-        6: { cellWidth: 75 },
-        7: { cellWidth: 'auto' }
-      },
-      theme: 'grid',
-      didParseCell: data => {
-        if(data.section === 'body' && recordsToPrint[data.row.index].missing){
-          data.cell.styles.textColor = [192, 57, 43];
-          data.cell.styles.fillColor = [253, 236, 234];
-        }
-      }
+    let nextY = 76, rowNumber = 0;
+    const sections = [
+      { records: groups.regular, title: 'Rekod kehadiran', color: [31,58,46] },
+      { records: groups.missing, title: 'Perlu semakan - Tiada Clock In', color: [145,48,40] },
+      { records: groups.short, title: 'Perlu semakan - Kurang 9 Jam', color: [133,85,25] },
+      { records: groups.open, title: 'Perlu semakan - Belum Clock Out', color: [67,86,115] }
+    ];
+    sections.forEach(section => {
+      if (!section.records.length) return;
+      if (nextY + 90 > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); nextY = 40; }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...section.color);
+      doc.text(`${section.title} (${section.records.length})`, 40, nextY);
+      const rows = section.records.map(r => {
+        const hours = calcHours(r.masuk, r.keluar);
+        return [++rowNumber, r.tarikh, r.nama, r.masuk || '-', r.keluar || '-', fmtHours(hours), r.status || 'Hadir', fmtKehadiranRemark(r)];
+      });
+      doc.autoTable({
+        startY: nextY + 10,
+        margin: { top: 40, right: 40, bottom: 40, left: 40 },
+        head: [['Bil','Tarikh','Nama','Clock In','Clock Out','Jumlah Jam','Status','Catatan']],
+        body: rows,
+        styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 5, overflow: 'linebreak' },
+        headStyles: { fillColor: section.color, textColor: [255,255,255], fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 26, halign: 'center' },
+          1: { cellWidth: 66 },
+          2: { cellWidth: 178 },
+          3: { cellWidth: 65 },
+          4: { cellWidth: 65 },
+          5: { cellWidth: 80 },
+          6: { cellWidth: 80 },
+          7: { cellWidth: 'auto' }
+        },
+        rowPageBreak: 'avoid',
+        didDrawPage: data => {
+          if(data.pageNumber > 1){
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(...section.color);
+            doc.text(section.title + ' (sambungan)', 40, 28);
+          }
+        },
+        theme: 'grid'
+      });
+      nextY = doc.lastAutoTable.finalY + 14;
     });
 
-    // Sign-off block — ~128pt tall (gap + label + signature space + 3 name lines).
+    // Ruang tandatangan: label, ruang tandatangan dan tiga baris nama.
     // Start a new page if the table left insufficient room.
     const pageH = doc.internal.pageSize.getHeight();
     const marginPt = 40;
-    const signoffH = 128;
-    let sy = doc.lastAutoTable.finalY + 30;
+    const signoffH = 90;
+    let sy = nextY + 4;
     if(sy + signoffH > pageH - marginPt){
       doc.addPage();
       sy = marginPt;
