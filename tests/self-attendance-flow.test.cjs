@@ -28,7 +28,7 @@ test('review escapes staff-entered details and hides trip details for leave',()=
 });
 test('staff status distinguishes not started, working, movement, full-day status and completed attendance',()=>{
  const f=fixture();const status=()=>f.node('khSelfStatus').innerHTML;
- f.c.renderSelfAttendanceStatus(null);assert.match(status(),/Belum daftar masuk/);
+ f.c.renderSelfAttendanceStatus(null);assert.match(status(),/Belum Clock In/);
  f.c.renderSelfAttendanceStatus({status:'Hadir',masuk:'08:00'});assert.match(status(),/Sedang bertugas/);
  f.c.getMyPergerakan=()=>[{jenis:'OUTSTATION'}];f.c.renderSelfAttendanceStatus({status:'Hadir',masuk:'08:00'});assert.match(status(),/Keluar bertugas/);
  f.c.renderSelfAttendanceStatus({status:'Outstation'});assert.match(status(),/Status hari ini telah direkodkan/);

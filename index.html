@@ -2875,7 +2875,7 @@
 
         <div id="khSelfPicker" style="display:none;">
           <h3 class="kh-self-heading">Rekod cuti atau bertugas di luar</h3>
-          <p class="kh-self-help">Untuk hari tanpa daftar masuk pejabat. Jika sudah daftar masuk, gunakan Keluar bertugas.</p>
+          <p class="kh-self-help">Untuk hari tanpa Clock In pejabat. Jika sudah Clock In, gunakan Keluar bertugas.</p>
           <div class="kh-status-pills" id="khSelfStatusPills">
             <button type="button" class="kh-pill" data-option="cutimc">Cuti / MC</button>
             <button type="button" class="kh-pill" data-option="Outstation">Outstation</button>
@@ -3457,7 +3457,7 @@
               <ol style="margin-bottom:14px;">
                 <li>Buka bahagian <strong>Kehadiran</strong> di bar navigasi bawah.</li>
                 <li>Sahkan maklumat diri dan waktu imbasan semasa pada skrin.</li>
-                <li>Tekan butang <strong>"Daftar Masuk (Check-In)"</strong>.</li>
+                <li>Tekan butang <strong>"Clock In"</strong>.</li>
                 <li>Sistem akan terus merekodkan waktu masuk anda ke dalam Google Sheet Kehadiran LPBS dengan status <strong>Hadir</strong>.</li>
               </ol>
 
@@ -3466,7 +3466,7 @@
                 <li>Sistem akan secara automatik menetapkan status kepada <strong>"Hadir Lewat"</strong>.</li>
                 <li>Ruang <strong>Catatan / Sebab Lewat</strong> akan dipaparkan pada borang.</li>
                 <li>Isikan alasan ringkas (contoh: <em>Tugas Luar, Urusan Rasmi, Kesesakan Lalu Lintas, atau Masalah Kesihatan</em>).</li>
-                <li>Tekan <strong>"Daftar Masuk (Check-In)"</strong> untuk menyimpan rekod dan catatan anda.</li>
+                <li>Tekan <strong>"Clock In"</strong> untuk menyimpan rekod dan catatan anda.</li>
               </ol>
             </div>
           </div>
@@ -3794,7 +3794,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.61";
+const APP_VERSION = "1.0.62";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -5123,14 +5123,14 @@ function renderSelfStatusReview(){
 
 function renderSelfAttendanceStatus(rec){
   const status = document.getElementById('khSelfStatus');
-  let title = 'Belum daftar masuk', detail = 'Daftar masuk apabila anda tiba di pejabat.';
+  let title = 'Belum Clock In', detail = 'Clock In apabila anda tiba di pejabat.';
   if(!kehadiranLoaded){ title = 'Rekod belum dimuatkan'; detail = 'Sila tunggu semakan rekod kehadiran.'; }
   else if(rec && (rec.status || 'Hadir') !== 'Hadir'){ title = rec.status; detail = 'Status hari ini telah direkodkan.'; }
   else if(rec && rec.keluar){ title = 'Selesai'; detail = 'Kehadiran hari ini lengkap.'; }
   else if(rec){
     const active = getActivePergerakan(getMyPergerakan(fmtKey(new Date())));
     title = active ? (active.jenis === 'URUSAN_PERIBADI' ? 'Keluar pejabat' : 'Keluar bertugas') : 'Sedang bertugas';
-    detail = active ? (active.jenis === 'URUSAN_PERIBADI' ? 'Rekodkan kepulangan apabila kembali ke pejabat.' : 'Rekodkan kepulangan atau tamat tugas apabila selesai.') : 'Gunakan Keluar bertugas untuk pergerakan selepas daftar masuk.';
+    detail = active ? (active.jenis === 'URUSAN_PERIBADI' ? 'Rekodkan kepulangan apabila kembali ke pejabat.' : 'Rekodkan kepulangan atau tamat tugas apabila selesai.') : 'Gunakan Keluar bertugas untuk pergerakan selepas Clock In.';
   }
   status.innerHTML = '<strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(detail) + '</p>';
 }
@@ -5314,11 +5314,11 @@ function applySelfCheckinLock(){
   const checking = clockPhase && khLocationState === 'pending';
   let timeMsg = '';
   if(masukPhase && isBeforeSelfMasukStart()){
-    timeMsg = 'Daftar masuk dibuka mulai 6:30 pagi.';
+    timeMsg = 'Clock In dibuka mulai 6:30 pagi.';
   } else if(keluarPhase && isBeforeSelfKeluarStart()){
-    timeMsg = 'Daftar keluar dibuka mulai 4:30 petang. Untuk keluar sementara, pilih Keluar bertugas.';
+    timeMsg = 'Clock Out dibuka mulai 4:30 petang. Untuk keluar sementara, pilih Keluar bertugas.';
   } else if(keluarPhase && isPastSelfKeluarEnd()){
-    timeMsg = 'Waktu daftar keluar telah tamat (9:00 malam). Hubungi pentadbir untuk bantuan.';
+    timeMsg = 'Waktu Clock Out telah tamat (9:00 malam). Hubungi pentadbir untuk bantuan.';
   }
   let locMsg = '';
   if(clockPhase && khLocationState === 'outside'){
@@ -5431,10 +5431,10 @@ function renderSelfCheckinCard(){
     if(!khSelfPickerOpen){
       if(isLate){
         lateReasonWrap.style.display = '';
-        action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Daftar masuk (lewat)</button>`;
+        action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Clock In (lewat)</button>`;
       } else {
         lateReasonWrap.style.display = 'none';
-        action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Daftar masuk</button>`;
+        action.innerHTML = `<button class="kh-self-action-btn" id="khSelfMasukBtn" onclick="selfDaftarMasuk()">Clock In</button>`;
       }
     } else {
       lateReasonWrap.style.display = 'none';
@@ -5481,7 +5481,7 @@ function renderSelfCheckinCard(){
         else if(khPgShowTamat) buttons = kembaliBtn('kh-self-action-btn') + tamatBtn('kh-self-alt-btn');
         else buttons = kembaliBtn('kh-self-action-btn') + `<button type="button" class="kh-pg-link" data-pg="1" onclick="showPergerakanTamat()">Tidak dapat kembali ke pejabat hari ini?</button>`;
         action.innerHTML = `
-          <p class="kh-self-confirm">&#10003; Daftar masuk pada <b>${rec.masuk}</b></p>
+          <p class="kh-self-confirm">&#10003; Clock In pada <b>${rec.masuk}</b></p>
           <div class="kh-pg-active">
             <span class="kh-pg-flag">${peribadi ? 'Keluar Pejabat &middot; Urusan Peribadi' : 'Keluar Bertugas'}</span>
             ${peribadi ? '' : `<span class="kh-pg-type">${escapeHtml(pgJenisLabel(active))}</span>`}
@@ -5496,18 +5496,18 @@ function renderSelfCheckinCard(){
       } else if(last && last.jenis === 'TAMAT_BERTUGAS'){
         // Tamat Bertugas sudah direkod tetapi masa keluar belum tersimpan — cuba semula.
         action.innerHTML = `
-          <p class="kh-self-confirm">&#10003; Daftar masuk pada <b>${rec.masuk}</b></p>
+          <p class="kh-self-confirm">&#10003; Clock In pada <b>${rec.masuk}</b></p>
           <button class="kh-self-action-btn" id="khSelfTamatBtn" data-pg="1" onclick="selfTamatBertugas()">Tamat Bertugas</button>
           <p class="kh-self-done" id="khPgTamatHint" style="display:none;"></p>
           ${renderPergerakanHistory(rec, events)}
         `;
       } else {
         action.innerHTML = `
-          <p class="kh-self-confirm">&#10003; Daftar masuk pada <b>${rec.masuk}</b></p>
+          <p class="kh-self-confirm">&#10003; Clock In pada <b>${rec.masuk}</b></p>
           ${pergerakanLoaded ? '<p class="kh-pg-status">Status: Sedang Bertugas</p>' : ''}
           <div class="${pergerakanLoaded ? 'kh-pg-actions' : ''}">
             ${pergerakanLoaded ? '<button class="kh-self-alt-btn" id="khSelfPgBtn" data-pg="1" onclick="openPergerakanModal()">Keluar Bertugas</button>' : ''}
-            <button class="kh-self-action-btn" id="khSelfKeluarBtn" onclick="selfDaftarKeluar()">Daftar keluar</button>
+            <button class="kh-self-action-btn" id="khSelfKeluarBtn" onclick="selfDaftarKeluar()">Clock Out</button>
           </div>
           ${renderPergerakanHistory(rec, events)}
         `;
@@ -5572,7 +5572,7 @@ async function selfDaftarMasuk(){
     const staleRecords = kehadiranRecords;
     await loadKehadiranFromSheet();
     if(kehadiranRecords === staleRecords){
-      if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', note, btn, isLate ? 'Daftar masuk (lewat)' : 'Daftar masuk'); return; }
+      if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', note, btn, isLate ? 'Clock In (lewat)' : 'Clock In'); return; }
       throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
     }
     if(kehadiranRecords.find(isMine)){
@@ -5585,7 +5585,7 @@ async function selfDaftarMasuk(){
       const errMsg = errData.error?.message || '';
       const errReason = errData.error?.status || errData.error?.errors?.[0]?.reason || '';
       if(res.status === 403 || res.status === 401 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('permission')){
-        handleAttendanceAuthError(res.status, errMsg, note, btn, isLate ? 'Daftar masuk (lewat)' : 'Daftar masuk', errReason);
+        handleAttendanceAuthError(res.status, errMsg, note, btn, isLate ? 'Clock In (lewat)' : 'Clock In', errReason);
         return;
       }
       throw new Error(errMsg || ('Gagal menyimpan (status ' + res.status + ')'));
@@ -5606,7 +5606,7 @@ async function selfDaftarMasuk(){
       note.textContent = 'Ralat: ' + e.message;
     }
     btn.disabled = false;
-    btn.textContent = isLate ? 'Daftar masuk (lewat)' : 'Daftar masuk';
+    btn.textContent = isLate ? 'Clock In (lewat)' : 'Clock In';
   }finally{
     khSelfWriting = false;
   }
@@ -8907,17 +8907,17 @@ function renderUtamaKehadiran(){
     } else if(weekend){
       todayText = 'Hujung minggu';
     } else {
-      todayText = 'Belum daftar masuk';
-      todayBtn = goBtn('Daftar masuk');
+      todayText = 'Belum Clock In';
+      todayBtn = goBtn('Clock In');
     }
   } else if((rec.status || 'Hadir') !== 'Hadir'){
     todayText = escapeHtml(rec.status) + (rec.tajuk ? `<small>${escapeHtml(rec.tajuk)}</small>` : '');
   } else if(!rec.keluar){
     const pgActive = getActivePergerakan(getMyPergerakan(todayKey));
-    todayText = `Masuk ${rec.masuk || '--:--'} &middot; belum daftar keluar`
+    todayText = `Masuk ${rec.masuk || '--:--'} &middot; belum Clock Out`
       + (pgActive ? `<small>${pgActive.jenis === 'URUSAN_PERIBADI' ? 'Keluar Pejabat' : 'Keluar Bertugas'}: ${escapeHtml(pgJenisLabel(pgActive))}${pgActive.lokasi ? ' — ' + escapeHtml(pgActive.lokasi) : ''}</small>` : '');
     if(pgActive && pgActive.kembali !== 'Tidak') todayBtn = goBtn('Kembali Ke Pejabat');
-    else if(!isBeforeSelfKeluarStart() && !isPastSelfKeluarEnd()) todayBtn = goBtn(pgActive ? 'Tamat Bertugas' : 'Daftar keluar');
+    else if(!isBeforeSelfKeluarStart() && !isPastSelfKeluarEnd()) todayBtn = goBtn(pgActive ? 'Tamat Bertugas' : 'Clock Out');
   } else {
     todayText = `${rec.masuk} &ndash; ${rec.keluar} &middot; ${fmtHours(rec.jam)}`;
   }
