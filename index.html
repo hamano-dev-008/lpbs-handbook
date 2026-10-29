@@ -3117,7 +3117,7 @@
             <button class="period-btn" data-khpdfmode="bulanan">Bulanan</button>
           </div>
           <label class="checkbox-row"><input type="checkbox" id="khPdfHqOnly"> Hanya staf HQ Kota Kinabalu</label>
-          <p class="kh-note">Tiada Clock In, kurang 9 jam dan belum Clock Out dikumpulkan di bahagian bawah laporan. Semakan hari bekerja sahaja; waktu yang belum lengkap tidak dikira sebagai kurang 9 jam.</p>
+          <p class="kh-note">Tiada Clock In (oren), kurang 9 jam (merah) dan belum Clock Out (kuning) dikumpulkan di bahagian bawah laporan. Semakan hari bekerja sahaja; waktu yang belum lengkap tidak dikira sebagai kurang 9 jam.</p>
           <div id="khPdfDailyField">
             <label class="field-label">Tarikh</label>
             <input type="date" id="khPdfDate">
@@ -3795,7 +3795,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.63";
+const APP_VERSION = "1.0.64";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -6253,19 +6253,40 @@ function generateKehadiranPDF(label, recordsToPrint, isMonthly, opts = {}){
     const issueCount = groups.missing.length + groups.short.length + groups.open.length;
     doc.text(`${headerLabel} | Jumlah rekod: ${recordsToPrint.length - missingCount}${missingLabel} | Perlu semakan: ${issueCount} | Dicetak: ${todayStr}`, 40, 60);
 
+    // Warna sorotan baris untuk laporan bercetak (lajur utama ditebalkan).
+    const KH_PDF_STYLES = {
+      regular: { title: 'Rekod kehadiran',                 head: [31,58,46],  headText: [255,255,255], titleColor: [31,58,46] },
+      missing: { title: 'Perlu semakan - Tiada Clock In',  head: [196,98,16], headText: [255,255,255], titleColor: [176,82,8],  fill: [253,226,196], keyText: [128,52,0],  keyCol: 6, label: 'Tiada Clock In' },
+      short:   { title: 'Perlu semakan - Kurang 9 Jam',    head: [178,40,32], headText: [255,255,255], titleColor: [160,32,24], fill: [250,214,210], keyText: [140,24,18], keyCol: 5, label: 'Kurang 9 Jam' },
+      open:    { title: 'Perlu semakan - Belum Clock Out', head: [234,188,24], headText: [51,40,0],    titleColor: [140,105,0], fill: [255,243,170], keyText: [110,82,0],  keyCol: 4, label: 'Belum Clock Out' }
+    };
+
     let nextY = 76, rowNumber = 0;
-    const sections = [
-      { records: groups.regular, title: 'Rekod kehadiran', color: [31,58,46] },
-      { records: groups.missing, title: 'Perlu semakan - Tiada Clock In', color: [145,48,40] },
-      { records: groups.short, title: 'Perlu semakan - Kurang 9 Jam', color: [133,85,25] },
-      { records: groups.open, title: 'Perlu semakan - Belum Clock Out', color: [67,86,115] }
-    ];
+
+    // Petunjuk warna (hanya jika ada rekod perlu semakan).
+    if (issueCount) {
+      let lx = 40;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      ['missing','short','open'].forEach(key => {
+        const s = KH_PDF_STYLES[key];
+        doc.setFillColor(...s.fill);
+        doc.setDrawColor(...s.titleColor);
+        doc.rect(lx, 67, 10, 8, 'FD');
+        doc.setTextColor(60,60,60);
+        doc.text(s.label, lx + 14, 74);
+        lx += 14 + doc.getTextWidth(s.label) + 16;
+      });
+      nextY = 92;
+    }
+
+    const sections = ['regular','missing','short','open'].map(key => Object.assign({ records: groups[key] }, KH_PDF_STYLES[key]));
     sections.forEach(section => {
       if (!section.records.length) return;
       if (nextY + 90 > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); nextY = 40; }
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      doc.setTextColor(...section.color);
+      doc.setTextColor(...section.titleColor);
       doc.text(`${section.title} (${section.records.length})`, 40, nextY);
       const rows = section.records.map(r => {
         const hours = calcHours(r.masuk, r.keluar);
@@ -6277,7 +6298,7 @@ function generateKehadiranPDF(label, recordsToPrint, isMonthly, opts = {}){
         head: [['Bil','Tarikh','Nama','Clock In','Clock Out','Jumlah Jam','Status','Catatan']],
         body: rows,
         styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 5, overflow: 'linebreak' },
-        headStyles: { fillColor: section.color, textColor: [255,255,255], fontStyle: 'bold' },
+        headStyles: { fillColor: section.head, textColor: section.headText, fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 26, halign: 'center' },
           1: { cellWidth: 66 },
@@ -6288,12 +6309,20 @@ function generateKehadiranPDF(label, recordsToPrint, isMonthly, opts = {}){
           6: { cellWidth: 80 },
           7: { cellWidth: 'auto' }
         },
+        didParseCell: data => {
+          if (data.section !== 'body' || !section.fill) return;
+          data.cell.styles.fillColor = section.fill;
+          if (data.column.index === section.keyCol) {
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.textColor = section.keyText;
+          }
+        },
         rowPageBreak: 'avoid',
         didDrawPage: data => {
           if(data.pageNumber > 1){
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(9);
-            doc.setTextColor(...section.color);
+            doc.setTextColor(...section.titleColor);
             doc.text(section.title + ' (sambungan)', 40, 28);
           }
         },
