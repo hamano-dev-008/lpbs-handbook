@@ -2476,6 +2476,56 @@
     }
   }
 
+  .fail-workspace{max-width:1100px;margin-inline:auto;}
+  .fail-header,.fail-section-heading,.fail-results-head{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+  .fail-header{align-items:flex-start;margin-bottom:32px;}
+  .fail-header .ana-title{margin:6px 0;}
+  .fail-intro,.fail-muted{color:var(--ink-soft);font-size:13px;line-height:1.6;margin:4px 0 0;}
+  .fail-add{margin:0;min-height:46px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;}
+  .fail-add span{font-size:23px;font-weight:400;line-height:1;}
+  .fail-section-heading{margin-bottom:12px;}
+  .fail-section-heading h3,.fail-results-head h3{font-size:15px;font-weight:600;margin:0;overflow-wrap:anywhere;}
+  .fail-section-heading .utama-link[aria-pressed="true"]{text-decoration:underline;text-underline-offset:5px;}
+  .fail-categories{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:32px;}
+  .fail-category{font:inherit;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-height:142px;padding:18px;background:var(--bg-card);border:1px solid var(--line);border-radius:14px;color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s;}
+  .fail-category:hover{border-color:var(--paddy);}
+  .fail-category[aria-pressed="true"]{background:#edf3fa;border-color:var(--paddy);box-shadow:inset 0 0 0 1px var(--paddy);}
+  .fail-category-top{display:flex;align-items:center;justify-content:space-between;width:100%;color:var(--paddy);}
+  .fail-category-top svg{width:23px;height:23px;}
+  .fail-code{font-size:11px;letter-spacing:.06em;color:var(--ink-soft);}
+  .fail-category strong{font-size:13px;font-weight:600;line-height:1.5;overflow-wrap:anywhere;}
+  .fail-category small{margin-top:auto;color:var(--ink-soft);font-size:12px;}
+  .fail-results-head{margin-bottom:16px;}
+  .fail-search{display:flex;align-items:center;gap:10px;min-height:48px;border:1px solid var(--sage-line);border-radius:12px;background:var(--bg-card);padding:0 14px;margin-bottom:20px;}
+  .fail-search:focus-within{outline:3px solid #3979BE;outline-offset:2px;}
+  .fail-search .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  .fail-search svg{width:20px;height:20px;flex:none;color:var(--ink-soft);}
+  .fail-search input{width:100%;min-width:0;border:0;background:transparent;color:var(--ink);padding:13px 0;font-size:14px;outline:none;}
+  .fail-documents{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+  .fail-document{display:flex;flex-direction:column;gap:15px;padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--bg-card);min-width:0;}
+  .fail-document-head{display:flex;align-items:flex-start;gap:12px;}
+  .fail-document-icon,.fail-empty-icon{display:grid;place-items:center;background:#edf3fa;color:var(--paddy);border-radius:11px;width:42px;height:42px;flex:none;}
+  .fail-document-icon svg,.fail-empty-icon svg{width:23px;height:23px;}
+  .fail-document h4{margin:0;font-size:15px;line-height:1.5;overflow-wrap:anywhere;}
+  .fail-document .fail-ref{font-size:12px;line-height:1.6;overflow-wrap:anywhere;color:var(--ink-soft);margin:5px 0 0;}
+  .fail-document-meta{display:flex;flex-wrap:wrap;gap:8px 14px;color:var(--ink-soft);font-size:12px;line-height:1.6;}
+  .fail-document-foot{margin-top:auto;display:flex;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px;}
+  .fail-document details{min-width:0;font-size:12px;color:var(--ink-soft);overflow-wrap:anywhere;}
+  .fail-document summary{cursor:pointer;min-height:44px;display:flex;align-items:center;text-decoration:underline;text-underline-offset:3px;}
+  .fail-document details p{margin:4px 0;line-height:1.6;}
+  .fail-open{display:inline-flex;gap:5px;align-items:center;justify-content:center;min-height:44px;padding:0 14px;background:#edf3fa;color:var(--paddy);font-size:13px;font-weight:600;border-radius:9px;text-decoration:none;white-space:nowrap;}
+  .fail-empty{text-align:center;padding:44px 24px;border:1px dashed var(--sage-line);border-radius:16px;background:var(--bg-card);}
+  .fail-empty-icon{width:52px;height:52px;margin:0 auto 16px;}
+  .fail-empty h4{font-size:16px;margin:0 0 8px;font-weight:600;}
+  .fail-empty p{color:var(--ink-soft);font-size:13px;line-height:1.7;max-width:360px;margin:0 auto 12px;}
+  #failModalOverlay .modal{max-width:540px;}
+  #failModalOverlay .modal-body{display:flex;flex-direction:column;gap:6px;}
+  #failModalOverlay .field-label{margin-top:10px;}
+  #failModalOverlay input,#failModalOverlay select{width:100%;box-sizing:border-box;min-height:44px;}
+  #failModalOverlay .field-row{align-items:start;}
+  #failModalOverlay .field-row>div{min-width:0;}
+  @media(max-width:600px){.fail-header{flex-direction:column;gap:16px;margin-bottom:24px;}.fail-categories{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}.fail-category{padding:14px;min-height:150px;}.fail-documents{grid-template-columns:1fr;}.fail-document{padding:16px;}.fail-results-head{align-items:flex-start;}.fail-empty{padding:32px 20px;}#failModalOverlay .field-row{grid-template-columns:1fr;}}
+
   /* Sistem Fail Styles */
   .attachment-inspector select,
   .attachment-inspector input {
@@ -3264,50 +3314,20 @@
   </div>
 
   <div id="sectionFail" style="display:none;">
-  <section class="analytics no-border-top">
-    <div class="print-head">
-      <p class="eyebrow">Sistem Fail &amp; Log</p>
-      <h2 class="ana-title">Sistem Fail</h2>
-    </div>
-
-    <div class="kehadiran-form" style="margin-bottom: 24px; padding: 20px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-        <div>
-          <h3 style="margin: 0 0 4px; font-size: 16px; color: var(--paddy);">Rekod Fail Rasmi</h3>
-          <p style="margin: 0; font-size: 12px; color: var(--ink-soft);">Senarai fail lampiran aktiviti yang telah didokumenkan.</p>
-        </div>
-        <div style="display: flex; gap: 8px;">
-          <button type="button" class="save-btn" style="margin: 0; padding: 8px 16px; font-size: 13px; background-color: var(--paddy-light);" onclick="openAddFailModal()">
-            + Tambah Fail
-          </button>
-          <button type="button" class="save-btn" style="margin: 0; padding: 8px 16px; font-size: 13px;" onclick="loadFailsFromSheet()">
-            <svg style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; display: inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            Segarkan
-          </button>
-        </div>
+    <section class="analytics no-border-top fail-workspace" aria-labelledby="failHeading">
+      <div class="fail-header">
+        <div><p class="eyebrow">DOKUMEN LPBS</p><h2 class="ana-title" id="failHeading">Sistem Fail</h2><p class="fail-intro">Dokumen rasmi, tersusun dan mudah dicari.</p></div>
+        <button type="button" class="save-btn fail-add" onclick="openAddFailModal()"><span aria-hidden="true">+</span> Tambah Fail</button>
       </div>
-    </div>
-
-    <div class="kh-table-wrap">
-      <table class="kh-table" id="failTable">
-        <thead>
-          <tr>
-            <th style="width: 50px; text-align: center;">No</th>
-            <th>Perkara (Tajuk Dokumen)</th>
-            <th style="width: 160px;">No. Rujukan</th>
-            <th style="width: 140px;">Tarikh Dibuka</th>
-            <th style="width: 120px;">Pautan Drive</th>
-            <th style="width: 160px;">Logged By</th>
-          </tr>
-        </thead>
-        <tbody id="failTableBody">
-          <tr>
-            <td colspan="6" style="text-align: center; padding: 24px; color: var(--ink-soft);">Memuatkan log fail...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+      <div class="fail-section-heading"><h3>Kategori fail</h3><button type="button" class="utama-link" id="failAllBtn" aria-pressed="true" onclick="selectFailCategory('all')">Semua fail</button></div>
+      <div class="fail-categories" id="failCategories" aria-label="Tapis mengikut kategori"></div>
+      <div class="fail-results-head">
+        <div><h3 id="failResultsHeading" tabindex="-1">Semua dokumen</h3><p id="failResultsCount" class="fail-muted" role="status" aria-live="polite"></p></div>
+        <button type="button" class="utama-link" id="failRefreshBtn" onclick="loadFailsFromSheet()">Muat semula</button>
+      </div>
+      <label class="fail-search" for="failSearch"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span class="sr-only">Cari tajuk atau nombor rujukan</span><input id="failSearch" type="search" placeholder="Cari tajuk atau no. rujukan" oninput="filterFailRecords(this.value)"></label>
+      <div id="failResults" aria-busy="false"></div>
+    </section>
   </div>
 
   <div id="sectionPautan" style="display:none;">
@@ -3725,21 +3745,21 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="failModalOverlay" style="display:none;">
-  <div class="modal">
+<div class="modal-overlay" id="failModalOverlay" onkeydown="handleFailModalKey(event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="failModalTitle">
     <div class="modal-head">
-      <h3>Tambah Fail Baru ke Rekod Rasmi</h3>
-      <button class="modal-close" id="failModalClose">&times;</button>
+      <h3 id="failModalTitle">Tambah Fail</h3>
+      <button type="button" class="modal-close" id="failModalClose" aria-label="Tutup borang fail">&times;</button>
     </div>
-    <div class="modal-body">
-      <label class="field-label">Tajuk Dokumen / Perkara</label>
+    <div class="modal-body"><p class="fail-muted">Pilih dokumen dan lengkapkan butiran untuk rekod rasmi.</p>
+      <label class="field-label" for="f-fail-title">Tajuk dokumen</label>
       <input type="text" id="f-fail-title" placeholder="Contoh: Laporan Kewangan Suku Pertama 2026">
 
       <div class="field-row">
         <div>
-          <label class="field-label">No. Rujukan (Klasifikasi)</label>
+          <label class="field-label" for="f-fail-code">Kategori</label>
           <select id="f-fail-code" onchange="onModalCodeChange()" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--sage-line); background: var(--bg); color: var(--ink); font-size: 14px;">
-            <option value="">-- Pilih Kod Klasifikasi --</option>
+            <option value="">Pilih kategori</option>
             <option value="100">LPBS.100 (Pentadbiran)</option>
             <option value="200">LPBS.200 (Tanah, Bangunan & Infrastruktur)</option>
             <option value="300">LPBS.300 (Pengurusan Kewangan)</option>
@@ -3749,22 +3769,22 @@
           </select>
         </div>
         <div>
-          <label class="field-label">No. Rujukan Penuh</label>
-          <input type="text" id="f-fail-ref" placeholder="Auto atau LPBS/...">
+          <label class="field-label" for="f-fail-ref">No. rujukan</label>
+          <input type="text" id="f-fail-ref" placeholder="Dijana selepas memilih kategori" aria-describedby="failRefHint"><p id="failRefHint" class="fail-muted">Semak atau ubah mengikut rujukan rasmi.</p>
         </div>
       </div>
 
-      <label class="field-label">Tarikh Fail Dibuka</label>
+      <label class="field-label" for="f-fail-date">Tarikh dibuka</label>
       <input type="date" id="f-fail-date" style="width:100%; font-family:'Inter',sans-serif; border:1px solid var(--sage-line); background:var(--bg); color:var(--ink); padding:9px 12px; border-radius:8px; font-size:14px;">
 
-      <label class="field-label">Lampiran Fail</label>
+      <label class="field-label" for="f-fail-file">Dokumen</label>
       <input type="file" id="f-fail-file" style="background:var(--bg-card); padding:8px; border:1px solid var(--sage-line); border-radius:8px; width:100%;">
 
-      <p class="kh-note" id="failModalNote" style="min-height: 18px; margin-top: 14px; font-weight: 500;"></p>
+      <p class="kh-note" id="failModalNote" role="status" style="min-height: 18px; margin-top: 14px; font-weight: 500;"></p>
     </div>
     <div class="modal-foot">
       <button class="cancel-btn" id="failModalCancel">Batal</button>
-      <button class="save-btn" id="failModalSaveBtn" onclick="saveNewFileFromModal()">Simpan</button>
+      <button class="save-btn" id="failModalSaveBtn" onclick="saveNewFileFromModal()">Simpan Fail</button>
     </div>
   </div>
 </div>
@@ -3774,7 +3794,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.60";
+const APP_VERSION = "1.0.61";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -11000,6 +11020,11 @@ async function deleteEventPrompt(eventId, uid){
 // SISTEM FAIL & LOG — Pengarsipan Fail Lampiran
 // ============================================================
 let failLogs = [];
+let failCategory = 'all';
+let failSearch = '';
+let failLoadState = 'idle';
+let failLoadError = '';
+let failModalOpener = null;
 let failSheetTabExists = true;
 
 function showToast(msg) {
@@ -11255,8 +11280,7 @@ async function saveFileToRegistry(uid) {
   }
 }
 
-async function setupFailSheetTab() {
-  const btn = event ? event.target : null;
+async function setupFailSheetTab(btn) {
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'Menyediakan...';
@@ -11307,11 +11331,10 @@ async function setupFailSheetTab() {
 }
 
 async function loadFailsFromSheet() {
-  const tableBody = document.getElementById('failTableBody');
-  if (tableBody) {
-    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--ink-soft);">Memuatkan log fail...</td></tr>`;
-  }
-  
+  if (failLoadState === 'loading') return;
+  failLoadState = 'loading';
+  failLoadError = '';
+  renderFailTable();
   try {
     accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${FAIL_SHEET_ID}/values/SistemFail!A2:F1000`;
@@ -11321,6 +11344,8 @@ async function loadFailsFromSheet() {
       throw new Error("UNAUTHORIZED");
     }
     if (res.status === 400) {
+      failLogs = [];
+      failLoadState = 'ready';
       failSheetTabExists = false;
       renderFailTable();
       return;
@@ -11340,74 +11365,124 @@ async function loadFailsFromSheet() {
       loggedBy: r[5] || ''
     }));
     
+    failLogs = failLogs.filter(log => log.perkara || log.rujukan || log.link);
+    failLoadState = 'ready';
     renderFailTable();
   } catch (e) {
-    console.error("loadFailsFromSheet failed:", e);
-    if (tableBody) {
-      tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--red-text);">Ralat: ${e.message}</td></tr>`;
-    }
+    console.error('loadFailsFromSheet failed:', e);
+    failLoadState = 'error';
+    failLoadError = e.message === 'UNAUTHORIZED' ? 'Sila sambung semula akaun Google.' : e.message;
+    renderFailTable();
   }
+}
+
+function failIcon(kind = 'folder') {
+  return `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${kind === 'document' ? '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>' : '<path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M3 9h18"/>'}</svg>`;
+}
+
+function getFailCategory(log) {
+  const match = String(log.rujukan || '').match(/^LPBS[/.](\d{3})(?:[/.]|$)/i);
+  return match && LPBS_CLASSIFICATION_FOLDERS[match[1]] ? match[1] : 'other';
+}
+
+function selectFailCategory(code) {
+  failCategory = code === 'all' || code === 'other' || LPBS_CLASSIFICATION_FOLDERS[code] ? code : 'all';
+  renderFailTable();
+  const heading = document.getElementById('failResultsHeading');
+  heading.scrollIntoView({ block: 'start', behavior: 'auto' });
+  heading.focus({ preventScroll: true });
+}
+
+function filterFailRecords(value) {
+  failSearch = String(value || '').trim().toLowerCase();
+  renderFailTable();
+}
+
+function safeFailLink(value) {
+  try { const url = new URL(value); return url.protocol === 'https:' ? url.href : ''; } catch { return ''; }
 }
 
 function renderFailTable() {
-  const tableBody = document.getElementById('failTableBody');
-  if (!tableBody) return;
-  
-  if (!failSheetTabExists) {
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; padding: 36px; color: var(--ink-soft);">
-          <p style="margin: 0 0 12px; font-weight: 500;">Jadual log "SistemFail" tidak dijumpai dalam Google Sheets.</p>
-          <button type="button" class="save-btn" style="margin: 0 auto; display: block;" onclick="setupFailSheetTab()">Sediakan Tab SistemFail</button>
-        </td>
-      </tr>
-    `;
-    return;
-  }
-  
-  if (failLogs.length === 0) {
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; padding: 36px; color: var(--ink-soft);">
-          Tiada fail yang telah direkodkan. Sila failkan lampiran dari mana-mana Aktiviti.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-  
-  tableBody.innerHTML = failLogs.map((log, idx) => {
-    const cleanLink = log.link ? `<a href="${log.link}" target="_blank" class="attachment" style="display:inline-flex; align-items:center; gap:4px; font-weight:600;">&#128279; Pautan</a>` : '-';
-    let displayNo = log.no;
-    if (typeof displayNo === 'string' && displayNo.startsWith('=')) {
-      displayNo = String(idx + 1);
-    }
-    return `
-      <tr>
-        <td style="text-align: center; font-weight: 600; color: var(--ink-soft);">${escapeHtml(String(displayNo))}</td>
-        <td style="white-space: normal; max-width: 300px; font-weight: 500;">${escapeHtml(log.perkara)}</td>
-        <td style="font-family: 'Space Grotesk', sans-serif; font-weight: 500;">${escapeHtml(log.rujukan)}</td>
-        <td>${escapeHtml(log.tarikh)}</td>
-        <td>${cleanLink}</td>
-        <td style="font-size: 12px; color: var(--ink-soft);">${escapeHtml(log.loggedBy)}</td>
-      </tr>
-    `;
+  const results = document.getElementById('failResults');
+  if (!results) return;
+  const ready = failLoadState === 'ready' && failSheetTabExists;
+  const categories = Object.entries(LPBS_CLASSIFICATION_FOLDERS).map(([code, meta]) => ({ code, name: meta.name }));
+  if (failLogs.some(log => getFailCategory(log) === 'other')) categories.push({ code: 'other', name: 'Lain-lain' });
+  document.getElementById('failCategories').innerHTML = categories.map(({code,name}) => {
+    const count = failLogs.filter(log => getFailCategory(log) === code).length;
+    return `<button type="button" class="fail-category" aria-pressed="${failCategory === code}" onclick="selectFailCategory('${code}')"><span class="fail-category-top">${failIcon()}<span class="fail-code">${code === 'other' ? 'LAIN-LAIN' : 'LPBS ' + code}</span></span><strong>${escapeHtml(name)}</strong><small>${ready ? count + ' fail' : '—'}</small></button>`;
   }).join('');
+  document.getElementById('failAllBtn').setAttribute('aria-pressed', String(failCategory === 'all'));
+  document.getElementById('failResultsHeading').textContent = failCategory === 'all' ? 'Semua dokumen' : failCategory === 'other' ? 'Lain-lain' : LPBS_CLASSIFICATION_FOLDERS[failCategory].name;
+  const refresh = document.getElementById('failRefreshBtn');
+  refresh.disabled = failLoadState === 'loading';
+  results.setAttribute('aria-busy', String(failLoadState === 'loading'));
+  const filtered = failLogs.filter(log => (failCategory === 'all' || getFailCategory(log) === failCategory)
+    && (!failSearch || (log.perkara + ' ' + log.rujukan).toLowerCase().includes(failSearch)));
+  document.getElementById('failResultsCount').textContent = ready ? `${filtered.length} daripada ${failLogs.length} fail` : '';
+  const empty = (title, text, action = '') => `<div class="fail-empty"><div class="fail-empty-icon">${failIcon()}</div><h4>${title}</h4><p>${text}</p>${action}</div>`;
+  if (failLoadState === 'loading' || failLoadState === 'idle') {
+    results.innerHTML = empty('Memuatkan dokumen', 'Senarai fail sedang disemak.');
+    return;
+  }
+  if (failLoadState === 'error') {
+    results.innerHTML = empty('Senarai belum dapat dimuatkan', escapeHtml(failLoadError), '<button type="button" class="today-btn" onclick="loadFailsFromSheet()">Cuba semula</button>');
+    return;
+  }
+  if (!failSheetTabExists) {
+    results.innerHTML = empty('Ruang fail belum disediakan', 'Sediakan rekod fail untuk mula menyimpan dokumen rasmi.', '<button type="button" class="today-btn" onclick="setupFailSheetTab(this)">Sediakan ruang fail</button>');
+    return;
+  }
+  if (!failLogs.length) {
+    results.innerHTML = empty('Belum ada dokumen', 'Apabila dokumen sudah tersedia, gunakan Tambah Fail. Dokumen akan disusun mengikut kategori di atas.');
+    return;
+  }
+  if (!filtered.length) {
+    results.innerHTML = empty(failSearch ? 'Tiada padanan ditemui' : 'Belum ada fail dalam kategori ini', failSearch ? 'Cuba tajuk atau nombor rujukan lain.' : 'Fail yang ditambah dalam kategori ini akan dipaparkan di sini.', '<button type="button" class="utama-link" onclick="resetFailFilters()">Lihat semua fail</button>');
+    return;
+  }
+  results.innerHTML = `<div class="fail-documents">${filtered.map(log => {
+    const code = getFailCategory(log), link = safeFailLink(log.link);
+    const category = code === 'other' ? 'Lain-lain' : LPBS_CLASSIFICATION_FOLDERS[code].name;
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(log.tarikh) ? fmtTarikhMalay(log.tarikh) : log.tarikh;
+    return `<article class="fail-document"><div class="fail-document-head"><span class="fail-document-icon">${failIcon('document')}</span><div><h4>${escapeHtml(log.perkara || 'Dokumen tanpa tajuk')}</h4><p class="fail-ref">${escapeHtml(log.rujukan || 'Tiada nombor rujukan')}</p></div></div><div class="fail-document-meta"><span>${escapeHtml(category)}</span><span>Tarikh dibuka: ${escapeHtml(date || '—')}</span></div><div class="fail-document-foot"><details><summary>Butiran rekod</summary><p>Direkodkan oleh<br>${escapeHtml(log.loggedBy || '—')}</p></details>${link ? `<a class="fail-open" href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer" aria-label="Buka fail: ${escapeHtml(log.perkara)} (tab baharu)">Buka Fail <span aria-hidden="true">↗</span></a>` : '<span class="fail-muted">Pautan belum tersedia</span>'}</div></article>`;
+  }).join('')}</div>`;
+}
+
+function resetFailFilters() {
+  failCategory = 'all';
+  failSearch = '';
+  document.getElementById('failSearch').value = '';
+  renderFailTable();
 }
 
 function openAddFailModal() {
+  failModalOpener = document.activeElement;
   document.getElementById('f-fail-title').value = '';
-  document.getElementById('f-fail-code').value = '';
+  document.getElementById('f-fail-code').value = LPBS_CLASSIFICATION_FOLDERS[failCategory] ? failCategory : '';
   document.getElementById('f-fail-ref').value = '';
-  document.getElementById('f-fail-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('f-fail-date').value = fmtKey(new Date());
   document.getElementById('f-fail-file').value = '';
   document.getElementById('failModalNote').innerHTML = '';
   
+  onModalCodeChange();
   document.getElementById('failModalOverlay').classList.add('open');
+  document.getElementById('f-fail-title').focus();
 }
 
 function closeAddFailModal() {
+  if (document.getElementById('failModalSaveBtn').disabled) return;
   document.getElementById('failModalOverlay').classList.remove('open');
+  if (failModalOpener && failModalOpener.isConnected) failModalOpener.focus();
+}
+
+function handleFailModalKey(event) {
+  if (event.key === 'Escape') { event.preventDefault(); closeAddFailModal(); }
+  if (event.key !== 'Tab') return;
+  const fields = [...document.getElementById('failModalOverlay').querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled)')];
+  const first = fields[0], last = fields[fields.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 }
 
 function onModalCodeChange() {
