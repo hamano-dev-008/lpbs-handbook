@@ -2357,6 +2357,7 @@
     background:#7A2E2E;
   }
   .reconnect-banner{z-index:10000;}
+  .offline-banner{background:#5F6368;padding-right:12px;}
   .reconnect-banner .pb-enable:disabled{opacity:.6;cursor:default;}
   .gate{
     min-height:100vh;
@@ -2669,6 +2670,9 @@
   <span id="reconnectMsg"></span>
   <button type="button" class="pb-enable" id="reconnectBtn" onclick="reconnectSession()">Sambung Semula</button>
   <button type="button" class="pb-close" onclick="hideReconnectPrompt()" aria-label="Tutup">&times;</button>
+</div>
+<div class="push-banner offline-banner" id="offlineBanner" role="status">
+  <span>Tiada sambungan internet — rekod tidak dapat disimpan buat masa ini.</span>
 </div>
 <div class="gate" id="gateScreen">
   <div class="gate-card">
@@ -3816,7 +3820,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.67";
+const APP_VERSION = "1.0.68";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -3967,7 +3971,7 @@ async function loadAllowlistFromSheet(){
       handleAuthExpired();
       throw new Error('UNAUTHORIZED');
     }
-    if(!res.ok) throw new Error('Sheet fetch failed: ' + res.status);
+    if(!res.ok) throw Object.assign(new Error('Sheet fetch failed: ' + res.status), { status: res.status });
     const data = await res.json();
     const rows = data.values || [];
 
@@ -3992,10 +3996,99 @@ async function loadAllowlistFromSheet(){
     VIEWER_SET = viewers;
     STAFF_DIRECTORY = directory;
     allowlistSource = 'sheet';
+    lastSheetsFailure = null;
   }catch(e){
+    lastSheetsFailure = classifySheetsFailure(e);
+    console.warn('[Senarai] load failed', lastSheetsFailure, navigator.onLine);
+    // Kekalkan senarai Sheet yang sudah dimuatkan; fallback hanya jika belum pernah berjaya.
+    if(allowlistSource === 'sheet'){
+      console.error('loadAllowlistFromSheet failed, keeping last loaded Sheet data:', e);
+      return;
+    }
     console.error('loadAllowlistFromSheet failed, using fallback list:', e);
     buildFallbackSets();
   }
+}
+
+// Punca kegagalan muat Sheets terakhir: { kind: 'offline'|'auth'|'forbidden'|'other', status }.
+let lastSheetsFailure = null;
+
+function classifySheetsFailure(e){
+  const status = (e && e.status) || '';
+  if(!navigator.onLine || (e && e.offline) || e instanceof TypeError) return { kind: 'offline', status: '' };
+  if(status === 401 || (e && e.message === 'UNAUTHORIZED')) return { kind: 'auth', status: 401 };
+  if(status === 403) return { kind: 'forbidden', status };
+  return { kind: 'other', status };
+}
+
+const KH_OFFLINE_MSG = 'Tiada sambungan internet. Sila semak WiFi/data mudah alih dan cuba semula.';
+
+function staleCheckMessage(){
+  const kind = lastSheetsFailure ? lastSheetsFailure.kind : (navigator.onLine ? 'other' : 'offline');
+  if(kind === 'offline') return KH_OFFLINE_MSG;
+  if(kind === 'forbidden') return 'Akaun anda tiada akses ke Sheet Kehadiran. Sila hubungi admin.';
+  return 'Tidak dapat menyemak rekod terkini. Sila cuba semula.';
+}
+
+function sheetsFailureCode(){
+  const f = lastSheetsFailure;
+  if(!f) return navigator.onLine ? '' : 'offline';
+  if(f.kind === 'offline') return 'offline';
+  return String(f.status || f.kind);
+}
+
+function staleCheckError(message){
+  return Object.assign(new Error(message || staleCheckMessage()), { staleCheck: true });
+}
+
+function staffDirectoryError(){
+  return staleCheckError(lastSheetsFailure && lastSheetsFailure.kind === 'offline'
+    ? KH_OFFLINE_MSG
+    : 'Senarai staf belum dimuatkan — sila semak sambungan internet dan cuba semula.');
+}
+
+// Papar ralat dalam nota; ralat semakan Sheets disertakan kod diagnostik kecil untuk tangkapan skrin staf.
+function showKhError(noteEl, e){
+  if(!noteEl) return;
+  const msg = 'Ralat: ' + ((e && e.message) || String(e));
+  const code = e && e.staleCheck ? sheetsFailureCode() : '';
+  if(!code){ noteEl.textContent = msg; return; }
+  noteEl.innerHTML = `${escapeHtml(msg)}<span style="display:block;font-size:11px;color:#888;">Kod: ${escapeHtml(code)}</span>`;
+}
+
+function refreshCurrentUserName(){
+  if(!currentUser || !hasStaffNama(currentUser.email)) return;
+  currentUser.name = getStaffDisplayName(currentUser.email);
+  try{ localStorage.setItem('padi_app_user', JSON.stringify(currentUser)); }catch(e){}
+  document.getElementById('heroAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+  document.getElementById('heroUserName').textContent = currentUser.name;
+}
+
+// Rekod dipadankan mengikut nama — jangan tulis dengan nama profil Google jika Senarai belum dimuatkan.
+async function ensureStaffDirectory(){
+  if(!currentUser) return false;
+  if(allowlistSource !== 'sheet' || !hasStaffNama(currentUser.email)){
+    await loadAllowlistFromSheet();
+    if(allowlistSource !== 'sheet') return false;
+    refreshCurrentUserName();
+  }
+  return true;
+}
+
+// Untuk aliran tulis sendiri: kunci butang semasa memuat semula Senarai; papar ralat jika gagal.
+async function ensureStaffDirectoryForWrite(noteEl){
+  if(currentUser && allowlistSource === 'sheet' && hasStaffNama(currentUser.email)) return true;
+  khSelfWriting = true;
+  applySelfCheckinLock();
+  let ok = false;
+  try{
+    ok = await ensureStaffDirectory();
+  }finally{
+    khSelfWriting = false;
+    applySelfCheckinLock();
+  }
+  if(!ok) showKhError(noteEl, staffDirectoryError());
+  return ok;
 }
 
 // Best display name for an email: Nama Penuh if on file, else the email's
@@ -4074,7 +4167,7 @@ async function readKehadiranSnapshot(url){
       res = await apiFetch(url, { cache: 'no-store' });
     }catch(e){
       if(attempt === 0){ await new Promise(resolve => setTimeout(resolve, 700)); continue; }
-      throw new Error('Sambungan ke Google terputus. Semak internet dan cuba Submit semula. Maklumat borang masih disimpan.');
+      throw Object.assign(new Error('Sambungan ke Google terputus. Semak internet dan cuba Submit semula. Maklumat borang masih disimpan.'), { offline: e instanceof TypeError || !navigator.onLine });
     }
     if(res.ok) return res.json();
     const data = await res.json().catch(() => ({}));
@@ -4130,11 +4223,15 @@ async function loadKehadiranFromSheet(){
     kehadiranLoaded = true;
     kehadiranLoadFailed = false;
     kehadiranLoadError = null;
+    lastSheetsFailure = null;
   }catch(e){
     console.error('loadKehadiranFromSheet failed:', e);
     kehadiranLoadFailed = true;
     kehadiranLoadError = e;
-    if(wrap) wrap.innerHTML = `<div class="empty-state"><div class="big">Gagal memuatkan rekod</div>Sila semak sambungan atau cuba semula.</div>`;
+    lastSheetsFailure = classifySheetsFailure(e);
+    console.warn('[Kehadiran] load failed', lastSheetsFailure, navigator.onLine);
+    const offline = lastSheetsFailure.kind === 'offline';
+    if(wrap) wrap.innerHTML = `<div class="empty-state"><div class="big">${offline ? 'Tiada sambungan internet' : 'Gagal memuatkan rekod'}</div>${offline ? 'Sila semak WiFi/data mudah alih dan cuba semula.' : 'Sila semak sambungan atau cuba semula.'}<span style="display:block;font-size:11px;color:#888;margin-top:6px;">Kod: ${escapeHtml(sheetsFailureCode())}</span></div>`;
   }
   try{
     if(!kehadiranLoadFailed) renderKehadiranTable();
@@ -5623,9 +5720,10 @@ async function selfDaftarMasuk(){
     const officeNote = `(Clock in di ${khLocationMatchedOfficeName})`;
     reasonVal = reasonVal ? `${reasonVal} ${officeNote}` : officeNote;
   }
+  const note = document.getElementById('khSelfNote');
+  if(!(await ensureStaffDirectoryForWrite(note))) return;
   const nama = getSelfCheckinName();
   const tarikh = fmtKey(new Date());
-  const note = document.getElementById('khSelfNote');
   const btn = document.getElementById('khSelfMasukBtn');
   const isMine = r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh;
 
@@ -5651,7 +5749,7 @@ async function selfDaftarMasuk(){
     await loadKehadiranFromSheet();
     if(kehadiranRecords === staleRecords){
       if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', note, btn, isLate ? 'Clock In (lewat)' : 'Clock In'); return; }
-      throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+      throw staleCheckError();
     }
     if(kehadiranRecords.find(isMine)){
       renderSelfCheckinCard();
@@ -5681,7 +5779,7 @@ async function selfDaftarMasuk(){
     }
   }catch(e){
     if(!note.querySelector('.kh-auth-msg')){
-      note.textContent = 'Ralat: ' + e.message;
+      showKhError(note, e);
     }
     btn.disabled = false;
     btn.textContent = isLate ? 'Clock In (lewat)' : 'Clock In';
@@ -5701,8 +5799,9 @@ async function selfSubmitStatus(){
   const days = getSelfDays();
   const reviewedDates = document.getElementById('khSelfReview')?.dataset?.dates;
   const owner = currentUser?.email;
-  const nama = getSelfCheckinName();
   const note = document.getElementById('khSelfNote');
+  if(!(await ensureStaffDirectoryForWrite(note))) return;
+  const nama = getSelfCheckinName();
   const btn = document.getElementById('khSelfSubmitBtn');
   const isMineOn = t => r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === t;
 
@@ -5721,7 +5820,7 @@ async function selfSubmitStatus(){
         handleAttendanceAuthError(403, kehadiranLoadError.detail, note, btn, 'Simpan rekod', kehadiranLoadError.reason);
         return;
       }
-      throw kehadiranLoadError || new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+      throw staleCheckError();
     }
     if(!currentUser || currentUser.email !== owner) throw new Error('Akaun telah berubah. Sila buka semula borang.');
     if(khHolidayApprovalError || !khHolidayApprovalsLoaded) throw new Error('Cuti umum tidak dapat disemak. Sila cuba Submit semula. Maklumat borang masih disimpan.');
@@ -5760,7 +5859,7 @@ async function selfSubmitStatus(){
       : KH_SELF_UNVERIFIED_MSG;
   }catch(e){
     if(!note.querySelector('.kh-auth-msg')){
-      note.textContent = 'Ralat: ' + e.message;
+      showKhError(note, e);
     }
     btn.textContent = 'Simpan rekod';
   }finally{
@@ -5775,9 +5874,10 @@ async function selfDaftarKeluar(){
     applySelfCheckinLock();
     return;
   }
+  const note = document.getElementById('khSelfNote');
+  if(!(await ensureStaffDirectoryForWrite(note))) return;
   const nama = getSelfCheckinName();
   const tarikh = fmtKey(new Date());
-  const note = document.getElementById('khSelfNote');
   const btn = document.getElementById('khSelfKeluarBtn');
   const isMine = r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh;
 
@@ -5799,7 +5899,7 @@ async function selfDaftarKeluar(){
     await loadKehadiranFromSheet();
     if(kehadiranRecords === staleRecords){
       if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', note, btn, 'Clock Out'); return; }
-      throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+      throw staleCheckError();
     }
     rec = kehadiranRecords.find(isMine);
     if(!rec || rec.keluar){
@@ -5822,7 +5922,7 @@ async function selfDaftarKeluar(){
     document.getElementById('khSelfNote').textContent = 'Masa keluar berjaya direkodkan.';
   }catch(e){
     if(!note.querySelector('.kh-auth-msg')){
-      note.textContent = 'Ralat: ' + e.message;
+      showKhError(note, e);
     }
     btn.disabled = false;
     btn.textContent = 'Clock Out';
@@ -5897,6 +5997,7 @@ function updatePergerakanForm(){
 // Pulangkan 'ok' | 'stale' | 'error' | 'unverified'.
 async function runSelfPergerakanWrite({ noteEl, btn, btnText, precheck, write, verify }){
   if(khSelfWriting || !btn) return 'error';
+  if(!(await ensureStaffDirectoryForWrite(noteEl))) return 'error';
   khSelfWriting = true;
   btn.disabled = true;
   btn.textContent = 'Merekod...';
@@ -5915,7 +6016,7 @@ async function runSelfPergerakanWrite({ noteEl, btn, btnText, precheck, write, v
     // Semak semula dengan data terkini — mungkin sudah direkod dari peranti/tab lain.
     if(!(await loadKehadiranFromSheet()) || !pergerakanLoaded){
       if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', noteEl, btn, btnText); return 'error'; }
-      throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+      throw staleCheckError();
     }
     const tarikh = fmtKey(new Date());
     const nama = getSelfCheckinName();
@@ -5945,7 +6046,7 @@ async function runSelfPergerakanWrite({ noteEl, btn, btnText, precheck, write, v
     return verify && !verified ? 'unverified' : 'ok';
   }catch(e){
     if(!noteEl.querySelector('.kh-auth-msg')){
-      noteEl.textContent = 'Ralat: ' + e.message;
+      showKhError(noteEl, e);
     }
     btn.disabled = false;
     btn.textContent = btnText;
@@ -7370,6 +7471,7 @@ async function submitKhFill(){
     renderMyKehadiranRecord();
     return;
   }
+  if(!(await ensureStaffDirectoryForWrite(note))) return;
   const nama = getSelfCheckinName();
   const isMine = r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === key;
   const p = malaysiaNowParts();
@@ -7385,7 +7487,7 @@ async function submitKhFill(){
     // Semak semula dengan data terkini — jurang mungkin sudah diisi dari peranti/tab lain atau oleh pentadbir.
     if(!(await loadKehadiranFromSheet())){
       if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', note, btn, 'Simpan'); return; }
-      throw new Error('Tidak dapat menyemak rekod terkini. Sila cuba semula.');
+      throw staleCheckError();
     }
     const rec = kehadiranRecords.find(isMine);
     const stale = type === 'rekod'
@@ -7453,7 +7555,7 @@ async function submitKhFill(){
       : `Rekod ${fmtTarikhPendek(new Date(key + 'T00:00:00'))} berjaya diisi.`;
   }catch(e){
     if(!note.querySelector('.kh-auth-msg')){
-      note.textContent = 'Ralat: ' + e.message;
+      showKhError(note, e);
     }
     btn.disabled = false;
     btn.textContent = 'Simpan';
@@ -8435,10 +8537,14 @@ async function retryPushTokenRegistration(){
     token = await getPushToken();
   } catch(e) {
     console.error('retryPushTokenRegistration failed (langkah: getToken):', errText(e), e);
+    if(!navigator.onLine) showPushError(PUSH_OFFLINE_MSG);
     return;
   }
   const saved = await savePushTokenToSheet(token);
-  if(!saved) console.error('retryPushTokenRegistration failed (langkah: simpan token): lihat ralat savePushTokenToSheet di atas');
+  if(!saved){
+    console.error('retryPushTokenRegistration failed (langkah: simpan token): lihat ralat savePushTokenToSheet di atas');
+    if(lastPushSaveFailure && lastPushSaveFailure.kind === 'offline') showPushError(PUSH_OFFLINE_MSG);
+  }
 }
 
 function dismissPushBanner(){
@@ -8466,27 +8572,38 @@ async function enablePushNotifications(){
     token = await getPushToken();
   } catch(e) {
     console.error('enablePushNotifications failed (langkah: getToken):', e);
-    showPushError('Gagal mendaftar peranti (langkah: getToken) - ' + errText(e));
+    showPushError(navigator.onLine ? 'Gagal mendaftar peranti (langkah: getToken) - ' + errText(e) : PUSH_OFFLINE_MSG);
     return;
   }
   const saved = await savePushTokenToSheet(token);
-  if(!saved) showPushError('Gagal menyimpan token ke Sheets — sila semak akses');
+  if(!saved) showPushError(pushSaveErrorMessage());
 }
 
+let lastPushSaveFailure = null;
 async function savePushTokenToSheet(token){
   try{
     await writePushTokenRow(token);
+    lastPushSaveFailure = null;
     return true;
   }catch(e){
-    console.error('savePushTokenToSheet failed:', e);
+    lastPushSaveFailure = classifySheetsFailure(e);
+    console.error('savePushTokenToSheet failed:', e, lastPushSaveFailure);
     return false;
   }
+}
+
+const PUSH_OFFLINE_MSG = 'Tiada sambungan internet — notifikasi belum didaftarkan. Cuba semula dari ikon loceng (🔔) apabila ada sambungan.';
+function pushSaveErrorMessage(){
+  const f = lastPushSaveFailure;
+  if(f && f.kind === 'offline') return PUSH_OFFLINE_MSG;
+  if(f && f.kind === 'forbidden') return 'Gagal menyimpan token ke Sheets — sila semak akses';
+  return 'Gagal menyimpan token ke Sheets' + (f && f.status ? ` (Kod: ${f.status})` : '') + ' — sila cuba semula.';
 }
 
 async function readPushTokenRows(){
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_RANGE)}`;
   const res = await apiFetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-  if(!res.ok) throw new Error('status ' + res.status);
+  if(!res.ok) throw Object.assign(new Error('status ' + res.status), { status: res.status });
   const data = await res.json();
   return data.values || [];
 }
@@ -8505,7 +8622,7 @@ async function writePushTokenRow(token){
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [[currentUser.email, token, new Date().toISOString(), deviceLabel]] })
     });
-    if(!updateRes.ok) throw new Error('status ' + updateRes.status);
+    if(!updateRes.ok) throw Object.assign(new Error('status ' + updateRes.status), { status: updateRes.status });
   } else {
     const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PUSH_TOKEN_SHEET_ID}/values/${encodeURIComponent(PUSH_TOKEN_SHEET_TAB + '!A:D')}:append?valueInputOption=USER_ENTERED`;
     const appendRes = await apiFetch(appendUrl, {
@@ -8513,7 +8630,7 @@ async function writePushTokenRow(token){
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [[currentUser.email, token, new Date().toISOString(), deviceLabel]] })
     });
-    if(!appendRes.ok) throw new Error('status ' + appendRes.status);
+    if(!appendRes.ok) throw Object.assign(new Error('status ' + appendRes.status), { status: appendRes.status });
   }
   try {
     localStorage.setItem('push_token', token);
@@ -10691,7 +10808,55 @@ async function resumeRestoredSession(){
   loadAllowlistFromSheet().then(() => attemptSignIn(currentUser.email, currentUser.name, currentUser.picture));
 }
 
+// Banner atas disusun bertindan (reconnect paling atas) supaya tiada yang menutup yang lain.
+const TOP_BANNER_IDS = ['reconnectBanner', 'offlineBanner', 'pushBannerError', 'pushBanner'];
+function stackTopBanners(){
+  let top = 0;
+  TOP_BANNER_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.style.top = top ? top + 'px' : '';
+    if(el.classList.contains('show')) top += el.offsetHeight;
+  });
+}
+(() => {
+  const obs = new MutationObserver(stackTopBanners);
+  TOP_BANNER_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+})();
+
+function showOfflineBanner(){ document.getElementById('offlineBanner').classList.add('show'); }
+function hideOfflineBanner(){ document.getElementById('offlineBanner').classList.remove('show'); }
+
+let onlineRecoveryRunning = false;
+async function recoverAfterOnline(){
+  if(onlineRecoveryRunning || !currentUser || !accessToken || restoreSignInPending) return;
+  if(document.getElementById('mainApp').style.display === 'none') return;
+  onlineRecoveryRunning = true;
+  try{
+    await loadAllowlistFromSheet();
+    if(allowlistSource === 'sheet') refreshCurrentUserName();
+    if(!khSelfWriting){
+      await loadKehadiranFromSheet();
+      renderSelfCheckinCard();
+    }
+  }catch(e){
+    console.error('recoverAfterOnline failed:', e);
+  }finally{
+    onlineRecoveryRunning = false;
+  }
+}
+
+window.addEventListener('offline', showOfflineBanner);
+window.addEventListener('online', () => {
+  hideOfflineBanner();
+  recoverAfterOnline();
+});
+
 window.addEventListener('load', async () => {
+  if(!navigator.onLine) showOfflineBanner();
   try {
     const justUpdated = localStorage.getItem('padiapp_just_updated');
     if(justUpdated){
