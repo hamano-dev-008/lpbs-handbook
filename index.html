@@ -1253,7 +1253,7 @@
   .kh-table tr.kh-pg-parent td{ border-bottom:none; }
   .kh-table td.kh-pg-cell{ white-space:normal; padding-top:0; }
   .kh-table td.kh-pg-cell .kh-pg-timeline{ margin:0 0 0 12px; font-size:12.5px; }
-  #khPgModalOverlay .save-btn:disabled, #khFillModalOverlay .save-btn:disabled, #khTmpModalOverlay .save-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  #khPgModalOverlay .save-btn:disabled, #khFillModalOverlay .save-btn:disabled, #khTmpModalOverlay .save-btn:disabled, #khLupaModalOverlay .save-btn:disabled{ opacity:.45; cursor:not-allowed; }
   #khPgKembaliToggle .period-btn{ flex:1; }
   .kh-pg-skp{ margin:14px 0 0; padding:12px; border-radius:10px; background:var(--amber-bg); color:var(--amber-text); font-size:13px; }
   .kh-pg-skp p{ margin:0 0 8px; }
@@ -1325,6 +1325,7 @@
   .kh-attendance-sub{font-size:12px;line-height:1.6;color:var(--ink-soft);margin:4px 0 0;}
   .kh-attendance-status{font-size:11px;font-weight:600;padding:5px 8px;border-radius:6px;background:var(--bg);color:var(--paddy);flex:none;}
   .kh-attendance-status.warn{background:var(--red-bg);color:var(--red-text);}
+  .kh-lupa-badge{display:inline-block;margin-top:4px;font-size:11px;font-weight:600;padding:3px 7px;border-radius:6px;background:var(--amber-bg);color:var(--amber-text);}
   .kh-attendance-times{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:18px 0 0;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
   .kh-attendance-times dt{font-size:11px;color:var(--ink-soft);margin-bottom:6px;}
   .kh-attendance-times dd{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;margin:0;overflow-wrap:anywhere;}
@@ -1361,6 +1362,7 @@
   .kh-my-fill-banner{ margin:14px 0 0; padding:10px 12px; border-radius:10px; background:var(--amber-bg); color:var(--amber-text); font-size:13px; line-height:1.5; }
   .kh-my-fill{ margin:0 0 9px; padding:6px 12px; border:1.5px solid var(--paddy); border-radius:8px; background:transparent; color:var(--paddy); font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; cursor:pointer; }
   .kh-my-fill:disabled{ opacity:.45; cursor:not-allowed; }
+  .kh-my-contact{ margin:0 0 9px; font-size:12.5px; color:var(--amber-text); }
   .kh-my-pdf{ width:100%; margin-top:14px; }
   .kh-table-wrap{
     margin-top:14px;
@@ -2918,6 +2920,7 @@
         <p class="kh-loc-checking" id="khSelfLocChecking" style="display:none;">Sedang menyemak lokasi...</p>
         <p class="kh-cutoff-msg" id="khSelfLocMsg" style="display:none;"></p>
         <button type="button" class="kh-pg-link" id="khSelfRetryLocation" onclick="verifySelfCheckinLocation()" hidden>Semak lokasi semula</button>
+        <button type="button" class="kh-self-alt-btn" id="khSelfLupaBtn" style="display:none;" onclick="openLupaClockOutModal()">Terlupa Clock Out di pejabat?</button>
         <p class="kh-note" id="khSelfNote" role="status" aria-live="polite"></p>
       </div>
     </div>
@@ -3221,6 +3224,29 @@
         <div class="modal-foot">
           <button class="cancel-btn" onclick="closeTidakMasukModal()">Batal</button>
           <button class="save-btn" id="khTmpConfirmBtn" onclick="selfTidakMasukPejabat()" disabled>Sahkan</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="khLupaModalOverlay">
+      <div class="modal" style="max-width:380px;">
+        <div class="modal-head">
+          <h3>Terlupa Clock Out</h3>
+          <button class="modal-close" onclick="closeLupaClockOutModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="kh-self-dates" style="margin-top:0;">Gunakan ini hanya jika anda terlupa Clock Out sebelum meninggalkan pejabat. Masa yang anda isi akan direkod sebagai masa Clock Out. Lokasi dan masa sebenar penghantaran turut direkodkan untuk semakan.</p>
+          <p class="kh-self-dates" id="khLupaMasukInfo"></p>
+          <label class="field-label" for="khLupaMasa">Masa sebenar keluar pejabat *</label>
+          <input type="time" id="khLupaMasa" oninput="updateLupaClockOutForm()">
+          <label class="field-label" for="khLupaSebab">Sebab *</label>
+          <input type="text" id="khLupaSebab" maxlength="120" placeholder="Contoh: Terlupa clock out sebelum balik" oninput="updateLupaClockOutForm()">
+          <p class="kh-self-dates" id="khLupaHint"></p>
+          <p class="kh-note" id="khLupaNote"></p>
+        </div>
+        <div class="modal-foot">
+          <button class="cancel-btn" onclick="closeLupaClockOutModal()">Batal</button>
+          <button class="save-btn" id="khLupaConfirmBtn" onclick="selfLupaClockOut()" disabled>Hantar Clock Out</button>
         </div>
       </div>
     </div>
@@ -3820,7 +3846,7 @@
 // KONFIGURASI — Google OAuth & Kalendar
 // ============================================================
 // Naikkan versi ini setiap kali deploy — sw.js (APP_VERSION di sana) mesti dinaikkan serentak.
-const APP_VERSION = "1.0.68";
+const APP_VERSION = "1.0.69";
 const GOOGLE_CLIENT_ID = "232403694215-s5c5il9af5cs86n7qca339ng6rq661ca.apps.googleusercontent.com";
 const CALENDAR_ID = "d7346996c6d3088e11db03ecfd557f7c1223f85f3f75597a3bd1105ba8e0ed3b@group.calendar.google.com";
 const ALLOWLIST_SHEET_ID = "12vKVWPjYrnfk4uLVKJjxzdh-8x3RGTv1XdAPsSgdarw";
@@ -4565,7 +4591,7 @@ function renderKhAttendanceCard(r){
   const events = r.missing ? [] : getPergerakanForRecord(r);
   const canEdit = isKhHolidayEditor();
   return `<article class="kh-attendance-card${warn ? ' needs-attention' : ''}" ${r.rowIndex ? `id="khAttendanceCard${r.rowIndex}"` : ''}>
-    <div class="kh-attendance-head"><div><h4>${escapeHtml(r.nama)}</h4>${info.jawatan || r.jawatan ? `<p class="kh-attendance-sub">${escapeHtml(info.jawatan || r.jawatan)}</p>` : ''}<p class="kh-attendance-sub">${escapeHtml(fmtTarikhMalay(r.tarikh))}</p></div><span class="kh-attendance-status${warn ? ' warn' : ''}">${escapeHtml(status)}</span></div>
+    <div class="kh-attendance-head"><div><h4>${escapeHtml(r.nama)}</h4>${(r.remark || '').includes('Lupa Clock Out:') ? '<span class="kh-lupa-badge">Lupa Clock Out</span>' : ''}${info.jawatan || r.jawatan ? `<p class="kh-attendance-sub">${escapeHtml(info.jawatan || r.jawatan)}</p>` : ''}<p class="kh-attendance-sub">${escapeHtml(fmtTarikhMalay(r.tarikh))}</p></div><span class="kh-attendance-status${warn ? ' warn' : ''}">${escapeHtml(status)}</span></div>
     <dl class="kh-attendance-times"><div><dt>Masuk</dt><dd>${escapeHtml(r.masuk || '—')}</dd></div><div><dt>Keluar</dt><dd>${escapeHtml(r.keluar || '—')}</dd></div><div><dt>Jumlah</dt><dd>${r.jam !== null && r.jam !== undefined ? escapeHtml(fmtHours(r.jam)) : '—'}</dd></div></dl>
     ${r.tajuk ? `<p class="kh-attendance-info"><b>Tajuk:</b> ${escapeHtml(r.tajuk)}</p>` : ''}
     ${r.lokasi ? `<p class="kh-attendance-info"><b>Lokasi:</b> ${escapeHtml(r.lokasi)}</p>` : ''}
@@ -5165,9 +5191,11 @@ function isPastSelfCheckinCutoff(){
 
 // Had waktu daftar sendiri (terpakai kepada semua pengguna kad, termasuk editor dalam Mod Peribadi):
 // Daftar Masuk hanya dari 6:30 pagi; Daftar Keluar hanya dari 4:30 petang hingga 9:00 malam.
+// Terlupa Clock Out (dari mana-mana lokasi) dari 4:30 petang hingga 11:59 malam.
 let KH_MASUK_START_HOUR = 6, KH_MASUK_START_MINUTE = 30;
 let KH_KELUAR_START_HOUR = 16, KH_KELUAR_START_MINUTE = 30;
 let KH_KELUAR_END_HOUR = 21, KH_KELUAR_END_MINUTE = 0;
+let KH_LUPA_KELUAR_END_HOUR = 23, KH_LUPA_KELUAR_END_MINUTE = 59;
 
 // Pilihan "Not coming in today?": 'cutimc' | 'Outstation' | 'Kursus' (null = belum dipilih).
 // Status yang disimpan kekal MC/Cuti/Outstation/Kursus — tidak tertakluk kepada semakan lokasi atau had waktu.
@@ -5311,6 +5339,12 @@ function isBeforeSelfKeluarStart(){
 function isPastSelfKeluarEnd(){
   const now = new Date();
   return now.getHours() * 60 + now.getMinutes() >= KH_KELUAR_END_HOUR * 60 + KH_KELUAR_END_MINUTE;
+}
+
+// Minit akhir (11:59 malam) masih dibenarkan.
+function isPastLupaKeluarEnd(){
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes() > KH_LUPA_KELUAR_END_HOUR * 60 + KH_LUPA_KELUAR_END_MINUTE;
 }
 
 // Semakan lokasi GPS untuk daftar masuk sendiri — setiap staf disemak terhadap
@@ -5487,7 +5521,9 @@ function applySelfCheckinLock(){
   } else if(keluarPhase && isBeforeSelfKeluarStart()){
     timeMsg = 'Clock Out dibuka mulai 4:30 petang. Untuk keluar sementara, pilih Keluar bertugas.';
   } else if(keluarPhase && isPastSelfKeluarEnd()){
-    timeMsg = 'Waktu Clock Out telah tamat (9:00 malam). Hubungi pentadbir untuk bantuan.';
+    timeMsg = isPastLupaKeluarEnd()
+      ? 'Waktu Clock Out telah tamat (9:00 malam). Hubungi pentadbir untuk bantuan.'
+      : 'Waktu Clock Out biasa telah tamat. Jika anda terlupa Clock Out, tekan butang di bawah.';
   }
   let locMsg = '';
   if(clockPhase && khLocationState === 'outside'){
@@ -5538,6 +5574,10 @@ function applySelfCheckinLock(){
   const retry = document.getElementById('khSelfRetryLocation');
   retry.hidden = !locMsg || checking;
   retry.disabled = khSelfWriting;
+  const lupaBtn = document.getElementById('khSelfLupaBtn');
+  lupaBtn.style.display = keluarPhase && isLupaClockOutWindow()
+    && (isPastSelfKeluarEnd() || khLocationState === 'outside' || khLocationState === 'unavailable') ? '' : 'none';
+  lupaBtn.disabled = khSelfWriting || khLupaUnverified === fmtKey(new Date());
   document.querySelectorAll('#khSelfPicker input, #khSelfPicker button, #khSelfAltLink').forEach(el => { el.disabled = khSelfWriting; });
   const pg = document.getElementById('khSelfPgBtn');
   const out = document.getElementById('khSelfKeluarBtn');
@@ -5928,6 +5968,184 @@ async function selfDaftarKeluar(){
     btn.textContent = 'Clock Out';
   }finally{
     khSelfWriting = false;
+  }
+}
+
+// ---- Terlupa Clock Out: Clock Out dari luar pejabat dengan masa sebenar keluar (4:30 petang – 11:59 malam) ----
+let khLupa = null; // { masuk }
+let khLupaUnverified = null;
+
+function isLupaClockOutWindow(){
+  return !isBeforeSelfKeluarStart() && !isPastLupaKeluarEnd();
+}
+
+function getMyOpenTodayRecord(){
+  const nama = getSelfCheckinName().toLowerCase();
+  const tarikh = fmtKey(new Date());
+  const rec = kehadiranRecords.find(r => r.nama.toLowerCase() === nama && r.tarikh === tarikh);
+  return rec && (rec.status || 'Hadir') === 'Hadir' && rec.masuk && !rec.keluar ? rec : null;
+}
+
+function openLupaClockOutModal(){
+  if(khSelfWriting) return;
+  const rec = getMyOpenTodayRecord();
+  if(!rec || !isLupaClockOutWindow()){
+    renderSelfCheckinCard();
+    return;
+  }
+  khLupa = { masuk: rec.masuk };
+  document.getElementById('khLupaMasa').value = '';
+  document.getElementById('khLupaSebab').value = '';
+  document.getElementById('khLupaNote').textContent = '';
+  document.getElementById('khLupaMasukInfo').textContent = `Clock In direkod: ${rec.masuk}`;
+  document.getElementById('khLupaConfirmBtn').textContent = 'Hantar Clock Out';
+  updateLupaClockOutForm();
+  document.getElementById('khLupaModalOverlay').classList.add('open');
+}
+
+function closeLupaClockOutModal(){
+  if(khSelfWriting) return;
+  document.getElementById('khLupaModalOverlay').classList.remove('open');
+  khLupa = null;
+}
+
+function readLupaClockOutForm(){
+  const masa = normalizeTimeString(document.getElementById('khLupaMasa').value);
+  const sebab = document.getElementById('khLupaSebab').value.trim();
+  const mula = `${String(KH_KELUAR_START_HOUR).padStart(2, '0')}:${String(KH_KELUAR_START_MINUTE).padStart(2, '0')}`;
+  const now = nowHHMM();
+  let err = '';
+  if(masa){
+    if(masa < mula) err = 'Untuk keluar sebelum 4:30 petang, sila hubungi admin.';
+    else if(khLupa && khLupa.masuk && masa <= khLupa.masuk) err = `Masa keluar mesti selepas masa Clock In (${khLupa.masuk}).`;
+    else if(masa > now) err = `Masa keluar tidak boleh selepas masa sekarang (${now}).`;
+  }
+  return { masa, sebab, err, valid: !!masa && !err && !!sebab };
+}
+
+function updateLupaClockOutForm(){
+  if(!khLupa) return;
+  const f = readLupaClockOutForm();
+  document.getElementById('khLupaHint').textContent = f.err;
+  document.getElementById('khLupaConfirmBtn').disabled = khSelfWriting || !f.valid || !isLupaClockOutWindow()
+    || khLupaUnverified === fmtKey(new Date());
+}
+
+// Satu bacaan GPS untuk semakan; gagal = '' (tidak menyekat).
+function captureLupaGps(){
+  return new Promise(resolve => {
+    if(!navigator.geolocation){ resolve(''); return; }
+    let done = false;
+    const finish = v => { if(!done){ done = true; resolve(v); } };
+    setTimeout(() => finish(''), 10000);
+    navigator.geolocation.getCurrentPosition(
+      pos => finish(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)} ±${Math.round(pos.coords.accuracy)}m`),
+      () => finish(''),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  });
+}
+
+async function selfLupaClockOut(){
+  if(khSelfWriting || !khLupa) return;
+  const note = document.getElementById('khLupaNote');
+  const btn = document.getElementById('khLupaConfirmBtn');
+  const f = readLupaClockOutForm();
+  if(!f.valid){
+    updateLupaClockOutForm();
+    return;
+  }
+  if(!isLupaClockOutWindow()){
+    btn.disabled = true;
+    note.textContent = 'Terlupa Clock Out tidak lagi tersedia. Sila hubungi admin.';
+    return;
+  }
+  if(!(await ensureStaffDirectoryForWrite(note))) return;
+  const nama = getSelfCheckinName();
+  const tarikh = fmtKey(new Date());
+  const isMine = r => r.nama.toLowerCase() === nama.toLowerCase() && r.tarikh === tarikh;
+
+  btn.disabled = true;
+  btn.textContent = 'Merekod...';
+  note.textContent = '';
+  khSelfWriting = true;
+  applySelfCheckinLock();
+
+  try{
+    accessToken = sessionStorage.getItem('padi_app_token') || accessToken;
+    // Cari semula rekod dengan data terkini — rowIndex lama mungkin sudah berubah.
+    const staleRecords = kehadiranRecords;
+    await loadKehadiranFromSheet();
+    if(kehadiranRecords === staleRecords){
+      if(document.getElementById('reconnectBanner').classList.contains('show')){ handleAttendanceAuthError(401, '', note, btn, 'Hantar Clock Out'); return; }
+      throw staleCheckError();
+    }
+    const rec = kehadiranRecords.find(isMine);
+    if(!rec || rec.keluar || (rec.status || 'Hadir') !== 'Hadir' || !rec.masuk){
+      khSelfWriting = false;
+      closeLupaClockOutModal();
+      renderSelfCheckinCard();
+      document.getElementById('khSelfNote').textContent = 'Rekod hari ini telah berubah — sila semak status di atas.';
+      return;
+    }
+    if(f.masa <= rec.masuk) throw new Error(`Masa keluar mesti selepas masa Clock In (${rec.masuk}).`);
+
+    const gps = await captureLupaGps();
+    const direkod = nowHHMM();
+    const res = await putKehadiranKeluar(rec.rowIndex, f.masa);
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      const errMsg = errData.error?.message || '';
+      const errReason = errData.error?.status || errData.error?.errors?.[0]?.reason || '';
+      if(res.status === 403 || res.status === 401 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('permission')){
+        handleAttendanceAuthError(res.status, errMsg, note, btn, 'Hantar Clock Out', errReason);
+        return;
+      }
+      throw new Error(errMsg || ('Gagal menyimpan (status ' + res.status + ')'));
+    }
+
+    const tag = `Lupa Clock Out: keluar pejabat ${f.masa}, direkod ${direkod} dari luar pejabat (${gps || 'GPS tiada'}) — ${f.sebab}`;
+    let remarkOk = false;
+    try{
+      const remarkRes = await putKehadiranRemark(rec.rowIndex, rec.remark ? `${rec.remark} | ${tag}` : tag);
+      remarkOk = remarkRes.ok;
+      if(!remarkOk) console.error('Kemas kini Remark (Lupa Clock Out) gagal:', remarkRes.status, await remarkRes.text().catch(() => ''));
+    }catch(e){
+      console.error('Kemas kini Remark (Lupa Clock Out) gagal:', e);
+    }
+
+    const p = malaysiaNowParts();
+    await logKhPindaan([
+      `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`,
+      currentUser.email.toLowerCase(), nama, tarikh,
+      'LUPA_CLOCK_OUT', `Keluar ${f.masa} (direkod ${direkod}, ${gps || 'GPS tiada'})`, f.sebab
+    ]);
+
+    let verified = false;
+    for(let i = 0; i < 3 && !verified; i++){
+      if(i) await new Promise(resolve => setTimeout(resolve, 2000));
+      if(await loadKehadiranFromSheet()){
+        const r = kehadiranRecords.find(isMine);
+        verified = !!r && r.keluar === f.masa;
+      }
+    }
+    if(!verified) khLupaUnverified = tarikh;
+    khSelfWriting = false;
+    closeLupaClockOutModal();
+    renderSelfCheckinCard();
+    document.getElementById('khSelfNote').textContent = !verified ? KH_SELF_UNVERIFIED_MSG
+      : remarkOk ? 'Clock Out berjaya direkod (Lupa Clock Out).'
+      : 'Clock Out direkod, tetapi catatan gagal disimpan. Sila maklumkan admin.';
+  }catch(e){
+    if(!note.querySelector('.kh-auth-msg')){
+      showKhError(note, e);
+    }
+    btn.disabled = false;
+    btn.textContent = 'Hantar Clock Out';
+  }finally{
+    khSelfWriting = false;
+    applySelfCheckinLock();
+    if(khLupa) updateLupaClockOutForm();
   }
 }
 
@@ -7249,7 +7467,8 @@ function renderMyKehadiranRecord(){
       ${times || events.length ? `<div class="kh-my-meta"><span>${times}${hours}</span>${events.length ? `<span class="kh-my-pg">Pergerakan ${chevron}</span>` : ''}</div>` : ''}
       ${remark ? `<small>${escapeHtml(remark)}</small>` : ''}`;
     const fill = khFillType(key, why, r);
-    const fillBtn = fill ? `<button type="button" class="kh-my-fill" data-key="${escapeHtml(key)}" onclick="openKhFillModal(this.dataset.key)">${fill === 'rekod' ? 'Isi rekod' : 'Isi masa keluar'}</button>` : '';
+    const fillBtn = fill ? `<button type="button" class="kh-my-fill" data-key="${escapeHtml(key)}" onclick="openKhFillModal(this.dataset.key)">${fill === 'rekod' ? 'Isi rekod' : 'Isi masa keluar'}</button>`
+      : why === 'Tiada clock-out' ? '<p class="kh-my-contact">Terlupa Clock Out? Sila hubungi admin.</p>' : '';
     return `<li class="kh-my-day"><div class="kh-my-row">${inner}</div>${events.length ? renderPergerakanTimeline(r || { masuk: "", keluar: "" }, events) : ""}${fillBtn}</li>`;
   }).join('');
 
